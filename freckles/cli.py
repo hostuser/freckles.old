@@ -1,15 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import click
-from freckles import Freckles, FRECKLES_DEFAULT_EXECUTION_BASE_DIR, FRECKLES_DEFAULT_EXECUTION_DIR_NAME
+from freckles import Freckles
 import pprint
 import py
 import yaml
 import os
 import json
 from freckles_runner import FrecklesRunner
+from constants import *
 
 DEFAULT_INDENT = 2
+
+DEFAULT_CONFIG = {
+    "frecks": {
+        "default": {
+            DOTFILES_KEY: DEFAULT_DOTFILES
+        },
+        "install": {},
+        "stow": {}
+    }
+}
 
 class Config(object):
 
@@ -31,11 +42,11 @@ class Config(object):
         """save yaml config to disk"""
 
         if not self.config:
-            self.config = {"build_base_dir": FRECKLES_DEFAULT_EXECUTION_BASE_DIR, "build_dir_name": FRECKLES_DEFAULT_EXECUTION_DIR_NAME, "dotfiles": [], "hosts": ['localhost']}
+            self.config = DEFAULT_CONFIG
 
         self.config_file.ensure()
         with self.config_file.open('w') as f:
-            yaml.dump(self.config, f, default_flow_style=False)
+            yaml.safe_dump(self.config, f, default_flow_style=False)
 
     def get(self, key):
         """Returns the value for the specified key"""
@@ -57,27 +68,17 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @pass_config
 @click.pass_context
 @click.option('--hosts', help='comma-separated list of hosts (default: \'localhost\'), overrides config', multiple=True)
-@click.option('--dotfiles', help='base-path(s) for dotfile directories (can be used multiple times), overrides config', type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), multiple=True)
-def cli(ctx, config, hosts, dotfiles):
+# @click.option('--dotfiles', help='base-path(s) for dotfile directories (can be used multiple times), overrides config', type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), multiple=True)
+def cli(ctx, config, hosts):
     config.load()
 
     if not config.config:
         config.save()
 
-    config.cli_hosts = hosts
-    config.cli_dotfiles = dotfiles
+    if hosts:
+        config.config["hosts"] = hosts
 
-    if config.cli_dotfiles:
-        dotfiles = config.cli_dotfiles
-    else:
-        dotfiles = config.config["dotfiles"]
-
-    if config.cli_hosts:
-        hosts = config.cli_hosts
-    else:
-        hosts = config.config["hosts"]
-
-    config.freckles = create_freckles(dotfiles, hosts)
+    config.freckles = Freckles(config.config)
 
     if ctx.invoked_subcommand is None:
         run(config)
@@ -99,23 +100,11 @@ def inventory(config):
 
     click.echo(inv_json)
 
-def create_freckles(dotfile_dirs, hosts):
-
-    inv_hosts = {}
-    for host in hosts:
-        if host == "localhost" or host == "127.0.0.1":
-            inv_hosts[host] = {"ansible_connection": "local"}
-        else:
-            inv_hosts[host] = {}
-
-    freckles = Freckles(dotfile_dirs, hosts=inv_hosts)
-    return freckles
-
-
 def run(config):
 
-    runner = FrecklesRunner(config.freckles, config.get("build_base_dir"), config.get("build_dir_name"))
-
+    runner = FrecklesRunner(config.freckles, clear_build_dir=True, execution_base_dir=config.get("build_base_dir"), execution_dir_name=config.get("build_dir_name"))
+    # runner.run()
+    pass
 
 if __name__ == "__main__":
     cli()

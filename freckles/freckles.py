@@ -5,52 +5,67 @@ import yaml
 import pprint
 import json
 from freckles_runner import FrecklesRunner
-from utils import get_pkg_mgr_from_path
-
-KEYWORDS = ["pkgs", "dotfiles"]
-
+from utils import get_pkg_mgr_from_path, load_extensions
+import six
+import abc
 from constants import *
+import sys
+import copy
+import pprint
+import logging
+log = logging.getLogger(__name__)
+from operator import itemgetter
+
+
+FRECK_DEFAULT_CONFIG = {
+    FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY
+}
+
+@six.add_metaclass(abc.ABCMeta)
+class Freck(object):
+
+    def __init__(self):
+        pass
+
+    def default_freck_config(self):
+        """Returns the default config, can be overwritten by the user config."""
+        return {}
+
+    def calculate_freck_config(self, user_default_config, user_freck_config):
+
+        freck_config = copy.deepcopy(FRECK_DEFAULT_CONFIG)
+        freck_config.update(copy.deepcopy(self.default_freck_config()))
+        freck_config.update(user_default_config)
+        freck_config.update(user_freck_config)
+
+        return freck_config
+
+
+    @abc.abstractmethod
+    def create_playbook_items(self):
+        """List of items to be included in the playbook."""
+        pass
 
 class Freckles(object):
 
-    def __init__(self, base_dirs, group_name=FRECKLES_DEFAULT_GROUP_NAME, default_pkg_state=FRECKLES_DEFAULT_PACKAGE_STATE, default_pkg_sudo=FRECKLES_DEFAULT_PACKAGE_SUDO, default_stow_target_base_dir=FRECKLES_DEFAULT_STOW_TARGET_BASE_DIR, hosts={u"localhost": {u"ansible_connection": u"local"}}):
+    def __init__(self, config):
 
-        self.group_name = group_name
-        if isinstance(base_dirs, str):
-            self.base_dirs = [base_dirs]
-        else:
-            self.base_dirs = base_dirs
+        self.frecks = load_extensions()
+        self.hosts = {}
+        if not config.get("hosts", False):
+            config["hosts"] = ["localhost"]
 
-        self.hosts = hosts
+        for host in config["hosts"]:
+            if host == "localhost" or host == "127.0.0.1":
+                self.hosts[host] = {"ansible_connection": "local"}
+            else:
+                self.hosts[host] = {}
 
-        self.apps = {}
+        if not config.get("frecks", False):
+            log.info("No frecks configured, doing nothing.")
+            sys.exit(0)
 
-        for dir in self.base_dirs:
-            for item in os.listdir(dir):
-                if not item.startswith(".") and os.path.isdir(os.path.join(dir, item)):
-                    # defaults
-                    dotfile_dir = os.path.join(dir, item)
-                    self.apps[item] = {"app_name": item, "dotfiles": dotfile_dir, "pkgs": {"default": [item]}, "pkg_state": default_pkg_state, "pkg_sudo": default_pkg_sudo, "stow": True, "dotfiles_base_dir": dir, "target_base_dir": default_stow_target_base_dir}
-                    # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
-                    pkg_mgr = get_pkg_mgr_from_path(dotfile_dir)
-                    if pkg_mgr:
-                        self.apps[item]["pkg_mgr"] = pkg_mgr
-
-                    freckles_metadata_file = os.path.join(dotfile_dir, FRECKLES_METADATA_FILENAME)
-                    if os.path.exists(freckles_metadata_file):
-                        stream = open(freckles_metadata_file, 'r')
-                        temp = yaml.load(stream)
-                        self.apps[item].update(temp)
-
-                    # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
-                    if not type(self.apps[item]["pkgs"]) == dict:
-                        temp = self.apps[item]["pkgs"]
-                        self.apps[item]["pkgs"] = {}
-                        self.apps[item]["pkgs"]["default"] = temp
-
-                    # check if an 'default' pkgs key exists, if not, use the package name
-                    if not self.apps[item].get("pkgs").get("default", False):
-                        self.apps[item]["pkgs"]["default"] = [item]
+        self.config = config
 
 
     def list_all(self):
@@ -59,68 +74,34 @@ class Freckles(object):
     def list(self, package_managers="apt", tags=None):
         print yaml.dump(self.apps, default_flow_style=False)
 
-    def create_inventory_yml(self):
+    # def create_inventory_yml(self):
 
-        groups = {self.group_name: {"vars": {"freckles": self.apps}, "hosts": [host for host in self.hosts.keys()]}}
-        hosts = self.hosts
+        # groups = {self.group_name: {"vars": {"freckles": self.apps}, "hosts": [host for host in self.hosts.keys()]}}
+        # hosts = self.hosts
 
-        inv = Inventory({"groups": groups, "hosts": hosts})
-        return inv.list()
+        # inv = Inventory({"groups": groups, "hosts": hosts})
+        # return inv.list()
 
-    def create_inventory_dir(self, base_dir):
+    def create_playbook_items(self):
+        """Create a list of sorted playbook items that can be included in a playbook section"""
 
-        group_base_dir = os.path.join(base_dir, "group_vars")
+        default_user_config = self.config["frecks"].get("default", {})
 
-        os.makedirs(group_base_dir)
+        playbook_items = []
 
-        # for group, details in self.apps.iteritems():
+        for freck_type, freck_config_item in self.config["frecks"].iteritems():
 
-            # group_dir = os.path.join(group_base_dir, group)
-            # os.makedirs(group_dir)
-            # freckles_group_yml_file = os.path.join(group_dir, "{}.yml".format(FRECKLES_GROUP_DETAILS_FILENAME))
+            if freck_type == "default":
+                continue
 
-            # with open(freckles_group_yml_file, 'w') as f:
-                # f.write(yaml.safe_dump({"freckles_{}_{}".format(group, key): value for (key, value) in details.iteritems()}, default_flow_style=False))
+            freck = self.frecks.get(freck_type, False)
+            if not freck:
+                log.error("Can't find freckles plugin: {}".format(freck_type))
 
-        for host in self.hosts.keys():
-            host_dir = os.path.join(base_dir, "host_vars", host)
-            os.makedirs(host_dir)
+            freck_config = freck.calculate_freck_config(default_user_config, freck_config_item)
 
-            freckles_host_file = os.path.join(host_dir, "freckles.yml")
-            with open(freckles_host_file, 'w') as f:
-                f.write(yaml.safe_dump(self.hosts.get(host, {}), default_flow_style=False))
+            playbook_items.extend(freck.create_playbook_items(freck_config))
 
-        inventory_file = os.path.join(base_dir, "inventory.ini")
-        with open(inventory_file, 'w') as f:
-            f.write("""[{}]
-{}
+        sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY, ANSIBLE_ROLE_NAME_KEY))
 
-""".format(FRECKLES_DEFAULT_GROUP_NAME, "\n".join(self.hosts.keys())))
-
-    def needs_sudo(self):
-
-        for group, details in self.apps.iteritems():
-            if details["pkg_sudo"]:
-                return True
-
-        return False
-
-    def create_playbook(self, playbook_dir, playbook_file_name, ansible_role_name):
-
-        playbook_file = os.path.join(playbook_dir, playbook_file_name)
-
-        temp_root = {}
-        temp_root["hosts"] = FRECKLES_DEFAULT_GROUP_NAME
-        temp_root["gather_facts"] = True
-        temp_roles = []
-        for group, details in self.apps.iteritems():
-            temp_details = {}
-            temp_details["role"] = ansible_role_name
-            temp_details.update({"{}_{}".format(self.group_name, key): value for (key, value) in details.iteritems()})
-
-            temp_roles.append(temp_details)
-
-        temp_root["roles"] = temp_roles
-
-        with open(playbook_file, 'w') as f:
-            f.write(yaml.safe_dump([temp_root], default_flow_style=False))
+        return sorted_playbook_items

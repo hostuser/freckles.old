@@ -13,6 +13,7 @@ requirements = [
     'Click>=6.0',
     'ansible>=2.2.0',
     'cookiecutter>=1.5.0',
+    'stevedore>-1.18.0',
     'py'
 ]
 
@@ -36,6 +37,11 @@ setup(
     entry_points={
         'console_scripts': [
             'freckles=freckles.cli:cli'
+        ],
+        'freckles.frecks': [
+            'install=freckles.frecks.install:Install',
+            'stow=freckles.frecks.stow:Stow'
+
         ]
     },
     include_package_data=True,
