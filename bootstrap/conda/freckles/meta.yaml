@@ -1,0 +1,26 @@
+package:
+  name: pyinstrument
+  version: "0.0.9"
+
+source:
+  git_rev: 0.0.9
+  git_url: https://github.com/makkus/freckles.git
+
+requirements:
+  build:
+    - python=2.7
+    - setuptools
+    - cryptography
+    - click >=6.0
+  run:
+    - python
+    - cryptography
+
+test:
+  imports:
+    - 
+
+about:
+  home: https://github.com/makkus/freckles
+  license: GPL v3
+  license_file: LICENSE

@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+
+set -e
+set -x
+
+BASE_DIR="$HOME/.freckles"
+BASE_DIR_OPT="$BASE_DIR/opt"
+TEMP_DIR="/tmp/freckles_install"
+
+FRECKLES_BIN_DIR="$BASE_DIR/bin"
+FRECKLES_USER="$USER"
+
+PROOT_DIR="$BASE_DIR/opt/proot"
+PROOT_EXE="$PROOT_DIR/proot-x86_64"
+NIX_DIR="$BASE_DIR/opt/nix"
+NIX_ROOT="$NIX_DIR/root"
+NIX_ROOT_INSTALL_SCRIPT="https://raw.githubusercontent.com/makkus/ansible-nix-single/master/files/install_nix.sh"
+NIX_NON_ROOT_INSTALL_SCRIPT="https://raw.githubusercontent.com/makkus/ansible-nix-single/master/files/install_nix_proot.sh"
+NIX_SRC_STORE_DIR="$BASE_DIR/nix"
+NIX_ENV_EXE="$HOME/.nix-profile/bin/nix-env"
+
+CONDA_DOWNLOAD_URL="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh"
+CONDA_BASE_DIR="$BASE_DIR/opt/conda"
+CONDA_PATH="$CONDA_BASE_DIR/bin"
+
+function nix_execute {
+    if [ $using_sudo == true ]; then
+        eval $@
+    else
+        PATH=$NIX_PATH:$PATH $PROOT_EXE -b $NIX_ROOT:/nix $@
+    fi
+}
+
+function command_exists {
+    type "$1" > /dev/null 2>&1 ;
+}
+
+function download {
+    if command_exists wget; then
+        wget -O $2 $1
+    elif command_exists curl; then
+        curl -o $2 $1
+    else
+        echo "Could not find 'wget' nor 'curl' to download files. Exiting..."
+        exit 1
+    fi
+}
+
+function install_freckles {
+    if [ "$1" == true ]; then
+        install_freckles_root
+    else
+        install_freckles_non_root
+    fi
+}
+
+function install_freckles_root {
+    if [ ! -d "$NIX_DIR" ]; then
+        install_nix_root
+    fi
+    echo "Bootstrapping freckles with root permissions..."
+}
+
+function install_freckles_non_root {
+    if [ ! -d "$CONDA_PATH" ]; then
+        install_conda_non_root
+    fi
+    echo "Bootstrapping freckles without root permissions..."
+    cd /vagrant
+    conda install -y cryptography
+    python setup.py install
+
+}
+
+function install_conda_non_root {
+    echo "Bootstrapping conda package manager for use without root permissions..."
+    cd "$TEMP_DIR"
+    download "$CONDA_DOWNLOAD_URL" "$TEMP_DIR/miniconda.sh"
+    mkdir -p "$BASE_DIR_OPT"
+    bash "$TEMP_DIR/miniconda.sh -b -p $CONDA_BASE_DIR"
+    cd "$HOME"
+    rm -rf "$TEMP_DIR"
+}
+
+function install_nix_non_root {
+    echo "Bootstrapping nix package manager for use without root permissions..."
+    cd "$TEMP_DIR"
+    download "$FRECKLES_NON_ROOT_INSTALL_SCRIPT" "$TEMP_DIR/install.sh"
+    chmod +x "$TEMP_DIR/install.sh"
+    ./install.sh
+    cd "$HOME"
+    rm -r "$TEMP_DIR"
+
+#        echo "Adding proot & nix environment loading to .bashrc..."
+#         cat <<EOF >> "$HOME/.bashrc"
+#
+# # load nix environment, added by freckles
+# if [ -f "$PROOT_EXE" ]; then
+#    eval "$PROOT_EXE -b $NIX_ROOT:/nix"
+# fi
+# if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+#    source "$HOME/.nix-profile/etc/profile.d/nix.sh"
+# fi
+# EOF
+}
+
+function install_nix_non_root_src {
+    install_nix_non_root
+    echo "Bootstrapping nix package manager from source using nix proot environment..."
+
+    execute bash
+    mkdir -p "$NIX_SRC_STORE_DIR"
+    nix-channel --update
+    NIX_STORE_DIR="$NIX_SRC_STORE_DIR" nix-env -i nix
+
+
+}
+
+function install_nix_root {
+    echo "Bootstrapping nix package manager (using root to create /nix folder)"
+    mkdir -p "/nix"
+    chown -R "$FRECKLES_USER" /nix
+    download "$FRECKLES_ROOT_INSTALL_SCRIPT" "$TEMP_DIR/install.sh"
+    cd "$TEMP_DIR"
+    sudo -u "$FRECKLES_USER" bash "$TEMP_DIR/install.sh"
+    cd "$HOME"
+    rm -r "$TEMP_DIR"
+}
+
+PATH="$CONDA_PATH:$PATH"
+
+if [ "$EUID" != 0 ]; then
+    using_sudo=false
+    FRECKLES_USER="$USER"
+else
+    using_sudo=true
+    FRECKLES_USER="$SUDO_USER"
+fi
+
+mkdir -p "$TEMP_DIR"
+if [ using_sudo == true ]; then
+    chown -R "$FRECKLES_USER" "$TEMP_DIR"
+fi
+
+if ! command_exists freckles; then
+    install_freckles "$using_sudo"
+fi
