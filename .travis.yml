@@ -9,9 +9,9 @@ deploy:
     secure: mQijDUGp/tSq36SgSx5ZXT71aj8lngyuyP1Qdr3xrAReRcCza3LwGYm5XFA75Kf2X5Ksl9RQ/ZxuhLJgl8YZV1kYNKJPtsTDfqd65NEjGEeShLNXpVO+36h5RLHQWcH8ey+lHQq/Zw5uWh7MCbXfg36VfBXsWLP1yQORxmy3+lhYyLoanOj6hCvb3LGmT/h04/QHYljeZwO+GTthGv9n5KXGveVkmCThA++1vEJhkNTzn9asXAjAA5ClYOlv/UyHjux6/HMwyLVYYDDa269E8WLay3mKjDFEv6t8G9CBoU2QRze42/JyuoBAvpS9rmxW8UD9SCTxrgyX7WMrfzC8+I91jk/1tLokkFD1W4Ww3WtEnOgppVOi9OdjvLoOj9dDK+nHIRaR9HFaVI0XtTDNk3Xz0k5fqiNdb83AiGiq97vlusrefcYiEdyb+0B66HvhNmuF4SsGArycYBzl7Avs/tWqM0qEoPM44LpCu+HAmKrw5A9nJY56dO0KV5AN3zwusv/4mEUUUcIKJln/AAASmd6Ma3CLdk0dlmkCpkMpVVYi5FWFQsdBD2IFh6nXwhTFuWKngIZ0FHnhcLKSd6W/rRPHEWQmNHtqv3zlrF2JHGZlECZ6bZosigwkm87o5JMP1w2D5ry44mYmoTnKz1+1qgA6nXs+bzgxcG536k6F/X4=
   provider: pypi
   user: makkus
-#env:
-#- TOXENV=py27
-# install: pip install -U tox
+env:
+- TOXENV=py27
+ install: pip install -U tox
 language: python
 python: 2.7
-# script: tox -e ${TOXENV}
+script: tox -e ${TOXENV}

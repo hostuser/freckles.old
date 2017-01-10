@@ -28,6 +28,7 @@ A dotfile manager
 Features
 --------
 
+* different options for bootstrapping
 * re-use your existing dotfile repository
 * simple, opinionated default configuration, but extensible if necessary
 * optional support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_
