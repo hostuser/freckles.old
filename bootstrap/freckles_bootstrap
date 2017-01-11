@@ -1,15 +1,61 @@
 #!/usr/bin/env bash
 
-set -e
-set -x
+# Exit codes:
+# 3: execution error somewhere in the pipeline
+# 6: platform or package manager not supported
 
-BASE_DIR="$HOME/.freckles"
-BASE_DIR_OPT="$BASE_DIR/opt"
+#set -x
+
+# event/error handling
+declare -A LISTENERS
+function throw {
+    EVENT=$1; shift; for listener in "${LISTENERS[$EVENT]}"; do eval "$listener $@"; done
+}
+function addListener {
+    if ! test "${LISTENERS['$1']+isset}"; then LISTENERS["$1"]=""; fi
+    LISTENERS["$1"]+="$2 " # we can get away with this since functionnames never contain spaces
+}
+function error_message {
+    exit_code=$1
+    shift
+    echo "$@"
+    echo "Refer to $SCRIPT_LOG_FILE for more details. Exiting..."
+    exit $exit_code
+}
+
+# convert exitcodes to events
+# trap "throw EXIT"    EXIT
+# trap "throw SIGINT"  SIGINT
+# trap "throw SIGTERM" SIGTERM
+
+addListener VIRTUALENV_ERROR error_message
+
+
+# determine whether we run with sudo, or not
+if [ "$EUID" != 0 ]; then
+    using_sudo=false
+    FRECKLES_USER="$USER"
+else
+    using_sudo=true
+    FRECKLES_USER="$SUDO_USER"
+fi
+
+# General variables
+SCRIPT_LOG_FILE="/tmp/freckles.log"
+DEBUG=false
+
+FRECKLES_USER_HOME="`eval echo ~$FRECKLES_USER`"
+BASE_DIR="$FRECKLES_USER_HOME/.freckles"
+FRECKLES_DATA_DIR="$BASE_DIR/data"
 TEMP_DIR="/tmp/freckles_install"
 
-FRECKLES_BIN_DIR="$BASE_DIR/bin"
-FRECKLES_USER="$USER"
+FRECKLES_PATH="$BASE_DIR/bin"
 
+# python/virtualenv related variables
+VIRTUALENV_DIR="$FRECKLES_DATA_DIR/venv"
+VIRTUALENV_PATH="$VIRTUALENV_DIR/bin"
+
+# nix-related variables
 PROOT_DIR="$BASE_DIR/opt/proot"
 PROOT_EXE="$PROOT_DIR/proot-x86_64"
 NIX_DIR="$BASE_DIR/opt/nix"
@@ -19,23 +65,29 @@ NIX_NON_ROOT_INSTALL_SCRIPT="https://raw.githubusercontent.com/makkus/ansible-ni
 NIX_SRC_STORE_DIR="$BASE_DIR/nix"
 NIX_ENV_EXE="$HOME/.nix-profile/bin/nix-env"
 
+# conda related variables
 CONDA_DOWNLOAD_URL="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh"
 CONDA_BASE_DIR="$BASE_DIR/opt/conda"
 CONDA_PATH="$CONDA_BASE_DIR/bin"
+STOW_SRC_DOWNLOAD_URL="http://ftp.gnu.org/gnu/stow/stow-2.2.2.tar.gz"
+
+# deb related variables
+DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow"
+
+# rpm related variables
+RPM_DEPENDENCIES="xxx"
 
 function nix_execute {
-    if [ $using_sudo == true ]; then
-        eval $@
-    else
-        PATH=$NIX_PATH:$PATH $PROOT_EXE -b $NIX_ROOT:/nix $@
-    fi
+    PATH=$NIX_PATH:$PATH $PROOT_EXE -b $NIX_ROOT:/nix $@
 }
+
 
 function command_exists {
     type "$1" > /dev/null 2>&1 ;
 }
 
 function download {
+    {
     if command_exists wget; then
         wget -O $2 $1
     elif command_exists curl; then
@@ -44,6 +96,7 @@ function download {
         echo "Could not find 'wget' nor 'curl' to download files. Exiting..."
         exit 1
     fi
+    } > "$SCRIPT_LOG_FILE"
 }
 
 function install_freckles {
@@ -54,11 +107,83 @@ function install_freckles {
     fi
 }
 
-function install_freckles_root {
-    if [ ! -d "$NIX_DIR" ]; then
-        install_nix_root
+function create_virtualenv {
+    echo " - creating virtualenv for freckles (in: $VIRTUALENV_DIR) and installing freckles from pypi."
+    {
+    su "$FRECKLES_USER" <<EOF
+mkdir -p "$FRECKLES_DATA_DIR"
+virtualenv "$VIRTUALENV_DIR"
+source "$VIRTUALENV_DIR/bin/activate"
+pip install --upgrade pip
+pip install --upgrade setuptools wheel
+pip install --upgrade freckles
+EOF
+    } > "$SCRIPT_LOG_FILE" 2>&1
+}
+
+
+function install_freckles_deb {
+    echo -e " - Debian-based system detected.\n\tInstalling dependencies: $DEB_DEPENDENCIES"
+    {
+    apt-get update
+    apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow
+    } > "$SCRIPT_LOG_FILE"
+    create_virtualenv || throw VIRTUALENV_ERROR 1 'Error creating virtualenv.'
+    link_required_executables "$VIRTUALENV_PATH"
+    add_freckles_path
+}
+
+function install_freckles_rpm {
+    echo " - RedHat-based system detected.\n\tInstalling dependencies: $RPM_DEPENDENCIES"
+}
+
+function install_freckles_linux_root {
+    YUM_CMD=$(which yum)
+    APT_GET_CMD=$(which apt-get)
+    if [[ ! -z $YUM_CMD ]]; then
+        install_freckles_rpm
+    elif [[ ! -z $APT_GET_CMD ]]; then
+        install_freckles_deb
+    else
+        echo "Could not find supported package manager. Exiting..."
+        exit 6
     fi
-    echo "Bootstrapping freckles with root permissions..."
+}
+
+function install_freckles_root {
+
+    # figure out which os we are running
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        install_freckles_linux_root
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "Sorry, MacOS X platform is not supported (at the moment, anyway). Exiting..."
+        exit 6
+    elif [[ "$OSTYPE" == "cygwin" ]]; then
+        # POSIX compatibility layer and Linux environment emulation for Windows
+        echo "Sorry, Cygwin platform is not supported (at the moment, anyway). Exiting..."
+        exit 6
+    elif [[ "$OSTYPE" == "msys" ]]; then
+        # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+        echo "Sorry, msys/MinGW platform is not supported (at the moment, anyway). Exiting..."
+        exit 6
+    elif [[ "$OSTYPE" == "win32" ]]; then
+        echo "Sorry, win32 platform is not supported (at the moment, anyway). Exiting..."
+        exit 6
+    elif [[ "$OSTYPE" == "freebsd"* ]]; then
+        echo "Sorry, freebsd platform is not supported (at the moment, anyway). Exiting..."
+        exit 6
+    else
+        echo "Could not figure out which platform I'm running on. Exiting..."
+        exit 6
+    fi
+}
+
+function link_required_executables {
+    ln -s "$1/freckles" "$FRECKLES_PATH/freckles"
+    ln -s "$1/stow" "$FRECKLES_PATH/stow"
+    ln -s "$1/git" "$FRECKLES_PATH/git"
+    ln -s "$1/ansible-playbook" "$FRECKLES_PATH/ansible-playbook"
+    ln -s "$1/ansible-galaxy" "$FRECKLES_PATH/ansible-galaxy"
 }
 
 function install_freckles_non_root {
@@ -66,18 +191,25 @@ function install_freckles_non_root {
         install_conda_non_root
     fi
     echo "Bootstrapping freckles without root permissions..."
-    cd /vagrant
+    {
+    conda install -y python=2.7
+    conda update -y pip
+    conda install -y git
     conda install -y cryptography
-    python setup.py install
-
+    conda config --add channels conda-forge
+    conda install -y -c freckles stow
+    pip install freckles
+    link_required_executables "$CONDA_PATH"
+    add_freckles_path
+    } > "$SCRIPT_LOG_FILE"
 }
 
 function install_conda_non_root {
     echo "Bootstrapping conda package manager for use without root permissions..."
     cd "$TEMP_DIR"
     download "$CONDA_DOWNLOAD_URL" "$TEMP_DIR/miniconda.sh"
-    mkdir -p "$BASE_DIR_OPT"
-    bash "$TEMP_DIR/miniconda.sh -b -p $CONDA_BASE_DIR"
+    mkdir -p "$FRECKLES_DATA_DIR"
+    bash "$TEMP_DIR/miniconda.sh" -b -p "$CONDA_BASE_DIR"
     cd "$HOME"
     rm -rf "$TEMP_DIR"
 }
@@ -90,18 +222,6 @@ function install_nix_non_root {
     ./install.sh
     cd "$HOME"
     rm -r "$TEMP_DIR"
-
-#        echo "Adding proot & nix environment loading to .bashrc..."
-#         cat <<EOF >> "$HOME/.bashrc"
-#
-# # load nix environment, added by freckles
-# if [ -f "$PROOT_EXE" ]; then
-#    eval "$PROOT_EXE -b $NIX_ROOT:/nix"
-# fi
-# if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-#    source "$HOME/.nix-profile/etc/profile.d/nix.sh"
-# fi
-# EOF
 }
 
 function install_nix_non_root_src {
@@ -113,7 +233,22 @@ function install_nix_non_root_src {
     nix-channel --update
     NIX_STORE_DIR="$NIX_SRC_STORE_DIR" nix-env -i nix
 
+}
 
+function add_freckles_path {
+
+    if [ -e "$FRECKLES_USER_HOME/.profile" ] && ! grep -q 'load freckles environment' "$FRECKLES_USER_HOME/.profile"; then
+       echo "Adding path to freckles bin dir to .profile, you'll need to logout and login again to see the effect."
+
+       cat <<EOF >> "$FRECKLES_USER_HOME/.profile"
+
+# load freckles environment
+if [ -d "$FRECKLES_PATH" ]; then
+    PATH="$PATH:$FRECKLES_PATH"
+fi
+EOF
+
+    fi
 }
 
 function install_nix_root {
@@ -127,21 +262,17 @@ function install_nix_root {
     rm -r "$TEMP_DIR"
 }
 
-PATH="$CONDA_PATH:$PATH"
+############# Start script ##################
 
-if [ "$EUID" != 0 ]; then
-    using_sudo=false
-    FRECKLES_USER="$USER"
-else
-    using_sudo=true
-    FRECKLES_USER="$SUDO_USER"
-fi
-
-mkdir -p "$TEMP_DIR"
-if [ using_sudo == true ]; then
-    chown -R "$FRECKLES_USER" "$TEMP_DIR"
-fi
-
+# check if freckles is already in the path, if it is, assume everything is bootstrapped
 if ! command_exists freckles; then
+    mkdir -p "$TEMP_DIR"
+    mkdir -p "$FRECKLES_PATH"
+    if [ $using_sudo == true ]; then
+        chown -R "$FRECKLES_USER" "$BASE_DIR"
+        chown -R "$FRECKLES_USER" "$TEMP_DIR"
+        chown -R "$FRECKLES_USER" "$FRECKLES_PATH"
+    fi
+
     install_freckles "$using_sudo"
 fi
