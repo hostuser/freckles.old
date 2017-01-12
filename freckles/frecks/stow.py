@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from freckles.freckles import Freck, ANSIBLE_ROLE_NAME_KEY, FRECK_PRIORITY_KEY, FRECK_DEFAULT_PRIORITY, FRECK_SUDO_KEY
-
+from freckles import Freck
 from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict
 import os
 from freckles.constants import *

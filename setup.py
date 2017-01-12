@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -23,24 +23,22 @@ test_requirements = [
 
 setup(
     name='freckles',
-    version='0.1.0',
+    version='0.1.1',
     description="A dotfile manager",
     long_description=readme + '\n\n' + history,
     author="Markus Binsteiner",
     author_email='makkus@posteo.de',
     url='https://github.com/makkus/freckles',
-    packages=[
-        'freckles',
-    ],
-    package_dir={'freckles':
-                 'freckles'},
+    packages=find_packages(),
+    # package_dir={'freckles':
+                 # 'freckles'},
     entry_points={
         'console_scripts': [
             'freckles=freckles.cli:cli'
         ],
         'freckles.frecks': [
-            'install=freckles.frecks.install:Install',
-            'stow=freckles.frecks.stow:Stow'
+            'install=freckles.frecks:Install',
+            'stow=freckles.frecks:Stow'
 
         ]
     },
