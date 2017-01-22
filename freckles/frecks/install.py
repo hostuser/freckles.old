@@ -26,7 +26,7 @@ class Install(Freck):
 
             # check if pkgs key exists
             if not details.get(PKGS_KEY, False):
-                details[PKGS_KEY] = {"default": [details[APP_NAME_KEY]]}
+                details[PKGS_KEY] = {"default": [details[ITEM_NAME_KEY]]}
 
             # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
             if not type(details["pkgs"]) == dict:
@@ -36,9 +36,31 @@ class Install(Freck):
 
             # check if an 'default' pkgs key exists, if not, use the package name
             if not details.get("pkgs").get("default", False):
-                details["pkgs"]["default"] = [details[APP_NAME_KEY]]
+                details["pkgs"]["default"] = [details[ITEM_NAME_KEY]]
 
         return apps.values()
+
+    def handle_task_output(self, task, output_details):
+
+        state = FRECKLES_STATE_SKIPPED
+        changed = False
+        for details in output_details:
+
+            if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_SKIPPED:
+                continue
+            else:
+            # this is the one we are interested in, there should only be one, right?
+                temp_changed = details["result"][FRECKLES_CHANGED_KEY]
+                if temp_changed:
+                    pkg_mgr = details["action"]
+                    state = "installed (using '{}')".format(pkg_mgr)
+                    changed = True
+                else:
+                    state = "already present"
+
+                break
+
+        return {FRECKLES_STATE_KEY: state, FRECKLES_CHANGED_KEY: changed}
 
     def default_freck_config(self):
 

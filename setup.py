@@ -11,10 +11,12 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'Click>=6.0',
+    'jinja2<2.9',
     'ansible>=2.2.0',
     'cookiecutter>=1.5.0',
-    'stevedore>-1.18.0',
-    'py'
+    'stevedore>=1.18.0',
+    'py',
+    'click-log'
 ]
 
 test_requirements = [

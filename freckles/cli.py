@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import click
+import click_log
 from freckles import Freckles
 import pprint
 import py
@@ -9,6 +10,13 @@ import os
 import json
 from freckles_runner import FrecklesRunner
 from constants import *
+import sys
+import logging
+log = logging.getLogger("freckles")
+
+# if not os.path.exists(FRECKLES_DEFAULT_LOG_DIR):
+    # os.makedirs(FRECKLES_DEFAULT_LOG_DIR)
+# logging.basicConfig(filename=FRECKLES_DEFAULT_LOG_FILE, level=logging.DEBUG)
 
 DEFAULT_INDENT = 2
 
@@ -25,8 +33,8 @@ DEFAULT_CONFIG = {
 class Config(object):
 
     def __init__(self, *args, **kwargs):
-        self.config_dir = click.get_app_dir('freckles')
-        self.config_file = py.path.local(self.config_dir).join('config.yml')
+        self.config_dir = FRECKLES_DEFAULT_DIR
+        self.config_file = py.path.local(self.config_dir).join(FRECKLES_DEFAULT_CONFIG_FILE_NAME)
         self.config = dict(*args, **kwargs)
 
     def load(self):
@@ -67,9 +75,13 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.group(invoke_without_command=True)
 @pass_config
 @click.pass_context
+@click_log.simple_verbosity_option()
+@click_log.init("freckles")
 @click.option('--hosts', help='comma-separated list of hosts (default: \'localhost\'), overrides config', multiple=True)
+@click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
 # @click.option('--dotfiles', help='base-path(s) for dotfile directories (can be used multiple times), overrides config', type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), multiple=True)
-def cli(ctx, config, hosts):
+def cli(ctx, config, hosts, details):
+
     config.load()
 
     if not config.config:
@@ -77,6 +89,8 @@ def cli(ctx, config, hosts):
 
     if hosts:
         config.config["hosts"] = hosts
+
+    config.config["details"] = details
 
     config.freckles = Freckles(config.config)
 
@@ -102,9 +116,9 @@ def inventory(config):
 
 def run(config):
 
-    runner = FrecklesRunner(config.freckles, clear_build_dir=True, execution_base_dir=config.get("build_base_dir"), execution_dir_name=config.get("build_dir_name"))
-    # runner.run()
-    pass
+    runner = FrecklesRunner(config.freckles, clear_build_dir=True, execution_base_dir=config.get("build_base_dir"), execution_dir_name=config.get("build_dir_name"), details=config.get("details"))
+    runner.run()
+
 
 if __name__ == "__main__":
     cli()

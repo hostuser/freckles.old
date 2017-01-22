@@ -8,7 +8,7 @@ import copy
 from constants import *
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 
 DEB_MATCH = "{}{}{}".format(sep, 'deb', sep)
 RPM_MATCH = "{}{}{}".format(sep, 'rpm', sep)
@@ -53,13 +53,11 @@ def get_pkg_mgr_from_path(path):
 
 def load_extensions():
 
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
+    log.debug("Loading extensions...")
     mgr = extension.ExtensionManager(
         namespace='freckles.frecks',
         invoke_on_load=True
     )
-
     log.debug("Registered plugins: {}".format(", ".join(ext.name for ext in mgr.extensions)))
 
     return {ext.name: ext.plugin() for ext in mgr.extensions}
@@ -67,7 +65,7 @@ def load_extensions():
 def playbook_needs_sudo(playbook_items):
     """Checks whether a playbook needs to use 'become' or not."""
 
-    return bool([x for x in playbook_items if x.get(FRECK_SUDO_KEY, False)])
+    return bool([x for x in playbook_items.values() if x.get(FRECK_SUDO_KEY, False)])
 
 
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
@@ -76,14 +74,14 @@ def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME)
     temp_root["hosts"] = host_group
     temp_root["gather_facts"] = True
 
-    temp_root["roles"] = playbook_items
+    temp_root["roles"] = playbook_items.values()
 
     return temp_root
 
 def extract_roles(playbook_items):
 
     roles = {}
-    for item in playbook_items:
+    for item in playbook_items.values():
         name = item.get(ANSIBLE_ROLE_NAME_KEY, False)
         url = item.get(ANSIBLE_ROLE_URL_KEY, False)
 
@@ -118,7 +116,7 @@ def create_dotfiles_dict(base_dirs, default_details):
                     # defaults
                     dotfile_dir = path.join(temp_full_path, item)
                     apps[item] = copy.deepcopy(default_details)
-                    apps[item][APP_NAME_KEY] = item
+                    apps[item][ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
                     apps[item][DOTFILES_BASE_DIR_KEY] = temp_full_path
                     apps[item][DOTFILES_BASE_KEY] = base
