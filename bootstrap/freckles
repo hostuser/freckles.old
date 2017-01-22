@@ -209,7 +209,7 @@ function link_required_executables {
 
 function install_freckles_non_root_conda {
     if [ ! -d "$CONDA_PATH" ]; then
-        echo "  * no elevated permissions detected, bootstrapping conda package manager"
+        echo "  * no elevated permissions detected, using conda package manager"
         install_conda_non_root
     fi
     echo "  - installing freckles and its requirements (this will take a bit)"
