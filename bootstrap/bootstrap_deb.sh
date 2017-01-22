@@ -9,10 +9,10 @@ sudo apt-get install -y build-essential git python-dev python-virtualenv libssl-
 
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
-FRECKLES_VIRTUALENV="$FRECKLES_DIR/virtualenv"
+FRECKLES_VIRTUALENV="$FRECKLES_DIR/data/venv"
 
-echo "$FRECKLES_DIR"
 mkdir -p "$FRECKLES_DIR"
+mkdir -p "$FRECKLES_DIR/data"
 export WORKON_HOME="$FRECKLES_VIRTUALENV"
 mkdir -p "$FRECKLES_VIRTUALENV"
 cd "$FRECKLES_VIRTUALENV"

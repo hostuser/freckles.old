@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Exit codes:
-# 3: execution error somewhere in the pipeline
+# 2: application configuration error
+# 3: execution error somewhere in the bootstrap pipeline
 # 6: platform or package manager not supported
 
 if [ ! -z "$FRECKLES_DEBUG" ]; then
