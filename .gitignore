@@ -63,3 +63,5 @@ target/
 /GPATH
 /GRTAGS
 /GTAGS
+.vagrant/
+
