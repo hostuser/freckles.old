@@ -54,6 +54,7 @@ class Freck(object):
         failed = False
         stderr = []
         stdout = []
+        msg = []
 
         result = {}
 
@@ -63,10 +64,12 @@ class Freck(object):
 
                 if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
                     failed = True
-                if details["result"][FRECKLES_CHANGED_KEY]:
+                if details["result"].get(FRECKLES_CHANGED_KEY, False):
                     changed = True
                 if details["result"].get("stderr", False):
                     stderr.append(details["result"]["stderr"])
+                if details["result"].get("msg", False):
+                    msg.append(details["result"]["msg"])
 
 
         if skipped:
@@ -74,10 +77,13 @@ class Freck(object):
         else:
             if failed:
                 result[FRECKLES_STATE_KEY] = FRECKLES_STATE_FAILED
+                stderr.extend(msg)
             elif changed:
                 result[FRECKLES_STATE_KEY] = FRECKLES_STATE_CHANGED
+                stdout.extend(msg)
             else:
                 result[FRECKLES_STATE_KEY] = FRECKLES_STATE_NO_CHANGE
+                stdout.extend(msg)
 
         result[FRECKLES_CHANGED_KEY] = changed
         result[FRECKLES_STDERR_KEY] = stderr
@@ -89,26 +95,18 @@ class Freck(object):
 
 class Freckles(object):
 
-    def __init__(self, config):
+    def __init__(self, hosts=FRECKLES_DEFAULT_HOSTS, default_vars={}):
 
         self.frecks = load_extensions()
         self.hosts = {}
-        if not config.get("hosts", False):
-            log.debug("Defaulting to 'localhost' for hosts value.")
-            config["hosts"] = ["localhost"]
 
-        for host in config["hosts"]:
+        for host in hosts:
             if host == "localhost" or host == "127.0.0.1":
                 self.hosts[host] = {"ansible_connection": "local"}
             else:
                 self.hosts[host] = {}
 
-        if not config.get("frecks", False):
-            logging.info("No frecks configured, doing nothing.")
-            sys.exit(0)
-
-        self.config = config
-
+        self.default_vars = default_vars
     # def list_all(self):
         # pprint.pprint(self.apps)
 
@@ -132,44 +130,53 @@ class Freckles(object):
 
         return result
 
-    def create_playbook_items(self):
+    def create_playbook_items(self, run):
         """Create a list of sorted playbook items that can be included in a playbook section"""
 
-        log.info("Parsing configuration...")
+        log.debug("Parsing configuration...")
 
-        default_user_config = self.config["frecks"].get("default", {})
+        default_user_config = self.default_vars
 
         playbook_items = []
 
-        for freck_type, freck_config_item in self.config["frecks"].iteritems():
-
-            if freck_type == "default":
-                continue
+        for freck_type, freck_config_item in run.get("frecks", {}).iteritems():
 
             freck = self.frecks.get(freck_type, False)
             if not freck:
                 logging.error("Can't find freckles plugin: {}".format(freck_type))
                 sys.exit(2)
 
-            log.info("\tAdding: {}".format(freck_type))
+            log.debug("\tAdding: {}".format(freck_type))
             freck_config = freck.calculate_freck_config(default_user_config, freck_config_item)
 
             freck_config_items = freck.create_playbook_items(freck_config)
+            i = 1
+            # add item_name, if not provided by freck
             for item in freck_config_items:
                 item[FRECK_TYPE_KEY] = freck_type
+                if not item.get(ITEM_NAME_KEY, False):
+                    item[ITEM_NAME_KEY] = "{}_{}".format(freck_type, i)
+                i = i+1
 
             playbook_items.extend(freck_config_items)
 
-        sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY, ANSIBLE_ROLE_NAME_KEY))
+        if not playbook_items:
+            return []
 
-        result = OrderedDict()
-        # add uuids to every item
+        sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY))
+
+        # add ids to every item, and ansible role
         id = 1
-
+        result_items = OrderedDict()
         for item in sorted_playbook_items:
-            item_id = id
-            item['freckles_id'] = str(item_id)
-            result[id] = item
+            if not item.get(ANSIBLE_ROLE_KEY, False):
+                roles = item.get(ANSIBLE_ROLES_KEY, {})
+                if len(roles) != 1:
+                    log.error("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[ITEM_NAME_KEY]))
+                    sys.exit(FRECKLES_BUG_EXIT_CODE)
+                item[ANSIBLE_ROLE_KEY] = roles.keys().next()
+            item['freckles_id'] = str(id)
+            result_items[id] = item
             id = id+1
 
-        return result
+        return result_items

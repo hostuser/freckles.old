@@ -21,7 +21,7 @@ FRECKLES_LOG_TOKEN = "FRECKLES: "
 
 class FrecklesRunner(object):
 
-    def __init__(self, freckles, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False):
+    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False):
 
         self.task_result = {}
 
@@ -35,7 +35,7 @@ class FrecklesRunner(object):
         self.execution_dir_name = execution_dir_name
         self.execution_dir = os.path.join(execution_base_dir, execution_dir_name)
 
-        log.info("Build dir: {}".format(self.execution_dir))
+        log.debug("Build dir: {}".format(self.execution_dir))
 
         #TODO: exception handling
         if not os.path.exists(self.execution_base_dir):
@@ -47,22 +47,24 @@ class FrecklesRunner(object):
         os.chdir(self.execution_base_dir)
 
         self.freckles = freckles
+        self.current_run = current_run
         self.freckles_group_name = FRECKLES_DEFAULT_GROUP_NAME
         self.playbook_dir = os.path.join(self.execution_dir, FRECKLES_PLAYBOOK_DIR)
         self.playbook_file = os.path.join(self.playbook_dir, FRECKLES_PLAYBOOK_NAME)
         self.inventory_dir = os.path.join(self.execution_dir, FRECKLES_INVENTORY_DIR)
         self.execution_script_file = os.path.join(self.execution_dir, FRECKLES_EXECUTION_SCRIPT)
-
         runner_file = inspect.stack()[0][1]
         runner_folder = os.path.abspath(os.path.join(runner_file, os.pardir))
         self.callback_plugins_folder = os.path.join(runner_folder, "ansible", "callback_plugins")
-
-        log.info("Creating playbook items...")
-        self.playbook_items = self.freckles.create_playbook_items()
-        log.info("Playbooks created, {} playbook items created.".format(len(self.playbook_items)))
+        log.debug("Creating playbook items...")
+        self.playbook_items = self.freckles.create_playbook_items(self.current_run)
+        if not self.playbook_items:
+            log.debug("No playbook items created, doing nothing in this run...")
+            return
+        log.debug("Playbooks created, {} playbook items created.".format(len(self.playbook_items)))
 
         if playbook_needs_sudo(self.playbook_items):
-            log.info("Some playbook items will need sudo, adding parameter execution pipeline...")
+            log.debug("Some playbook items will need sudo, adding parameter execution pipeline...")
             self.freckles_ask_sudo = "--ask-become-pass"
         else:
             self.freckles_ask_sudo = ""
@@ -82,15 +84,15 @@ class FrecklesRunner(object):
                 "freckles_callback_plugins": self.callback_plugins_folder,
                 "freckles_callback_plugin_name": FRECKLES_CALLBACK_PLUGIN_NAME
             }
-            log.info("Creating build environment from template...")
+            log.debug("Creating build environment from template...")
             log.debug("Using cookiecutter details: {}".format(cookiecutter_details))
 
             cookiecutter(cookiecutter_freckles_play_url, extra_context=cookiecutter_details, no_input=True)
 
-        log.info("Creating and writing inventory...")
+        log.debug("Creating and writing inventory...")
         self.create_inventory_dir()
 
-        log.info("Creating and writing playbook...")
+        log.debug("Creating and writing playbook...")
         playbook_dict = create_playbook_dict(self.playbook_items, self.freckles_group_name)
         with open(self.playbook_file, 'w') as f:
             f.write(yaml.safe_dump([playbook_dict], default_flow_style=False))
@@ -98,22 +100,22 @@ class FrecklesRunner(object):
         # check if roles are already installed
         ext_role_path = os.path.join(self.execution_dir, "roles", "external")
         if update_roles or not os.path.exists(os.path.join(ext_role_path)):
-            log.info("Installing or updating roles in use...")
+            log.debug("Installing or updating roles in use...")
             res = subprocess.check_output([os.path.join(self.execution_dir, "extensions", "setup", "role_update.sh")])
             for line in res.splitlines():
                 log.debug("Installing role: {}".format(line))
 
     def run(self):
 
-        log.info("Starting freckles run...")
+        success = True
         if self.freckles_ask_sudo:
-            log.info("\nFreckles needs sudo password for certain parts of the pipeline, please provide below:\n")
+            log.info("Freckles needs sudo password for certain parts of the pipeline, please provide below:")
         proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE)
 
         total_tasks = (len(self.playbook_items))
         latest_id = 0
         for line in iter(proc.stdout.readline, ''):
-            log.debug(line)
+            # log.debug(line)
 
             details = json.loads(line)
             freckles_id = int(details[FRECKLES_ID_KEY])
@@ -121,24 +123,33 @@ class FrecklesRunner(object):
 
             if changed:
                 if latest_id != 0:
-                    self.log(freckles_id-1)
+                    if not self.log(freckles_id-1):
+                        success = False
 
                 latest_id = freckles_id
-                self.task_result[freckles_id] = []
 
-            self.task_result[freckles_id].append(details)
+            self.append_log(freckles_id, details)
 
         if latest_id != 0:
-            self.log(latest_id)
+            if not self.log(latest_id):
+                success = False
 
-        log.info("Run finished.")
+        return success
+
+    def append_log(self, freckles_id, details):
+        if not self.task_result.get(freckles_id, False):
+            self.task_result[freckles_id] = []
+
+        self.task_result[freckles_id].append(details)
+        log.debug(details)
 
     def log(self, freckles_id):
 
+        failed = False
         task_item = self.playbook_items[freckles_id]
         output_details = self.task_result[freckles_id]
         item_name = task_item[ITEM_NAME_KEY]
-        role_name = task_item[ANSIBLE_ROLE_NAME_KEY]
+        role_name = task_item[ANSIBLE_ROLE_KEY]
 
         output = self.freckles.handle_task_output(task_item, output_details)
 
@@ -146,19 +157,21 @@ class FrecklesRunner(object):
 
         task_title = "- task {:02d}/{:02d}: {} '{}': {}".format(freckles_id, len(self.playbook_items), role_name, item_name, state_string)
         log.info(task_title)
-        if not self.details:
-            return
+        if not self.details and state_string != FRECKLES_STATE_FAILED:
+            return True
 
         if state_string == FRECKLES_STATE_SKIPPED:
-            return
+            return True
         elif state_string == FRECKLES_STATE_FAILED:
+            failed = True
             if output.get("stderr", False):
                 log.error("Error:")
                 for line in output["stderr"]:
                     log.error("\t{}".format(line))
-                log.info("Standard output:")
-                for line in output.get("stdout", []):
-                    log.error("\t{}".format(line))
+                if output.get("stdout", False):
+                    log.info("Standard output:")
+                    for line in output.get("stdout", []):
+                        log.error("\t{}".format(line))
             else:
                 for line in output.get("stdout", []):
                     log.error("\t{}".format(line))
@@ -166,6 +179,7 @@ class FrecklesRunner(object):
             for line in output.get("stdout", []):
                 log.info("\t{}".format(line))
 
+        return not failed
 
     def create_inventory_dir(self):
 

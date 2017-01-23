@@ -10,6 +10,8 @@ from constants import *
 import logging
 log = logging.getLogger("freckles")
 
+
+
 DEB_MATCH = "{}{}{}".format(sep, 'deb', sep)
 RPM_MATCH = "{}{}{}".format(sep, 'rpm', sep)
 NIX_MATCH = "{}{}{}".format(sep, 'nix', sep)
@@ -37,6 +39,33 @@ def parse_dotfiles_item(item):
             temp_dotfiles = parse_dotfiles_item(sub_item)
             dotfiles.extend(temp_dotfiles)
         return dotfiles
+
+def expand_repo_url(repo_url):
+
+    if repo_url.startswith("gh"):
+        return "github"
+    elif repo_url.startswith("bb"):
+        return "bitbucket"
+    else:
+        return repo_url
+
+def check_dotfile_items(dotfiles):
+
+    result = []
+    for d in dotfiles:
+        paths = d[DOTFILES_PATHS_KEY]
+        if not paths:
+            paths = [""]
+        base = d[DOTFILES_BASE_KEY]
+        remote = d[DOTFILES_REMOTE_KEY]
+
+        for p in paths:
+            full_path = os.path.join(base, p)
+            if os.path.isdir(full_path):
+                result.append(full_path)
+
+    return result
+
 
 def get_pkg_mgr_from_path(path):
 
@@ -82,11 +111,8 @@ def extract_roles(playbook_items):
 
     roles = {}
     for item in playbook_items.values():
-        name = item.get(ANSIBLE_ROLE_NAME_KEY, False)
-        url = item.get(ANSIBLE_ROLE_URL_KEY, False)
-
-        if name and url:
-            roles[name] = url
+        item_roles = item.get(ANSIBLE_ROLES_KEY, {})
+        roles.update(item_roles)
 
     return roles
 
@@ -118,12 +144,12 @@ def create_dotfiles_dict(base_dirs, default_details):
                     apps[item] = copy.deepcopy(default_details)
                     apps[item][ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
-                    apps[item][DOTFILES_BASE_DIR_KEY] = temp_full_path
-                    apps[item][DOTFILES_BASE_KEY] = base
+                    apps[item][DOTFILES_BASE_KEY] = temp_full_path
+                    # apps[item][DOTFILES_BASE_KEY] = base
                     if remote:
                         apps[item][DOTFILES_REMOTE_KEY] = remote
                     if dotfile_path:
-                        apps[item][DOTFILES_PATH_KEY] = dotfile_path
+                        apps[item][DOTFILES_PATHS_KEY] = dotfile_path
 
                     freckles_metadata_file = path.join(dotfile_dir, FRECKLES_METADATA_FILENAME)
                     if path.exists(freckles_metadata_file):

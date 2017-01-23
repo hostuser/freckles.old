@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items
 import os
 from freckles.constants import *
 import sys
@@ -16,8 +16,11 @@ class Stow(Freck):
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
 
-        apps = create_dotfiles_dict(dotfiles, default_details=config)
+        existing_dotfiles = check_dotfile_items(dotfiles)
+        if not existing_dotfiles:
+            return []
 
+        apps = create_dotfiles_dict(dotfiles, default_details=config)
         return apps.values()
 
     def handle_task_output(self, task, output_details):
@@ -51,8 +54,8 @@ class Stow(Freck):
 
         return {
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
-            ANSIBLE_ROLE_NAME_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME,
-            ANSIBLE_ROLE_URL_KEY: FRECKLES_DEFAULT_STOW_ROLE_URL,
-            DOTFILES_KEY: DEFAULT_DOTFILES,
-            STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR
+            ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
+            STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
+            ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME,
+            FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+100
         }

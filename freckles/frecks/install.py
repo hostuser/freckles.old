@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items
 import os
 from freckles.constants import *
 import sys
@@ -13,6 +13,12 @@ class Install(Freck):
     def create_playbook_items(self, config):
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
+
+        existing_dotfiles = check_dotfile_items(dotfiles)
+
+        if not existing_dotfiles:
+            # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
+            return []
 
         apps = create_dotfiles_dict(dotfiles, default_details=config)
 
@@ -67,7 +73,8 @@ class Install(Freck):
         return {
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ANSIBLE_ROLE_NAME_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME,
-            ANSIBLE_ROLE_URL_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_URL,
-            DOTFILES_KEY: DEFAULT_DOTFILES
+            ANSIBLE_ROLES_KEY:
+            { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+
         }
