@@ -8,6 +8,7 @@ Contents:
 
    readme
    installation
+   bootstrap
    usage
    contributing
    authorshistory
