@@ -311,11 +311,13 @@ if ! command_exists freckles; then
     echo
     add_freckles_path
     echo
-
+    echo
+    echo "Starting 'freckles' with arguments: $@..."
+    echo
 fi
 
+
 if [ $using_sudo == true ]; then
-    echo "$@"
     exec sudo -u "$FRECKLES_USER" -i freckles "$@"
 else
     PATH="$PATH:$FRECKLES_PATH" freckles "$@"
