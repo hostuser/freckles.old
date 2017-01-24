@@ -11,8 +11,9 @@ from tempfile import NamedTemporaryFile
 from cookiecutter.main import cookiecutter
 from constants import *
 import subprocess
-from utils import playbook_needs_sudo, create_playbook_dict, extract_roles
+from utils import playbook_needs_sudo, create_playbook_dict, extract_roles, can_passwordless_sudo
 import logging
+import click
 log = logging.getLogger("freckles")
 DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL = "https://github.com/makkus/cookiecutter-freckles-play.git"
 
@@ -63,7 +64,8 @@ class FrecklesRunner(object):
             return
         log.debug("Playbooks created, {} playbook items created.".format(len(self.playbook_items)))
 
-        if playbook_needs_sudo(self.playbook_items):
+        passwordless_sudo = can_passwordless_sudo()
+        if not passwordless_sudo and playbook_needs_sudo(self.playbook_items):
             log.debug("Some playbook items will need sudo, adding parameter execution pipeline...")
             self.freckles_ask_sudo = "--ask-become-pass"
         else:
@@ -110,7 +112,7 @@ class FrecklesRunner(object):
         success = True
         if self.freckles_ask_sudo:
             log.info("Freckles needs sudo password for certain parts of the pipeline, please provide below:")
-        proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE, shell=True)
 
         total_tasks = (len(self.playbook_items))
         latest_id = 0
@@ -127,6 +129,8 @@ class FrecklesRunner(object):
                         success = False
 
                 latest_id = freckles_id
+                # log title of task
+                self.print_task_title(freckles_id)
 
             self.append_log(freckles_id, details)
 
@@ -143,20 +147,27 @@ class FrecklesRunner(object):
         self.task_result[freckles_id].append(details)
         log.debug(details)
 
+    def print_task_title(self, freckles_id):
+
+        task_item = self.playbook_items[freckles_id]
+        item_name = task_item[ITEM_NAME_KEY]
+        role_name = task_item[ANSIBLE_ROLE_KEY]
+
+        task_title = "- task {:02d}/{:02d}: {} '{}'".format(freckles_id, len(self.playbook_items), role_name, item_name)
+        click.echo(task_title, nl=False)
+
     def log(self, freckles_id):
 
         failed = False
         task_item = self.playbook_items[freckles_id]
         output_details = self.task_result[freckles_id]
-        item_name = task_item[ITEM_NAME_KEY]
-        role_name = task_item[ANSIBLE_ROLE_KEY]
 
         output = self.freckles.handle_task_output(task_item, output_details)
 
         state_string = output[FRECKLES_STATE_KEY]
 
-        task_title = "- task {:02d}/{:02d}: {} '{}': {}".format(freckles_id, len(self.playbook_items), role_name, item_name, state_string)
-        log.info(task_title)
+        click.echo("\t=> {}".format(state_string))
+
         if not self.details and state_string != FRECKLES_STATE_FAILED:
             return True
 

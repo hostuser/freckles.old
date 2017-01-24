@@ -25,7 +25,7 @@ test_requirements = [
 
 setup(
     name='freckles',
-    version='0.1.2',
+    version='0.1.3',
     description="A dotfile manager",
     long_description=readme + '\n\n' + history,
     author="Markus Binsteiner",
@@ -42,7 +42,8 @@ setup(
             'install=freckles.frecks:Install',
             'checkout=freckles.frecks:Checkout',
             'stow=freckles.frecks:Stow',
-            'install-nix=freckles.frecks:InstallNix'
+            'install-nix=freckles.frecks:InstallNix',
+            'delete=freckles.frecks:Delete'
 
         ]
     },

@@ -5,28 +5,34 @@ from stevedore import extension
 import sys
 import yaml
 import copy
+import subprocess
 from constants import *
 
 import logging
 log = logging.getLogger("freckles")
 
-
+DEB_MARKER_FILE = ".{}{}".format('deb', FRECKLES_METADATA_FILENAME)
+RPM_MARKER_FILE = ".{}{}".format('rpm', FRECKLES_METADATA_FILENAME)
+NIX_MARKER_FILE = ".{}{}".format('nix', FRECKLES_METADATA_FILENAME)
+CONDA_MARKER_FILE = ".{}{}".format('conda', FRECKLES_METADATA_FILENAME)
+NO_INSTALL_MARKER_FILE = ".{}{}".format('no_install', FRECKLES_METADATA_FILENAME)
 
 DEB_MATCH = "{}{}{}".format(sep, 'deb', sep)
 RPM_MATCH = "{}{}{}".format(sep, 'rpm', sep)
 NIX_MATCH = "{}{}{}".format(sep, 'nix', sep)
+CONDA_MATCH = "{}{}{}".format(sep, 'conda', sep)
 NO_INSTALL_MATCH = "{}{}{}".format(sep, "no_install", sep)
 
 def parse_dotfiles_item(item):
     """Parses an item in a config file, and depending on its type returns a complete list of dicts."""
 
     if isinstance(item, basestring):
-        dotfiles = [{DOTFILES_BASE_KEY: item, DOTFILES_PATHS_KEY: [], DOTFILES_REMOTE_KEY: ""}]
+        dotfiles = [{DOTFILES_BASE_KEY: os.path.expanduser(item), DOTFILES_PATHS_KEY: [], DOTFILES_REMOTE_KEY: ""}]
         return dotfiles
     elif isinstance(item, dict):
         paths = item.get(DOTFILES_PATHS_KEY, [])
         remote = item.get(DOTFILES_REMOTE_KEY, "")
-        base = item.get(DOTFILES_BASE_KEY, False)
+        base = os.path.expanduser(item.get(DOTFILES_BASE_KEY, False))
         if not base:
             log.error("Config item for plugin 'install' is dict, but no key {}.".format(DOTFILES_BASE_KEY))
             sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
@@ -42,12 +48,46 @@ def parse_dotfiles_item(item):
 
 def expand_repo_url(repo_url):
 
-    if repo_url.startswith("gh"):
+    if repo_url.startswith("gh:"):
         return "github"
-    elif repo_url.startswith("bb"):
+    elif repo_url.startswith("bb:"):
         return "bitbucket"
     else:
         return repo_url
+
+def can_passwordless_sudo():
+
+    p = subprocess.Popen('sudo -n ls', shell=True)
+    r = p.wait()
+    return r == 0
+
+def expand_bootstrap_config_url(config_url):
+
+    return expand_config_url(config_url, default_repo=FRECKLES_DEFAULT_DOTFILE_REPO_NAME, default_path=FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH)
+
+def expand_config_url(config_url, default_repo=FRECKLES_DEFAULT_DOTFILE_REPO_NAME, default_path=FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH):
+
+    if config_url.startswith("gh:"):
+        tokens = config_url.split(":")
+        if len(tokens) == 1 or len(tokens) > 4:
+            log.error("Can't parse github config url '{}'. Exiting...")
+            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+        if len(tokens) >= 2:
+            host = "https://raw.githubusercontent.com"
+            username = tokens[1]
+            repo = default_repo
+            path = default_path
+        if len(tokens) >= 3:
+            repo = tokens[2]
+        if len(tokens) == 4:
+            path = tokens[3]
+
+        return "{}/{}/{}/master/{}".format(host, username, repo, path)
+
+    elif config_url.startswith("bb:"):
+        return "bitbucket"
+    else:
+        return config_url
 
 def check_dotfile_items(dotfiles):
 
@@ -66,16 +106,42 @@ def check_dotfile_items(dotfiles):
 
     return result
 
+def get_pkg_mgr_sudo(mgr):
+    if mgr == 'no_install':
+        return False
+    elif mgr == 'nix':
+        return False
+    elif mgr == 'conda':
+        return False
+    else:
+        return True
 
-def get_pkg_mgr_from_path(path):
+def get_pkg_mgr_from_marker_file(p):
 
-    if NIX_MATCH in path:
+    if path.exists(path.join(p, NO_INSTALL_MARKER_FILE)):
+        return 'no_install'
+    if path.exists(path.join(p, NIX_MARKER_FILE)):
         return 'nix'
-    elif DEB_MATCH in path:
+    elif path.exists(path.join(p, CONDA_MARKER_FILE)):
+        return 'conda'
+    elif path.exists(path.join(p, DEB_MARKER_FILE)):
         return 'deb'
-    elif RPM_MATCH in path:
+    elif path.exists(path.join(p, RPM_MARKER_FILE)):
         return 'rpm'
-    elif NO_INSTALL_MATCH in path:
+    else:
+        return False
+
+def get_pkg_mgr_from_path(p):
+
+    if NIX_MATCH in p:
+        return 'nix'
+    elif CONDA_MATCH in p:
+        return 'conda'
+    elif DEB_MATCH in p:
+        return 'deb'
+    elif RPM_MATCH in p:
+        return 'rpm'
+    elif NO_INSTALL_MATCH in p:
         return 'no_install'
     else:
         return False
@@ -145,7 +211,6 @@ def create_dotfiles_dict(base_dirs, default_details):
                     apps[item][ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
                     apps[item][DOTFILES_BASE_KEY] = temp_full_path
-                    # apps[item][DOTFILES_BASE_KEY] = base
                     if remote:
                         apps[item][DOTFILES_REMOTE_KEY] = remote
                     if dotfile_path:

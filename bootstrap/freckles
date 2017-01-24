@@ -5,6 +5,7 @@
 # 3: execution error somewhere in the bootstrap pipeline
 # 6: platform or package manager not supported
 
+
 if [ ! -z "$FRECKLES_DEBUG" ]; then
     DEBUG=true
 fi
@@ -314,7 +315,8 @@ if ! command_exists freckles; then
 fi
 
 if [ $using_sudo == true ]; then
-    su "$FRECKLES_USER" -l -c freckles "$@"
+    echo "$@"
+    exec sudo -u "$FRECKLES_USER" -i freckles "$@"
 else
     PATH="$PATH:$FRECKLES_PATH" freckles "$@"
 fi

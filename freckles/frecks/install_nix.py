@@ -12,6 +12,9 @@ class InstallNix(Freck):
 
     def create_playbook_items(self, config):
 
+        if os.path.isdir("/nix") and os.access('/nix', os.W_OK):
+            config[FRECK_SUDO_KEY] = False
+        config[ITEM_NAME_KEY] = "single-user"
         return [config]
 
     def default_freck_config(self):
