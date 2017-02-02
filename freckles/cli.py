@@ -14,98 +14,14 @@ from freckles_runner import FrecklesRunner
 from constants import *
 import sys
 import logging
-from utils import expand_repo_url, expand_config_url, expand_bootstrap_config_url
+from utils import expand_repo_url, expand_config_url, expand_bootstrap_config_url, create_runs
 from copy import copy
 
 log = logging.getLogger("freckles")
 
 DEFAULT_INDENT = 2
 
-def guess_local_default_config(base_dir=None, paths=None, remote=None):
 
-    result = {}
-    result["default_vars"] = {}
-    result["default_vars"][DOTFILES_KEY] = {}
-
-    if not base_dir:
-        if os.path.isdir(DEFAULT_DOTFILE_DIR):
-            result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = DEFAULT_DOTFILE_DIR
-    else:
-        if os.path.isdir(base_dir):
-            result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = base_dir
-        else:
-            log.error("Directory '{}' does not exist. Exiting...".format(base_dir))
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-
-    if not result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
-        return False
-
-    if paths:
-        if not result["default_vars"][DOTFILES_KEY].get(DEFAULT_DOTFILE_DIR, False):
-            log.error("Paths specified, but not base dir. Can't continue, exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        for p in paths:
-            path = os.path.join(result["default_vars"][DOTFILES_KEY][DEFAULT_DOTFILE_DIR], p)
-            if not os.path.isdir(path):
-                log.error("Combined dotfile path '{} does not exist, exiting...".format(path))
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-
-
-    # check if base_dir is git repo
-    remotes = []
-    if result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
-        git_config_file = os.path.join(result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY], ".git", "config")
-        if os.path.isfile(git_config_file):
-            with open(git_config_file) as f:
-                content = f.readlines()
-            in_remote = False
-            for line in content:
-                if not in_remote:
-                    if "[remote " in line:
-                        in_remote = True
-                    continue
-                else:
-                    if "url = " in line:
-                        remote = line.strip().split()[-1]
-                        remotes.append(remote)
-                        in_remote = False
-                        continue
-
-    # TODO: this all is a bit crude, should just use git exe to figure out remotes
-    if not remote:
-        if len(remotes) == 1:
-            result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remotes[0]
-        elif len(remotes) > 1:
-            log.error("Can't guess git remote, more than one configured. Exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-    else:
-        if len(remotes) == 1:
-            if remotes[0] == remote:
-                result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
-            else:
-                log.error("Provided git remote '{}' differs from local one '{}'. Exiting...".format(remote, remotes[0]))
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        elif len(remotes) == 0:
-            log.error("git remote provided, but local repo is not configured to use it. Exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        else:
-            if remote in remotes:
-                result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
-            else:
-                log.error("Provided remote repo url does not match with locally available ones. Exiting...")
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-
-    if result["default_vars"][DOTFILES_KEY].get(DOTFILES_REMOTE_KEY, False):
-        result["runs"] = [
-            {"frecks": {"checkout": {}}},
-            {"frecks": {"install": {}, "stow": {}}}
-        ]
-    else:
-        result["runs"] = [
-            {"frecks": {"install": {}, "stow": {}}}
-        ]
-
-    return result
 
 class Config(object):
 
@@ -154,82 +70,35 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.pass_context
 @click_log.simple_verbosity_option()
 @click_log.init("freckles")
-@click.option('--hosts', help='comma-separated list of hosts (default: \'localhost\'), overrides config', multiple=True)
 @click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
-def cli(ctx, config, hosts, details):
+def cli(ctx, config, details):
 
     config.load()
 
-    if not config.config:
-        config.config = {}
+    augment_config(config, details)
 
-    augment_config(config, hosts, details)
-
-    if ctx.invoked_subcommand is None:
-        run(config)
+    # if ctx.invoked_subcommand is None:
+        # run(config)
 
 
-def augment_config(config, hosts=None, details=False):
-
-    if hosts:
-        config.hosts = hosts
-    else:
-        config.hosts = FRECKLES_DEFAULT_HOSTS
+def augment_config(config, details=False):
 
     config.details = details
 
-    config.freckles = Freckles(hosts=config.hosts, default_vars=config.config.get("default_vars", {}))
-    config.runs = config.config.get("runs", {})
-
 
 @cli.command()
-@click.argument('config_file_url', required=False)
+@click.argument('config_file_urls', required=False, nargs=-1)
 @pass_config
-def run(config, config_file_url):
+def run(config, config_file_urls):
 
-    if  config_file_url:
-
-        url = expand_bootstrap_config_url(config_file_url)
-        log.debug("Trying to download bootstrap config file: {}".format(url))
-        txt = urllib.urlopen(url).read()
-
-        if "404" in txt:
-            url2 = expand_config_url(config_file_url)
-            log.debug("Trying to download default config file: {}".format(url2))
-
-            txt = urllib.urlopen(url2).read()
-            if "404" in txt:
-                log.error("Could not download config from '{}' or '{}'. Exiting...".format(url, url2))
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-            else:
-                url = url2
-
-        temp_config = Config()
-        temp_config.config.update(yaml.load(txt))
-
-        log.info("Using configuration from: {}".format(url))
-
+    if config_file_urls:
+        config.runs = create_runs(config_file_urls)
+        config.freckles = Freckles()
     else:
-        temp_config = Config()
-        if not config.config:
-            temp = guess_local_default_config()
-            if temp:
-                temp_config.config = temp
-                log.info("No configuration found or specified, using default values.")
-            else:
-                temp_config.config = {}
-        else:
-            temp_config.config = config.config
-            log.info("Using local configuration: {}".format(config.config_file))
+        # TODO: auto-magic config creation
+        pass
 
-    if not temp_config.config:
-        log.error("Empty configuration. Exiting...")
-        sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-
-    augment_config(temp_config, hosts=config.hosts, details=config.details)
-
-    log.debug("Running initial freckles run with temporary config...")
-    run(temp_config)
+    start_runs(config)
 
 
 @cli.command()
@@ -238,7 +107,17 @@ def config(config):
 
     print(yaml.dump(config.config, default_flow_style=False))
 
-def run(config):
+@cli.command()
+@click.argument('config_file_urls', required=True, nargs=-1)
+@pass_config
+def test(config, config_file_urls):
+
+    runs = create_runs(config_file_urls)
+
+    print(yaml.dump(runs, default_flow_style=False))
+
+
+def start_runs(config):
 
     run_nr = 1
     for run in config.runs:

@@ -22,9 +22,20 @@ FRECKLES_LOG_TOKEN = "FRECKLES: "
 
 class FrecklesRunner(object):
 
-    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False):
+    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False, hosts=None):
 
         self.task_result = {}
+
+        if not hosts:
+            hosts = FRECKLES_DEFAULT_HOSTS
+
+        self.hosts = {}
+        for host in hosts:
+            if host == "localhost" or host == "127.0.0.1":
+                self.hosts[host] = {"ansible_connection": "local"}
+            else:
+                self.hosts[host] = {}
+
 
         if not execution_base_dir:
             execution_base_dir = FRECKLES_DEFAULT_EXECUTION_BASE_DIR
@@ -197,13 +208,13 @@ class FrecklesRunner(object):
         group_base_dir = os.path.join(self.inventory_dir, "group_vars")
         os.makedirs(group_base_dir)
 
-        for host in self.freckles.hosts.keys():
+        for host in self.hosts.keys():
             host_dir = os.path.join(self.inventory_dir, "host_vars", host)
             os.makedirs(host_dir)
 
             freckles_host_file = os.path.join(host_dir, "freckles.yml")
             with open(freckles_host_file, 'w') as f:
-                f.write(yaml.safe_dump(self.freckles.hosts.get(host, {}), default_flow_style=False))
+                f.write(yaml.safe_dump(self.hosts.get(host, {}), default_flow_style=False))
 
         inventory_file = os.path.join(self.inventory_dir, "inventory.ini")
         with open(inventory_file, 'w') as f:
@@ -211,4 +222,4 @@ class FrecklesRunner(object):
 
 {}
 
-""".format(self.freckles_group_name, "\n".join(self.freckles.hosts.keys())))
+""".format(self.freckles_group_name, "\n".join(self.hosts.keys())))

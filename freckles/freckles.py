@@ -6,7 +6,7 @@ import yaml
 import pprint
 import json
 from freckles_runner import FrecklesRunner
-from utils import get_pkg_mgr_from_path, load_extensions
+from utils import get_pkg_mgr_from_path, load_extensions, dict_merge
 import six
 import abc
 from constants import *
@@ -32,12 +32,11 @@ class Freck(object):
         """Returns the default config, can be overwritten by the user config."""
         return {}
 
-    def calculate_freck_config(self, user_default_config, user_freck_config):
+    def calculate_freck_config(self, freck_vars):
 
         freck_config = copy.deepcopy(FRECK_DEFAULT_CONFIG)
-        freck_config.update(copy.deepcopy(self.default_freck_config()))
-        freck_config.update(user_default_config)
-        freck_config.update(user_freck_config)
+        dict_merge(freck_config, copy.deepcopy(self.default_freck_config()))
+        dict_merge(freck_config, copy.deepcopy(freck_vars))
 
         return freck_config
 
@@ -95,31 +94,10 @@ class Freck(object):
 
 class Freckles(object):
 
-    def __init__(self, hosts=FRECKLES_DEFAULT_HOSTS, default_vars={}):
+    def __init__(self):
 
         self.frecks = load_extensions()
-        self.hosts = {}
 
-        for host in hosts:
-            if host == "localhost" or host == "127.0.0.1":
-                self.hosts[host] = {"ansible_connection": "local"}
-            else:
-                self.hosts[host] = {}
-
-        self.default_vars = default_vars
-    # def list_all(self):
-        # pprint.pprint(self.apps)
-
-    # def list(self, package_managers="apt", tags=None):
-        # print yaml.dump(self.apps, default_flow_style=False)
-
-    # def create_inventory_yml(self):
-
-        # groups = {self.group_name: {"vars": {"freckles": self.apps}, "hosts": [host for host in self.hosts.keys()]}}
-        # hosts = self.hosts
-
-        # inv = Inventory({"groups": groups, "hosts": hosts})
-        # return inv.list()
 
     def handle_task_output(self, task_item, output_details):
 
@@ -135,11 +113,16 @@ class Freckles(object):
 
         log.debug("Parsing configuration...")
 
-        default_user_config = self.default_vars
-
         playbook_items = []
 
-        for freck_type, freck_config_item in run.get("frecks", {}).iteritems():
+        run_name = run["name"]
+        frecks = run["frecks"]
+
+        for freck in frecks:
+
+            freck_type = freck["type"]
+            freck_name = freck["name"]
+            freck_vars = freck["vars"]
 
             freck = self.frecks.get(freck_type, False)
             if not freck:
@@ -147,7 +130,7 @@ class Freckles(object):
                 sys.exit(2)
 
             log.debug("\tAdding: {}".format(freck_type))
-            freck_config = freck.calculate_freck_config(default_user_config, freck_config_item)
+            freck_config = freck.calculate_freck_config(freck_vars)
 
             freck_config_items = freck.create_playbook_items(freck_config)
             i = 1
