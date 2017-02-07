@@ -4,11 +4,15 @@ from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_do
 import os
 from freckles.constants import *
 import sys
+from voluptuous import Schema, ALLOW_EXTRA, Any
 
 import logging
 log = logging.getLogger(__name__)
 
 class InstallNix(Freck):
+
+    def get_config_schema(self):
+        return False
 
     def create_playbook_items(self, config):
 

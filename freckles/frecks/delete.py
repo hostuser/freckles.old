@@ -6,9 +6,13 @@ from freckles.constants import *
 import sys
 import copy
 import logging
+from voluptuous import Schema, ALLOW_EXTRA, Any
 log = logging.getLogger(__name__)
 
 class Delete(Freck):
+
+    def get_config_schema(self):
+        return False
 
     def create_playbook_items(self, config):
 

@@ -328,7 +328,8 @@ def load_extensions():
     log.debug("Loading extensions...")
     mgr = extension.ExtensionManager(
         namespace='freckles.frecks',
-        invoke_on_load=True
+        invoke_on_load=True,
+        propagate_map_exceptions=True
     )
     log.debug("Registered plugins: {}".format(", ".join(ext.name for ext in mgr.extensions)))
 

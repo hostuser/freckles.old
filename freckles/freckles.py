@@ -40,6 +40,10 @@ class Freck(object):
 
         return freck_config
 
+    @abc.abstractmethod
+    def get_config_schema(self):
+        """The schema for the configuration of this nect."""
+        pass
 
     @abc.abstractmethod
     def create_playbook_items(self):
@@ -131,6 +135,16 @@ class Freckles(object):
 
             log.debug("\tAdding: {}".format(freck_type))
             freck_config = freck.calculate_freck_config(freck_vars)
+
+            log.debug("Calculated config for '{}': {}".format(freck_name, freck_config))
+
+            config_schema = freck.get_config_schema()
+            if config_schema:
+                log.debug("Checking schema for freck '{}'...".format(freck_name))
+                config_schema(freck_config)
+                log.debug("Schema ok")
+            else:
+                log.debug("Omitting schama check for freck '{}': no schema provided.". format(freck_name))
 
             freck_config_items = freck.create_playbook_items(freck_config)
             i = 1

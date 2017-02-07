@@ -4,6 +4,7 @@ from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_do
 import os
 from freckles.constants import *
 import sys
+from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 import logging
 log = logging.getLogger(__name__)
@@ -11,6 +12,14 @@ log = logging.getLogger(__name__)
 PRECENDENCE_ERROR_STRING = "Possible precedence issue with control flow operator at"
 
 class Stow(Freck):
+
+    def get_config_schema(self):
+        s = Schema({
+            Required(DOTFILES_KEY): list
+        }, extra=ALLOW_EXTRA)
+
+        return s
+
 
     def create_playbook_items(self, config):
 
@@ -53,6 +62,7 @@ class Stow(Freck):
     def default_freck_config(self):
 
         return {
+            DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
             ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,

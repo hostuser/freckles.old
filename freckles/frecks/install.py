@@ -4,11 +4,24 @@ from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_do
 import os
 from freckles.constants import *
 import sys
+from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 import logging
 log = logging.getLogger(__name__)
 
+SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
+
 class Install(Freck):
+
+    def get_config_schema(self):
+
+        s = Schema({
+            Required(DOTFILES_KEY): list,
+            PKG_MGR_KEY: Any(*SUPPORTED_PKG_MGRS),
+            PKGS_KEY: dict
+        }, extra=ALLOW_EXTRA)
+
+        return s
 
     def create_playbook_items(self, config):
 
@@ -86,12 +99,10 @@ class Install(Freck):
         return {FRECKLES_STATE_KEY: state, FRECKLES_CHANGED_KEY: changed, FRECKLES_STDERR_KEY: stderr}
 
     def default_freck_config(self):
-
         return {
+            DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ANSIBLE_ROLES_KEY:
-            { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
             ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-
         }

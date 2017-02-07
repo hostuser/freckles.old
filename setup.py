@@ -16,7 +16,8 @@ requirements = [
     'cookiecutter>=1.5.0',
     'stevedore>=1.18.0',
     'py',
-    'click-log'
+    'click-log',
+    'voluptuous'
 ]
 
 test_requirements = [
