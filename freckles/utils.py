@@ -8,6 +8,7 @@ import yaml
 import copy
 import subprocess
 from constants import *
+import collections
 
 import logging
 log = logging.getLogger("freckles")
@@ -24,7 +25,6 @@ NIX_MATCH = "{}{}{}".format(sep, 'nix', sep)
 CONDA_MATCH = "{}{}{}".format(sep, 'conda', sep)
 NO_INSTALL_MATCH = "{}{}{}".format(sep, "no_install", sep)
 
-import collections
 
 def dict_merge(dct, merge_dct):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -45,7 +45,16 @@ def dict_merge(dct, merge_dct):
         else:
             dct[k] = merge_dct[k]
 
+
 def get_config(config_file_url):
+    """Retrieves the config (if necessary), and converts it to a dict.
+
+    Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
+
+    For the case that a url is provided, there are a few abbreviations available:
+
+    TODO
+    """
 
     with open(config_file_url) as f:
         config_yaml = yaml.load(f)
@@ -72,6 +81,7 @@ def create_runs(configs, seed_vars={}):
         for run_item in runs:
 
             name = run_item.get("name", False)
+            number = i
             if not name:
                 name = "run_{}".format(i)
 
@@ -108,7 +118,7 @@ def create_runs(configs, seed_vars={}):
                  dict_merge(freck_vars, freck_inner_vars)
                  run_frecks.append({"name": freck_name, "vars": freck_vars, "type": freck_type})
                  j = j + 1
-            run = {"name": name, "frecks": run_frecks}
+            run = {"name": name, "frecks": run_frecks, "nr": number}
             result_runs.append(run)
 
     return result_runs

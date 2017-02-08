@@ -131,7 +131,7 @@ class FrecklesRunner(object):
             # log.debug(line)
 
             details = json.loads(line)
-            freckles_id = int(details[FRECKLES_ID_KEY])
+            freckles_id = int(details[FRECK_ID_KEY])
             changed = not freckles_id == latest_id
 
             if changed:

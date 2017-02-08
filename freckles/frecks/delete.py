@@ -7,7 +7,7 @@ import sys
 import copy
 import logging
 from voluptuous import Schema, ALLOW_EXTRA, Any
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 
 class Delete(Freck):
 

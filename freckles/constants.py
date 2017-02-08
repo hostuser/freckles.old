@@ -4,20 +4,49 @@
 import os
 import click
 
+
+# configuration constants
+FRECKLES_DEFAULT_DIR = click.get_app_dir('freckles', force_posix=True)
+DEFAULT_DOTFILE_DIR = os.path.expanduser("~/dotfiles")
+
+# freckles filenames and extensions
+FRECKLES_DEFAULT_CONFIG_FILE_NAME = "config.yml"
+FRECKLES_METADATA_FILENAME = ".frkl"
+
+
+# ERROR CODES
+FRECKLES_CONFIG_ERROR_EXIT_CODE = 2
+FRECKLES_EXECUTION_ERROR_EXIT_CODE = 4
+FRECKLES_BUG_EXIT_CODE = 7
+
+
+# freck configuration keys
+FRECK_TYPE_KEY = "freck_type"
+FRECK_NAME_KEY = "freck_name"
+FRECK_ID_KEY = "freck_id"
+
+
+
+
+
+
+
+
+
+
 FRECKLES_DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
 FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH = "freckles/.freckles/default.yml"
 FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH = "freckles/.freckles/bootstrap.yml"
 
+
 FRECKLES_DEFAULT_GROUP_NAME = "freckles"
-FRECKLES_METADATA_FILENAME = ".frkl"
 #FRECKLES_DEFAULT_PROFILE = "<all>"
 
 
 FRECKLES_GROUP_DETAILS_FILENAME = "freckles"
 
-FRECKLES_DEFAULT_DIR = click.get_app_dir('freckles', force_posix=True)
+
 FRECKLES_DEFAULT_HOSTS = ["localhost"]
-FRECKLES_DEFAULT_CONFIG_FILE_NAME = "default.yml"
 FRECKLES_DEFAULT_EXECUTION_BASE_DIR = os.path.join(FRECKLES_DEFAULT_DIR, "cache")
 # FRECKLES_DEFAULT_LOG_DIR = os.path.join(FRECKLES_DEFAULT_EXECUTION_BASE_DIR, "log")
 # FRECKLES_DEFAULT_LOG_FILE = os.path.join(FRECKLES_DEFAULT_LOG_DIR, "freckles.log")
@@ -40,7 +69,6 @@ FRECKLES_DEFAULT_DELETE_ROLE_NAME = "delete"
 FRECKLES_DEFAULT_DELETE_ROLE_URL = "https://github.com/makkus/ansible-delete"
 DEFAULT_STOW_TARGET_BASE_DIR = os.path.expanduser("~/")
 STOW_TARGET_BASE_DIR_KEY = "stow_target_dir"
-DEFAULT_DOTFILE_DIR = os.path.expanduser("~/dotfiles")
 DEFAULT_DOTFILE_PATHS = []
 #DEFAULT_DOTFILE_REMOTE = ""
 #DEFAULT_DOTFILES = [DEFAULT_DOTFILE_DIR]
@@ -53,7 +81,6 @@ DEFAULT_PACKAGE_STATE_KEY = "default_pkg_state"
 DEFAULT_PACKAGE_SUDO_KEY = "default_pkg_sudo"
 PACKAGE_STATE_KEY = "pkg_state"
 
-FRECK_TYPE_KEY = "freck_type"
 
 ANSIBLE_ROLE_KEY = "role"
 ANSIBLE_ROLES_KEY = "freck-roles"
@@ -71,15 +98,11 @@ DOTFILES_BASE_KEY = "base_dir"
 DOTFILES_PATHS_KEY = "paths"
 DOTFILES_REMOTE_KEY = "remote"
 
-FRECKLES_CONFIG_ERROR_EXIT_CODE = 2
-FRECKLES_BUG_EXIT_CODE = 7
-FRECKLES_EXECUTION_ERROR_EXIT_CODE = 4
 
 FRECK_CONFIG_TEMPLATE_KEY = "freck_config_template"
 
 FRECKLES_CALLBACK_PLUGIN_NAME = "freckles_callback"
 
-FRECKLES_ID_KEY = "freckles_id"
 
 FRECKLES_STATE_SKIPPED = "skipped"
 FRECKLES_STATE_KEY = "state"

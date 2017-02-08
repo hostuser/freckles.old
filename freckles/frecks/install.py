@@ -7,7 +7,7 @@ import sys
 from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 
 SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
 
@@ -23,19 +23,18 @@ class Install(Freck):
 
         return s
 
-    def create_playbook_items(self, config):
+    def pre_process_config(self, config):
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
-        existing_dotfiles = check_dotfile_items(dotfiles)
-
-        if not existing_dotfiles:
+        # existing_dotfiles = check_dotfile_items(dotfiles)
+        # if not existing_dotfiles:
             # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
-            return []
-
+            # return False
         apps = create_dotfiles_dict(dotfiles, default_details=config)
 
-        for app, details in apps.iteritems():
+        configs = []
 
+        for app, details in apps.iteritems():
             # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
             if not details.get(PKG_MGR_KEY, False):
                 pkg_mgr = get_pkg_mgr_from_path(details[DOTFILES_DIR_KEY])
@@ -64,7 +63,13 @@ class Install(Freck):
             if not details.get("pkgs").get("default", False):
                 details["pkgs"]["default"] = [details[ITEM_NAME_KEY]]
 
-        return apps.values()
+            configs.append(details)
+
+        return configs
+
+    def create_playbook_items(self, config):
+
+        return [config]
 
     def handle_task_output(self, task, output_details):
 

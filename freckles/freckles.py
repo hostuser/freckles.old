@@ -32,6 +32,12 @@ class Freck(object):
         """Returns the default config, can be overwritten by the user config."""
         return {}
 
+
+    def pre_process_config(self, config):
+        """(Optionally) pre-process or augment the config that will be injected in the 'create_playbook_itmes' method."""
+
+        return config
+
     def calculate_freck_config(self, freck_vars):
 
         freck_config = copy.deepcopy(FRECK_DEFAULT_CONFIG)
@@ -40,10 +46,9 @@ class Freck(object):
 
         return freck_config
 
-    @abc.abstractmethod
     def get_config_schema(self):
         """The schema for the configuration of this nect."""
-        pass
+        return False
 
     @abc.abstractmethod
     def create_playbook_items(self):
@@ -146,11 +151,30 @@ class Freckles(object):
             else:
                 log.debug("Omitting schama check for freck '{}': no schema provided.". format(freck_name))
 
-            freck_config_items = freck.create_playbook_items(freck_config)
+            if freck_config.get("freck_preprocess", True):
+                freck_config = freck.pre_process_config(freck_config)
+
+            # if preprocessing returns a list, we add all those seperately.
+            if isinstance(freck_config, dict):
+                freck_config["freck_preprocess"] = False
+                freck_config_items = freck.create_playbook_items(freck_config)
+                if isinstance(freck_config_items, dict):
+                        freck_config_items = [freck_config_items]
+            else:
+                freck_config_items = []
+                for item in freck_config:
+                    item["freck_preprocess"] = False
+                    temp = freck.create_playbook_items(item)
+                    if isinstance(temp, dict):
+                        temp = [temp]
+                    freck_config_items.extend(temp)
+
+
             i = 1
             # add item_name, if not provided by freck
             for item in freck_config_items:
                 item[FRECK_TYPE_KEY] = freck_type
+                item[FRECK_NAME_KEY] = freck_name
                 if not item.get(ITEM_NAME_KEY, False):
                     item[ITEM_NAME_KEY] = "{}_{}".format(freck_type, i)
                 i = i+1

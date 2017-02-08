@@ -7,7 +7,7 @@ import sys
 from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 
 PRECENDENCE_ERROR_STRING = "Possible precedence issue with control flow operator at"
 
@@ -20,17 +20,20 @@ class Stow(Freck):
 
         return s
 
+    def pre_process_config(self, config):
+
+        dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
+        # existing_dotfiles = check_dotfile_items(dotfiles)
+        # if not existing_dotfiles:
+            # return []
+
+        apps = create_dotfiles_dict(dotfiles, default_details=config)
+
+        return apps.values()
 
     def create_playbook_items(self, config):
 
-        dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
-
-        existing_dotfiles = check_dotfile_items(dotfiles)
-        if not existing_dotfiles:
-            return []
-
-        apps = create_dotfiles_dict(dotfiles, default_details=config)
-        return apps.values()
+        return [config]
 
     def handle_task_output(self, task, output_details):
 

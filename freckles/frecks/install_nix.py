@@ -7,7 +7,7 @@ import sys
 from voluptuous import Schema, ALLOW_EXTRA, Any
 
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 
 class InstallNix(Freck):
 

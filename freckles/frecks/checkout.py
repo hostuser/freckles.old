@@ -6,7 +6,7 @@ from freckles.constants import *
 import sys
 import copy
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("freckles")
 from voluptuous import Schema, ALLOW_EXTRA, Any
 
 class Checkout(Freck):

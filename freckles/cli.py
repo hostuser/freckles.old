@@ -16,14 +16,25 @@ import sys
 import logging
 from utils import expand_repo_url, expand_config_url, expand_bootstrap_config_url, create_runs
 from copy import copy
+from exceptions import FrecklesRunError
 
 log = logging.getLogger("freckles")
 
 DEFAULT_INDENT = 2
 
 
-
 class Config(object):
+    """Freckles app config object, stores local configuration.
+
+    The default Freckles configuration is located in $HOME/.freckles. If this directory does not exist, Freckles looks for a directory ``$HOME/dotfiles/freckles/.freckles`` and, if that exists, uses that as default. Reason is that there might already be a dotfiles repo checked out or copied to the local machine, but no 'stow' operation had been done on it yet.
+
+    The default freckles file is called ``config.yml`` and is located in the default freckles config directory.
+
+    Attributes:
+        config_dir (str): the directory containing freckles configuration
+        config_file (str): the path to the config file
+        config (dict): other config values
+    """
 
     def __init__(self, *args, **kwargs):
         self.config_dir = FRECKLES_DEFAULT_DIR
@@ -63,64 +74,101 @@ class Config(object):
         return self.config.get(key, None)
 
 
-pass_config = click.make_pass_decorator(Config, ensure=True)
+pass_freckles_config = click.make_pass_decorator(Config, ensure=True)
 
 @click.group(invoke_without_command=True)
-@pass_config
+@pass_freckles_config
 @click.pass_context
 @click_log.simple_verbosity_option()
 @click_log.init("freckles")
 @click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
-def cli(ctx, config, details):
+def cli(ctx, freckles_config, details):
+    """Freckles manages your dotfiles (and other aspects of your local machine).
 
-    config.load()
+    The base options here are forwarded to all the sub-commands listed below. Not all of the sub-commands will use all of the options you can specify though.
 
-    augment_config(config, details)
+    For information about how to use and configure Freckles, please visit: XXX
+    """
+    freckles_config.load()
+    augment_config(freckles_config, details)
 
     # if ctx.invoked_subcommand is None:
         # run(config)
 
 
-def augment_config(config, details=False):
+def augment_config(freckles_config, details=False):
+    """Helper method to make sure the configuration is complete."""
 
-    config.details = details
-
+    freckles_config.details = details
+    freckles_config.freckles = Freckles()
 
 @cli.command()
-@click.argument('config_file_urls', required=False, nargs=-1)
-@pass_config
-def run(config, config_file_urls):
+@click.argument('config', required=False, nargs=-1)
+@pass_freckles_config
+def run(freckles_config, config):
+    """Executes one or multiple runs.
+
+    A config can either be a local yaml file, a url to a remote yaml file, or a json string.
+
+    Configurations are overlayed in the order they are provided. Read more about configuration files and format by visiting XXX``).
+    """
+
+    freckles_config.runs = create_config(config)
+    start_runs(freckles_config)
+
+
+def create_config(config_file_urls):
+    """Create runs from the list of configs.
+
+    If no config is provided a default one will be calculated (not implemented yet)."""
 
     if config_file_urls:
-        config.runs = create_runs(config_file_urls)
-        config.freckles = Freckles()
+        result  = create_runs(config_file_urls)
     else:
         # TODO: auto-magic config creation
         pass
 
-    start_runs(config)
+    return result
 
 
-@cli.command()
-@pass_config
-def config(config):
+@cli.command("print-config")
+@click.argument('config', required=False, nargs=-1)
+@pass_freckles_config
+def print_config(freckles_config, config):
+    """Calculates the overlayed config for each single Freck, and prints it in yaml format.
 
-    print(yaml.dump(config.config, default_flow_style=False))
+    This is useful mostly for debugging purposes, when creating the configuration.
 
-@cli.command()
-@click.argument('config_file_urls', required=True, nargs=-1)
-@pass_config
-def test(config, config_file_urls):
+    The output to this command could be piped into a yaml file, and then used with the ``run`` command. Although, in practice that doesn't make much sense of course. """
 
-    runs = create_runs(config_file_urls)
+    runs = create_runs(config)
 
-    print(yaml.dump(runs, default_flow_style=False))
+    result_runs = []
+
+    for run in runs:
+        run_name = run["name"]
+        run_nr = run["nr"]
+        playbook_items = freckles_config.freckles.create_playbook_items(run)
+        frecks = []
+        for item_nr, item in playbook_items.iteritems():
+            freck_type = item.pop(FRECK_TYPE_KEY)
+            freck_name = item.pop(FRECK_NAME_KEY)
+            freckles_id = item.pop(FRECK_ID_KEY) # we don't need this id, still pulling it out
+
+            frecks.append({freck_type: {"name": freck_name, "vars": item}})
+
+        result_runs.append({"name": run_name, "frecks": frecks})
+
+    print(yaml.dump({"runs": result_runs}, default_flow_style=False))
+
+
 
 
 def start_runs(config):
+    """Helper method to kick of all runs."""
 
-    run_nr = 1
     for run in config.runs:
+        run_nr = run["nr"]
         log.info("Reading configuration for run #{}".format(run_nr))
         runner = FrecklesRunner(config.freckles, run, clear_build_dir=True, execution_base_dir=config.get("build_base_dir"), execution_dir_name=config.get("build_dir_name"), details=config.get("details"))
         if not runner.playbook_items:
@@ -130,8 +178,7 @@ def start_runs(config):
             success = runner.run()
             log.info("Run #{} finished.".format(run_nr))
             if not success:
-                log.error("\tAt least one error for run #{}. Exiting...".format(run_nr))
-                sys.exit(FRECKLES_EXECUTION_ERROR_EXIT_CODE)
+                raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr))
 
         run_nr = run_nr + 1
 
