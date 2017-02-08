@@ -161,8 +161,8 @@ class FrecklesRunner(object):
     def print_task_title(self, freckles_id):
 
         task_item = self.playbook_items[freckles_id]
-        item_name = task_item[ITEM_NAME_KEY]
-        role_name = task_item[ANSIBLE_ROLE_KEY]
+        item_name = task_item[FRECK_ITEM_NAME_KEY]
+        role_name = task_item[FRECK_ANSIBLE_ROLE_KEY]
 
         task_title = "- task {:02d}/{:02d}: {} '{}'".format(freckles_id, len(self.playbook_items), role_name, item_name)
         click.echo(task_title, nl=False)

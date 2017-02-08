@@ -17,6 +17,8 @@ import freckles.utils
 from contextlib import contextmanager
 from click.testing import CliRunner
 
+import os
+
 from freckles import freckles
 from freckles import cli
 from freckles import utils
@@ -30,6 +32,10 @@ SINGLE_RUN_WITH_ONE_VAR_DICT = {
     }
 
 SINGLE_RUN_WITH_ONE_VAR_DICT_JSON = '{"vars": {"key1": "value1"}, "runs": [{"name": "run1", "frecks": ["debug"]}]}'
+
+DEFAULT_DOTFILES_LIST = [{"base_dir": os.path.expanduser("~/dotfiles"), "paths": [], "remote": ""}]
+
+DEFAULT_DOTFILES_LIST_REMOTE = [{"base_dir": os.path.expanduser("~/dotfiles"), "paths": [], "remote": "https://github.com/makkus/dotfiles.git"}]
 
 def get_yaml_file_content(rel_path):
 
@@ -46,4 +52,13 @@ def get_yaml_file_content(rel_path):
 def test_get_config(url, expected):
 
     config = utils.get_config(url)
-    assert config == SINGLE_RUN_WITH_ONE_VAR_DICT
+    assert config == expected
+
+@pytest.mark.parametrize("item, expected", [
+    ("~/dotfiles", DEFAULT_DOTFILES_LIST),
+    ("https://github.com/makkus/dotfiles.git", DEFAULT_DOTFILES_LIST_REMOTE)
+])
+def test_parse_dotfiles_item(item, expected):
+
+    result = utils.parse_dotfiles_item(item)
+    assert result == expected

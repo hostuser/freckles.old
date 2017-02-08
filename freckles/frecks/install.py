@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo
-import os
-from freckles.constants import *
-import sys
+import logging
+
 from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
-import logging
+from freckles import Freck
+from freckles.constants import *
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, \
+    get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo
+
 log = logging.getLogger("freckles")
 
 SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
@@ -47,7 +48,7 @@ class Install(Freck):
 
             # check if pkgs key exists
             if not details.get(PKGS_KEY, False):
-                details[PKGS_KEY] = {"default": [details[ITEM_NAME_KEY]]}
+                details[PKGS_KEY] = {"default": [details[FRECK_ITEM_NAME_KEY]]}
 
             if details.get(PKG_MGR_KEY, False):
                 sudo = get_pkg_mgr_sudo(details[PKG_MGR_KEY])
@@ -61,7 +62,7 @@ class Install(Freck):
 
             # check if an 'default' pkgs key exists, if not, use the package name
             if not details.get("pkgs").get("default", False):
-                details["pkgs"]["default"] = [details[ITEM_NAME_KEY]]
+                details["pkgs"]["default"] = [details[FRECK_ITEM_NAME_KEY]]
 
             configs.append(details)
 
@@ -108,6 +109,6 @@ class Install(Freck):
             DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-            ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
         }

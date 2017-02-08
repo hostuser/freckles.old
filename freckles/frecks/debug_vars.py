@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items
-import os
-from freckles.constants import *
-import sys
-import copy
-from voluptuous import Schema, ALLOW_EXTRA, Any
 import logging
+
+from freckles import Freck
+
 log = logging.getLogger("freckles")
 
 class DebugVars(Freck):

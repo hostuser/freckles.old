@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict
 import os
 from freckles.constants import *
 import sys
@@ -38,7 +38,7 @@ class Checkout(Freck):
             temp_config = copy.copy(config)
             temp_config[DOTFILES_REMOTE_KEY] = remote
             temp_config[DOTFILES_BASE_KEY] = base_dir
-            temp_config[ITEM_NAME_KEY] = "{} => {}".format(remote, base_dir)
+            temp_config[FRECK_ITEM_NAME_KEY] = "{} => {}".format(remote, base_dir)
             result.append(temp_config)
 
         return result
@@ -47,7 +47,7 @@ class Checkout(Freck):
 
         return {
             FRECK_SUDO_KEY: False,
-            ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME: FRECKLES_DEFAULT_CHECKOUT_ROLE_URL},
+            FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME: FRECKLES_DEFAULT_CHECKOUT_ROLE_URL},
             DOTFILES_KEY: DEFAULT_DOTFILE_DIR,
-            ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME
         }

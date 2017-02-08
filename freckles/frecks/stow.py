@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from freckles import Freck
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, check_dotfile_items
-import os
-from freckles.constants import *
-import sys
-from voluptuous import Schema, ALLOW_EXTRA, Any, Required
-
 import logging
+
+from voluptuous import Schema, ALLOW_EXTRA, Required
+
+from freckles import Freck
+from freckles.constants import *
+from freckles.utils import parse_dotfiles_item, create_dotfiles_dict
+
 log = logging.getLogger("freckles")
 
 PRECENDENCE_ERROR_STRING = "Possible precedence issue with control flow operator at"
@@ -67,8 +67,8 @@ class Stow(Freck):
         return {
             DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
-            ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
+            FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
-            ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME,
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME,
             FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+100
         }

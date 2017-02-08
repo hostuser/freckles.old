@@ -50,6 +50,33 @@ def dict_merge(dct, merge_dct):
             dct[k] = merge_dct[k]
 
 
+
+def expand_config_url(url):
+
+    if not url.startswith("gh:") and not url.startswith("bb:"):
+        return url
+
+    if  url.startswith("gh:"):
+        tokens = url.split(":")
+        if len(tokens) == 1 or len(tokens) > 4:
+            raise FrecklesConfigError("Can't parse github config url '{}'. Exiting...", 'config', url)
+        if len(tokens) >= 2:
+            host = "https://raw.githubusercontent.com"
+            username = tokens[1]
+            repo = DEFAULT_DOTFILE_REPO_NAME
+            path = FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH
+        if len(tokens) >= 3:
+            repo = tokens[2]
+        if len(tokens) == 4:
+            path = tokens[3]
+        url = "{}/{}/{}/master/{}".format(host, username, repo, path)
+        log.debug("Expanding '{}' as url: {}".format(url, url))
+        return url
+    elif url.startswith("bb:"):
+        # TODO bitbucket
+        raise Exception("Not implemented")
+
+
 def get_config(config_file_url):
     """Retrieves the config (if necessary), and converts it to a dict.
 
@@ -59,6 +86,8 @@ def get_config(config_file_url):
 
     TODO
     """
+
+    config_file_url = expand_config_url(config_file_url)
 
     # check if file first
     if os.path.exists(config_file_url):
@@ -73,25 +102,6 @@ def get_config(config_file_url):
         response = urllib2.urlopen(config_file_url)
         content = response.read()
         return yaml.load(content)
-    elif  config_file_url.startswith("gh:"):
-        tokens = config_file_url.split(":")
-        if len(tokens) == 1 or len(tokens) > 4:
-            raise FrecklesConfigError("Can't parse github config url '{}'. Exiting...", 'config', config_file_url)
-        if len(tokens) >= 2:
-            host = "https://raw.githubusercontent.com"
-            username = tokens[1]
-            repo = FRECKLES_DEFAULT_DOTFILE_REPO_NAME
-            path = FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH
-        if len(tokens) >= 3:
-            repo = tokens[2]
-        if len(tokens) == 4:
-            path = tokens[3]
-        url = "{}/{}/{}/master/{}".format(host, username, repo, path)
-        log.debug("Expanding '{}' as url: {}".format(config_file_url, url))
-        response = urllib2.urlopen(url)
-        content = response.read()
-        return yaml.load(content)
-    # TDOD: bitbucket and other services?
     else:
         # try to convert a json string
         try:
@@ -144,19 +154,16 @@ def create_runs(configs):
             for freck in frecks:
                  if isinstance(freck, dict):
                     if len(freck) != 1:
-                         log.error("Can't read freck configuration in run {}".format(run_name))
-                         sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+                        raise FrecklesConfigError("Can't read freck configuration in run {}, not exactly one key in dict.".fromat(name), "config", freck)
                     freck_type = freck.keys()[0]
                     freck_metadata = freck[freck_type]
                     if not isinstance(freck_metadata, dict):
-                        log.error("Freck configuration for type {} in run {} not a dict, don't know what to do with that...".format(freck_type, name))
-                        sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+                        raise FrecklesConfigError("Freck configuration for type {} in run {} not a dict, don't know what to do with that...".format(freck_type, name), "config", freck_metadata)
 
                     freck_name = freck_metadata.get("name", "freck_{}_{}".format(j, freck_type))
                     freck_inner_vars = freck_metadata.get("vars", {})
                  elif not isinstance(freck, basestring):
-                     log.error("Can't parse config in run {}".format(run_name))
-                     sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+                     raise FrecklesConfigError("Can't parse config in run {}".format(name), "config", freck)
                  else:
                      freck_type = freck
                      freck_inner_vars = {}
@@ -259,18 +266,37 @@ def create_runs(configs):
 #     return result
 
 def parse_dotfiles_item(item):
-    """Parses an item in a config file, and depending on its type returns a complete list of dicts."""
+    """Parses an item in a config file, and depending on its type returns a complete list of dicts.
+
+    More details about dotfiles and the format they can be specified can be found here: XXX
+
+    This method is mostly for convenience, as it allows users to provide either a string, in which case it is assumed it's a local or remote path/url (and, depending on that, either the base_dir or remote value), a fully descriptive dict, or a list of strings and/or dicts.
+    """
 
     if isinstance(item, basestring):
-        dotfiles = [{DOTFILES_BASE_KEY: os.path.expanduser(item), DOTFILES_PATHS_KEY: [], DOTFILES_REMOTE_KEY: ""}]
-        return dotfiles
+
+        # lets see if it is a local, existing path
+        try:
+            temp_path = os.path.expanduser(item)
+            if os.path.exists(temp_path):
+                dotfiles = [{DOTFILES_BASE_KEY: os.path.expanduser(item), DOTFILES_PATHS_KEY: DEFAULT_DOTFILE_PATHS, DOTFILES_REMOTE_KEY: DEFAULT_DOTFILE_REMOTE}]
+                return dotfiles
+        except:
+            pass
+
+        # or maybe its a remote url
+        temp_url = expand_config_url(item)
+        if temp_url.startswith("http"):
+            dotfiles = [{DOTFILES_BASE_KEY: DEFAULT_DOTFILE_DIR, DOTFILES_PATHS_KEY: DEFAULT_DOTFILE_PATHS, DOTFILES_REMOTE_KEY: temp_url}]
+            return dotfiles
+        else:
+            raise FrecklesConfigError("Can't parse dotfiles item: {}".format(item), "dotfiles", item)
     elif isinstance(item, dict):
-        paths = item.get(DOTFILES_PATHS_KEY, [])
-        remote = item.get(DOTFILES_REMOTE_KEY, "")
+        paths = item.get(DOTFILES_PATHS_KEY, DEFAULT_DOTFILE_PATHS)
+        remote = item.get(DOTFILES_REMOTE_KEY, DEFAULT_DOTFILE_REMOTE)
         base = os.path.expanduser(item.get(DOTFILES_BASE_KEY, False))
         if not base:
-            log.error("Config item for plugin 'install' is dict, but no key {}.".format(DOTFILES_BASE_KEY))
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+            raise FrecklesConfigError("Config item for plugin 'install' is dict, but no key {}.".format(DOTFILES_BASE_KEY), "config", item)
 
         dotfiles = [{DOTFILES_BASE_KEY: base, DOTFILES_PATHS_KEY: paths, DOTFILES_REMOTE_KEY: remote}]
         return dotfiles
@@ -282,54 +308,33 @@ def parse_dotfiles_item(item):
         return dotfiles
 
 def can_passwordless_sudo():
+    """Checks if the user can use passwordless sudo on this host."""
 
     p = subprocess.Popen('sudo -n ls', shell=True)
     r = p.wait()
     return r == 0
 
 
-def expand_config_url(config_url, default_repo=FRECKLES_DEFAULT_DOTFILE_REPO_NAME, default_path=FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH):
-
-    if config_url.startswith("gh:"):
-        tokens = config_url.split(":")
-        if len(tokens) == 1 or len(tokens) > 4:
-            log.error("Can't parse github config url '{}'. Exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        if len(tokens) >= 2:
-            host = "https://raw.githubusercontent.com"
-            username = tokens[1]
-            repo = default_repo
-            path = default_path
-        if len(tokens) >= 3:
-            repo = tokens[2]
-        if len(tokens) == 4:
-            path = tokens[3]
-
-        return "{}/{}/{}/master/{}".format(host, username, repo, path)
-
-    elif config_url.startswith("bb:"):
-        return "bitbucket"
-    else:
-        return config_url
-
-def check_dotfile_items(dotfiles):
-
-    result = []
-    for d in dotfiles:
-        paths = d[DOTFILES_PATHS_KEY]
-        if not paths:
-            paths = [""]
-        base = d[DOTFILES_BASE_KEY]
-        remote = d[DOTFILES_REMOTE_KEY]
-
-        for p in paths:
-            full_path = os.path.join(base, p)
-            if os.path.isdir(full_path):
-                result.append(full_path)
-
-    return result
+# def check_dotfile_items(dotfiles):
+#
+#     result = []
+#     for d in dotfiles:
+#         paths = d[DOTFILES_PATHS_KEY]
+#         if not paths:
+#             paths = [""]
+#         base = d[DOTFILES_BASE_KEY]
+#         remote = d[DOTFILES_REMOTE_KEY]
+#
+#         for p in paths:
+#             full_path = os.path.join(base, p)
+#             if os.path.isdir(full_path):
+#                 result.append(full_path)
+#
+#     return result
 
 def get_pkg_mgr_sudo(mgr):
+    """Simple function to determine whether a given package manager needs sudo rights or not.
+    """
     if mgr == 'no_install':
         return False
     elif mgr == 'nix':
@@ -340,6 +345,7 @@ def get_pkg_mgr_sudo(mgr):
         return True
 
 def get_pkg_mgr_from_marker_file(p):
+    """Checks whether there exists a package manager marker file in a dotfile directory, if it does, the name of the package manager is returned."""
 
     if path.exists(path.join(p, NO_INSTALL_MARKER_FILE)):
         return 'no_install'
@@ -355,6 +361,7 @@ def get_pkg_mgr_from_marker_file(p):
         return False
 
 def get_pkg_mgr_from_path(p):
+    """Checks whether the dotfiles directories' path has a 'marker'-component to it. If it does, the package manager to use is returned."""
 
     if NIX_MATCH in p:
         return 'nix'
@@ -370,6 +377,14 @@ def get_pkg_mgr_from_path(p):
         return False
 
 def load_extensions():
+    """Loads all the extensions that can be found."""
+
+    log2 = logging.getLogger("stevedore")
+    out_hdlr = logging.StreamHandler(sys.stdout)
+    out_hdlr.setFormatter(logging.Formatter('PLUGIN ERROR -> %(message)s'))
+    out_hdlr.setLevel(logging.DEBUG)
+    log2.addHandler(out_hdlr)
+    log2.setLevel(logging.INFO)
 
     log.debug("Loading extensions...")
     mgr = extension.ExtensionManager(
@@ -388,7 +403,7 @@ def playbook_needs_sudo(playbook_items):
 
 
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
-
+    """Assembles the dictionary to create the playbook from."""
     temp_root = {}
     temp_root["hosts"] = host_group
     temp_root["gather_facts"] = True
@@ -398,16 +413,26 @@ def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME)
     return temp_root
 
 def extract_roles(playbook_items):
+    """Extracts all roles that will be used in a run.
+
+    The result is used to download the roles automatically before the run starts.
+    """
 
     roles = {}
     for item in playbook_items.values():
-        item_roles = item.get(ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
         roles.update(item_roles)
 
     return roles
 
 
 def create_dotfiles_dict(base_dirs, default_details):
+    """Walks through all the provided dotfiles, and creates a dictionary with values according to what it finds, per folder.
+
+    Args:
+       base_dirs (list): a list of dotfile dictionaries (see: XXX)
+       default_details (list): details to use for each entry as default (which can be overwritten), this would differ for every Freck that calls this method
+    """
 
     apps = {}
 
@@ -432,7 +457,7 @@ def create_dotfiles_dict(base_dirs, default_details):
                     # defaults
                     dotfile_dir = path.join(temp_full_path, item)
                     apps[item] = copy.deepcopy(default_details)
-                    apps[item][ITEM_NAME_KEY] = item
+                    apps[item][FRECK_ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
                     apps[item][DOTFILES_BASE_KEY] = temp_full_path
                     if remote:

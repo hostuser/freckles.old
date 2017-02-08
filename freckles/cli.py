@@ -135,7 +135,7 @@ def create_config(config_file_urls):
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
 def print_config(freckles_config, config):
-    """Calculates the overlayed config for each single Freck, and prints it in yaml format.
+    """Flattens overlayed configs and prints result.
 
     This is useful mostly for debugging purposes, when creating the configuration.
 
@@ -165,7 +165,7 @@ def print_config(freckles_config, config):
 
 
 def start_runs(config):
-    """Helper method to kick of all runs."""
+    """Helper method to kick off all runs."""
 
     for run in config.runs:
         run_nr = run["nr"]
