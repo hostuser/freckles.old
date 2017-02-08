@@ -1,0 +1,6 @@
+vars:
+  key1: value1
+runs:
+  - name: run1
+    frecks:
+      - debug
