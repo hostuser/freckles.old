@@ -14,7 +14,7 @@ from freckles_runner import FrecklesRunner
 from constants import *
 import sys
 import logging
-from utils import expand_repo_url, expand_config_url, expand_bootstrap_config_url, create_runs
+from utils import create_runs
 from copy import copy
 from exceptions import FrecklesRunError
 

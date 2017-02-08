@@ -13,6 +13,9 @@ DEFAULT_DOTFILE_DIR = os.path.expanduser("~/dotfiles")
 FRECKLES_DEFAULT_CONFIG_FILE_NAME = "config.yml"
 FRECKLES_METADATA_FILENAME = ".frkl"
 
+# freckles defaults/conventions
+FRECKLES_DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
+FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH = "freckles/.freckles/default.yml"
 
 # ERROR CODES
 FRECKLES_CONFIG_ERROR_EXIT_CODE = 2
@@ -34,8 +37,7 @@ FRECK_ID_KEY = "freck_id"
 
 
 
-FRECKLES_DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
-FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH = "freckles/.freckles/default.yml"
+
 FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH = "freckles/.freckles/bootstrap.yml"
 
 

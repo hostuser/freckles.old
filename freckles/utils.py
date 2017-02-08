@@ -5,10 +5,14 @@ from stevedore import extension
 import sys
 import pprint
 import yaml
+import json
 import copy
 import subprocess
 from constants import *
 import collections
+import os
+import urllib2
+from exceptions import FrecklesConfigError
 
 import logging
 log = logging.getLogger("freckles")
@@ -56,15 +60,59 @@ def get_config(config_file_url):
     TODO
     """
 
-    with open(config_file_url) as f:
-        config_yaml = yaml.load(f)
-    return config_yaml
+    # check if file first
+    if os.path.exists(config_file_url):
+        log.debug("Opening as file: {}".format(config_file_url))
+        with open(config_file_url) as f:
+            config_yaml = yaml.load(f)
+        return config_yaml
+    # check if url
+    elif config_file_url.startswith("http"):
+        # TODO: exception handling
+        log.debug("Opening as url: {}".format(config_file_url))
+        response = urllib2.urlopen(config_file_url)
+        content = response.read()
+        return yaml.load(content)
+    elif  config_file_url.startswith("gh:"):
+        tokens = config_file_url.split(":")
+        if len(tokens) == 1 or len(tokens) > 4:
+            raise FrecklesConfigError("Can't parse github config url '{}'. Exiting...", 'config', config_file_url)
+        if len(tokens) >= 2:
+            host = "https://raw.githubusercontent.com"
+            username = tokens[1]
+            repo = FRECKLES_DEFAULT_DOTFILE_REPO_NAME
+            path = FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH
+        if len(tokens) >= 3:
+            repo = tokens[2]
+        if len(tokens) == 4:
+            path = tokens[3]
+        url = "{}/{}/{}/master/{}".format(host, username, repo, path)
+        log.debug("Expanding '{}' as url: {}".format(config_file_url, url))
+        response = urllib2.urlopen(url)
+        content = response.read()
+        return yaml.load(content)
+    # TDOD: bitbucket and other services?
+    else:
+        # try to convert a json string
+        try:
+            config = json.loads(config_file_url)
+            return config
+        except:
+            raise FrecklesConfigError("Can't parse json string: {}", 'config', config_file_url)
 
-def create_runs(configs, seed_vars={}):
+
+def create_runs(configs):
+    """Creates all runs using the list of provided configs.
+
+    Configs will be overlayed (as described in XXX).
+
+    Args:
+        configs (list): a list of configs (paths, urls, etc.)
+    """
 
     result_runs = []
 
-    current_default_vars = copy.deepcopy(seed_vars)
+    current_default_vars = {}  # copy.deepcopy(seed_vars)
 
     for config in configs:
 
@@ -124,91 +172,91 @@ def create_runs(configs, seed_vars={}):
     return result_runs
 
 
-def guess_local_default_config(base_dir=None, paths=None, remote=None):
+# def guess_local_default_config(base_dir=None, paths=None, remote=None):
 
-    result = {}
-    result["default_vars"] = {}
-    result["default_vars"][DOTFILES_KEY] = {}
+#     result = {}
+#     result["default_vars"] = {}
+#     result["default_vars"][DOTFILES_KEY] = {}
 
-    if not base_dir:
-        if os.path.isdir(DEFAULT_DOTFILE_DIR):
-            result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = DEFAULT_DOTFILE_DIR
-    else:
-        if os.path.isdir(base_dir):
-            result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = base_dir
-        else:
-            log.error("Directory '{}' does not exist. Exiting...".format(base_dir))
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#     if not base_dir:
+#         if os.path.isdir(DEFAULT_DOTFILE_DIR):
+#             result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = DEFAULT_DOTFILE_DIR
+#     else:
+#         if os.path.isdir(base_dir):
+#             result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY] = base_dir
+#         else:
+#             log.error("Directory '{}' does not exist. Exiting...".format(base_dir))
+#             sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
 
-    if not result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
-        return False
+#     if not result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
+#         return False
 
-    if paths:
-        if not result["default_vars"][DOTFILES_KEY].get(DEFAULT_DOTFILE_DIR, False):
-            log.error("Paths specified, but not base dir. Can't continue, exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        for p in paths:
-            path = os.path.join(result["default_vars"][DOTFILES_KEY][DEFAULT_DOTFILE_DIR], p)
-            if not os.path.isdir(path):
-                log.error("Combined dotfile path '{} does not exist, exiting...".format(path))
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#     if paths:
+#         if not result["default_vars"][DOTFILES_KEY].get(DEFAULT_DOTFILE_DIR, False):
+#             log.error("Paths specified, but not base dir. Can't continue, exiting...")
+#             sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#         for p in paths:
+#             path = os.path.join(result["default_vars"][DOTFILES_KEY][DEFAULT_DOTFILE_DIR], p)
+#             if not os.path.isdir(path):
+#                 log.error("Combined dotfile path '{} does not exist, exiting...".format(path))
+#                 sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
 
 
-    # check if base_dir is git repo
-    remotes = []
-    if result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
-        git_config_file = os.path.join(result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY], ".git", "config")
-        if os.path.isfile(git_config_file):
-            with open(git_config_file) as f:
-                content = f.readlines()
-            in_remote = False
-            for line in content:
-                if not in_remote:
-                    if "[remote " in line:
-                        in_remote = True
-                    continue
-                else:
-                    if "url = " in line:
-                        remote = line.strip().split()[-1]
-                        remotes.append(remote)
-                        in_remote = False
-                        continue
+#     # check if base_dir is git repo
+#     remotes = []
+#     if result["default_vars"][DOTFILES_KEY].get(DOTFILES_BASE_KEY, False):
+#         git_config_file = os.path.join(result["default_vars"][DOTFILES_KEY][DOTFILES_BASE_KEY], ".git", "config")
+#         if os.path.isfile(git_config_file):
+#             with open(git_config_file) as f:
+#                 content = f.readlines()
+#             in_remote = False
+#             for line in content:
+#                 if not in_remote:
+#                     if "[remote " in line:
+#                         in_remote = True
+#                     continue
+#                 else:
+#                     if "url = " in line:
+#                         remote = line.strip().split()[-1]
+#                         remotes.append(remote)
+#                         in_remote = False
+#                         continue
 
-    # TODO: this all is a bit crude, should just use git exe to figure out remotes
-    if not remote:
-        if len(remotes) == 1:
-            result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remotes[0]
-        elif len(remotes) > 1:
-            log.error("Can't guess git remote, more than one configured. Exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-    else:
-        if len(remotes) == 1:
-            if remotes[0] == remote:
-                result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
-            else:
-                log.error("Provided git remote '{}' differs from local one '{}'. Exiting...".format(remote, remotes[0]))
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        elif len(remotes) == 0:
-            log.error("git remote provided, but local repo is not configured to use it. Exiting...")
-            sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
-        else:
-            if remote in remotes:
-                result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
-            else:
-                log.error("Provided remote repo url does not match with locally available ones. Exiting...")
-                sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#     # TODO: this all is a bit crude, should just use git exe to figure out remotes
+#     if not remote:
+#         if len(remotes) == 1:
+#             result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remotes[0]
+#         elif len(remotes) > 1:
+#             log.error("Can't guess git remote, more than one configured. Exiting...")
+#             sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#     else:
+#         if len(remotes) == 1:
+#             if remotes[0] == remote:
+#                 result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
+#             else:
+#                 log.error("Provided git remote '{}' differs from local one '{}'. Exiting...".format(remote, remotes[0]))
+#                 sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#         elif len(remotes) == 0:
+#             log.error("git remote provided, but local repo is not configured to use it. Exiting...")
+#             sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
+#         else:
+#             if remote in remotes:
+#                 result["default_vars"][DOTFILES_KEY][DOTFILES_REMOTE_KEY] = remote
+#             else:
+#                 log.error("Provided remote repo url does not match with locally available ones. Exiting...")
+#                 sys.exit(FRECKLES_CONFIG_ERROR_EXIT_CODE)
 
-    if result["default_vars"][DOTFILES_KEY].get(DOTFILES_REMOTE_KEY, False):
-        result["runs"] = [
-            {"frecks": {"checkout": {}}},
-            {"frecks": {"install": {}, "stow": {}}}
-        ]
-    else:
-        result["runs"] = [
-            {"frecks": {"install": {}, "stow": {}}}
-        ]
+#     if result["default_vars"][DOTFILES_KEY].get(DOTFILES_REMOTE_KEY, False):
+#         result["runs"] = [
+#             {"frecks": {"checkout": {}}},
+#             {"frecks": {"install": {}, "stow": {}}}
+#         ]
+#     else:
+#         result["runs"] = [
+#             {"frecks": {"install": {}, "stow": {}}}
+#         ]
 
-    return result
+#     return result
 
 def parse_dotfiles_item(item):
     """Parses an item in a config file, and depending on its type returns a complete list of dicts."""
@@ -233,24 +281,12 @@ def parse_dotfiles_item(item):
             dotfiles.extend(temp_dotfiles)
         return dotfiles
 
-def expand_repo_url(repo_url):
-
-    if repo_url.startswith("gh:"):
-        return "github"
-    elif repo_url.startswith("bb:"):
-        return "bitbucket"
-    else:
-        return repo_url
-
 def can_passwordless_sudo():
 
     p = subprocess.Popen('sudo -n ls', shell=True)
     r = p.wait()
     return r == 0
 
-def expand_bootstrap_config_url(config_url):
-
-    return expand_config_url(config_url, default_repo=FRECKLES_DEFAULT_DOTFILE_REPO_NAME, default_path=FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH)
 
 def expand_config_url(config_url, default_repo=FRECKLES_DEFAULT_DOTFILE_REPO_NAME, default_path=FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH):
 

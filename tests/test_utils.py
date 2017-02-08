@@ -29,6 +29,7 @@ SINGLE_RUN_WITH_ONE_VAR_DICT = {
     ]
     }
 
+SINGLE_RUN_WITH_ONE_VAR_DICT_JSON = '{"vars": {"key1": "value1"}, "runs": [{"name": "run1", "frecks": ["debug"]}]}'
 
 def get_yaml_file_content(rel_path):
 
@@ -38,7 +39,9 @@ def get_yaml_file_content(rel_path):
 
 @pytest.mark.parametrize("url, expected", [
     ("tests/resources/single_run_with_one_var.yml", SINGLE_RUN_WITH_ONE_VAR_DICT),
-    ("")
+    ("https://raw.githubusercontent.com/makkus/freckles/master/tests/resources/single_run_with_one_var.yml", SINGLE_RUN_WITH_ONE_VAR_DICT),
+    ("gh:makkus:freckles:tests/resources/single_run_with_one_var.yml", SINGLE_RUN_WITH_ONE_VAR_DICT),
+    (SINGLE_RUN_WITH_ONE_VAR_DICT_JSON, SINGLE_RUN_WITH_ONE_VAR_DICT)
 ])
 def test_get_config(url, expected):
 
