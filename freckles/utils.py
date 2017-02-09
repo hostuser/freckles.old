@@ -379,12 +379,12 @@ def get_pkg_mgr_from_path(p):
 def load_extensions():
     """Loads all the extensions that can be found."""
 
-    log2 = logging.getLogger("stevedore")
-    out_hdlr = logging.StreamHandler(sys.stdout)
-    out_hdlr.setFormatter(logging.Formatter('PLUGIN ERROR -> %(message)s'))
-    out_hdlr.setLevel(logging.DEBUG)
-    log2.addHandler(out_hdlr)
-    log2.setLevel(logging.INFO)
+    # log2 = logging.getLogger("stevedore")
+    # out_hdlr = logging.StreamHandler(sys.stdout)
+    # out_hdlr.setFormatter(logging.Formatter('PLUGIN ERROR -> %(message)s'))
+    # out_hdlr.setLevel(logging.DEBUG)
+    # log2.addHandler(out_hdlr)
+    # log2.setLevel(logging.INFO)
 
     log.debug("Loading extensions...")
     mgr = extension.ExtensionManager(
@@ -412,15 +412,15 @@ def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME)
 
     return temp_root
 
-def extract_roles(playbook_items):
-    """Extracts all roles that will be used in a run.
+def extract_ansible_roles(playbook_items):
+    """Extracts all ansible roles that will be used in a run.
 
     The result is used to download the roles automatically before the run starts.
     """
 
     roles = {}
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
         roles.update(item_roles)
 
     return roles

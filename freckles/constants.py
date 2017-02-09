@@ -33,6 +33,8 @@ FRECK_ID_KEY = "freck_id"
 FRECK_ITEM_NAME_KEY = "item_name"
 
 FRECK_SUDO_KEY = "freck_sudo"
+FRECK_RUNNER_KEY = "runner"
+FRECK_ANSIBLE_RUNNER = "ansible"
 FRECK_ANSIBLE_ROLES_KEY = "freck-roles"
 FRECK_ANSIBLE_ROLE_KEY = "role"
 FRECK_PRIORITY_KEY = "freck_priority"

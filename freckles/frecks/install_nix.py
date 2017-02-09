@@ -23,8 +23,11 @@ class InstallNix(Freck):
         return {
             FRECK_PRIORITY_KEY:100,
             FRECK_SUDO_KEY: True,
-            FRECK_ANSIBLE_ROLES_KEY:
-            { FRECKLES_DEFAULT_INSTALL_NIX_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_NIX_ROLE_URL },
-            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_NIX_ROLE_NAME
-
+            FRECK_RUNNER_KEY: {
+                FRECK_ANSIBLE_RUNNER: {
+                    FRECK_ANSIBLE_ROLES_KEY: {
+                        FRECKLES_DEFAULT_INSTALL_NIX_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_NIX_ROLE_URL},
+                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_NIX_ROLE_NAME
+                }
+            }
         }

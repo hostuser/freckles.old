@@ -11,9 +11,10 @@ from tempfile import NamedTemporaryFile
 from cookiecutter.main import cookiecutter
 from constants import *
 import subprocess
-from utils import playbook_needs_sudo, create_playbook_dict, extract_roles, can_passwordless_sudo
+from utils import playbook_needs_sudo, create_playbook_dict, extract_ansible_roles, can_passwordless_sudo
 import logging
 import click
+from exceptions import FrecklesConfigError
 log = logging.getLogger("freckles")
 DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL = "https://github.com/makkus/cookiecutter-freckles-play.git"
 
@@ -21,6 +22,8 @@ FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
 FRECKLES_LOG_TOKEN = "FRECKLES: "
 
 class FrecklesRunner(object):
+    """ Runner that takes a freckles object, creates an ansible playbook and associated environment, then executes it.
+    """
 
     def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False, hosts=None):
 
@@ -70,6 +73,17 @@ class FrecklesRunner(object):
         self.callback_plugins_folder = os.path.join(runner_folder, "ansible", "callback_plugins")
         log.debug("Creating playbook items...")
         self.playbook_items = self.freckles.create_playbook_items(self.current_run)
+
+        # check that every item has a role specified
+        for item in self.playbook_items.values():
+            if not item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLE_KEY, False):
+                roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+                if len(roles) != 1:
+                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]), FRECK_ANSIBLE_ROLE_KEY, roles)
+                item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys()[0]
+            else:
+                item[FRECK_ANSIBLE_ROLE_KEY] = item[FRECK_RUNNER_KEY][FRECK_ANSIBLE_RUNNER][FRECK_ANSIBLE_ROLE_KEY]
+
         if not self.playbook_items:
             log.debug("No playbook items created, doing nothing in this run...")
             return
@@ -82,13 +96,12 @@ class FrecklesRunner(object):
         else:
             self.freckles_ask_sudo = ""
 
-        self.roles = extract_roles(self.playbook_items)
+        self.roles = extract_ansible_roles(self.playbook_items)
         log.debug("Roles in use: {}".format(self.roles))
         if not os.path.exists(os.path.join(self.execution_dir)):
             cookiecutter_details = {
                 "execution_dir": self.execution_dir_name,
                 "freckles_group_name": self.freckles_group_name,
-                "freckles_role_name": "ansible-freckles",
                 "freckles_playbook_dir": self.playbook_dir,
                 "freckles_playbook": self.playbook_file,
                 "freckles_ask_sudo": self.freckles_ask_sudo,

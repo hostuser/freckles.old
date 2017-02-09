@@ -250,17 +250,11 @@ class Freckles(object):
 
         sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY))
 
-        # add ids to every item, and ansible role
+        # add ids to every item
         id = 1
         result_items = OrderedDict()
         for item in sorted_playbook_items:
-            if not item.get(FRECK_ANSIBLE_ROLE_KEY, False):
-                roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
-                if len(roles) != 1:
-                    log.error("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]))
-                    sys.exit(FRECKLES_BUG_EXIT_CODE)
-                item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys().next()
-            item['freckles_id'] = str(id)
+            item[FRECK_ID_KEY] = str(id)
             result_items[id] = item
             id = id+1
 

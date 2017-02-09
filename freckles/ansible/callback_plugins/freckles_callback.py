@@ -25,6 +25,7 @@ class CallbackModule(CallbackBase):
         self.task = None
         self.play = None
 
+
     def get_task_detail(self, detail_key):
 
         temp = self.task.serialize()
@@ -37,8 +38,8 @@ class CallbackModule(CallbackBase):
 
         output = {}
         output["state"] = category
-        output["freckles_id"] = self.get_task_detail("role._role_params.freckles_id")
-        if not output.get("freckles_id", False):
+        output["freck_id"] = self.get_task_detail("role._role_params.freck_id")
+        if not output.get("freck_id", False):
             return
 
         output["action"] = self.task.serialize().get("action", "n/a")
