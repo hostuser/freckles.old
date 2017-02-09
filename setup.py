@@ -15,9 +15,9 @@ requirements = [
     'ansible>=2.2.0',
     'cookiecutter>=1.5.0',
     'stevedore>=1.18.0',
-    'py',
-    'click-log',
-    'voluptuous'
+    'py>=1.4.32',
+    'click-log>=0.1.8',
+    'voluptuous>=0.9.3'
 ]
 
 test_requirements = [
@@ -26,7 +26,7 @@ test_requirements = [
 
 setup(
     name='freckles',
-    version='0.1.4',
+    version='0.1.5',
     description="A dotfile manager",
     long_description=readme + '\n\n' + history,
     author="Markus Binsteiner",
