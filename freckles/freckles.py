@@ -246,7 +246,7 @@ class Freckles(object):
             playbook_items.extend(freck_config_items)
 
         if not playbook_items:
-            return []
+            return {}
 
         sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY))
 

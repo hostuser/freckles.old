@@ -426,6 +426,9 @@ def extract_ansible_roles(playbook_items):
     return roles
 
 
+    for app, details in app_dict.iteritems():
+        pass
+
 def create_dotfiles_dict(base_dirs, default_details):
     """Walks through all the provided dotfiles, and creates a dictionary with values according to what it finds, per folder.
 
@@ -451,6 +454,10 @@ def create_dotfiles_dict(base_dirs, default_details):
         for dotfile_path in paths:
 
             temp_full_path = path.join(base, dotfile_path)
+
+            if not os.path.isdir(temp_full_path):
+                log.debug("Not a directory, ignoring: {}".format(temp_full_path))
+                continue
 
             for item in listdir(temp_full_path):
                 if not item.startswith(".") and path.isdir(path.join(temp_full_path, item)):

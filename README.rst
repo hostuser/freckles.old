@@ -17,30 +17,47 @@ Freckles
      :target: https://pyup.io/repos/github/makkus/freckles/
      :alt: Updates
 
-
 A dotfile manager
 
+Quickstart
+----------
 
-* Free software: GNU General Public License v3
-* Documentation: https://freckles.readthedocs.io.
+Freckles needs 2 things:
 
+ - *a dotfile repository* -> to have something to work on
+ - *curl* -> for bootstrapping (well, technically it also needs *bash*)
+
+At the moment (and it'd be super-cool if that changed sometime in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash:
+
+.. code-block:: console
+
+   $ curl -L https://get.frkl.io | bash gh:makkus:example-dotfiles
+
+
+
+Documentation: https://freckles.readthedocs.io.
 
 Features
 --------
 
-* different options for bootstrapping
-* re-use your existing dotfile repository
+* bootstrap & first run wrapped in one command
 * simple, opinionated default configuration, but extensible if necessary
-* optional support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_
+* optional support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_ or `conda <https://conda.io/docs>`_.
+
+
+Freckles is free software under the GNU General Public License v3
+
+
+
+
 
 Credits
 ---------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+This package was created using, amongst others:
+
+- _Cookiecutter
+- _ansible-nix
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
-Also used, in some way or other:
-
 .. _ansible-nix: from: https://github.com/AdamFrey/nix-ansible

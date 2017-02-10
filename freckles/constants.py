@@ -39,10 +39,9 @@ FRECK_ANSIBLE_ROLES_KEY = "freck-roles"
 FRECK_ANSIBLE_ROLE_KEY = "role"
 FRECK_PRIORITY_KEY = "freck_priority"
 
-
 # configuration keys & defaults
 
-## dotfiles defaults
+## dotfiles keys & defaults
 DOTFILES_BASE_KEY = "base_dir"
 DOTFILES_PATHS_KEY = "paths"
 DOTFILES_REMOTE_KEY = "remote"
@@ -51,6 +50,9 @@ DEFAULT_DOTFILE_DIR = os.path.expanduser("~/dotfiles")
 DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
 DEFAULT_DOTFILE_PATHS = []
 DEFAULT_DOTFILE_REMOTE = ""
+
+## misc keys & defaults
+APPS_KEY = "apps"
 
 ## freck run defaults
 FRECK_DEFAULT_PRIORITY = 10000

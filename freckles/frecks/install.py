@@ -5,8 +5,8 @@ from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 from freckles import Freck
 from freckles.constants import *
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, \
-    get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge
+import copy
 
 log = logging.getLogger("freckles")
 
@@ -26,25 +26,39 @@ class Install(Freck):
 
     def pre_process_config(self, config):
 
+        # check whether there are non-dotfile apps to isntall
+        apps = {}
+        # if config.get(APPS_KEY, False):
+        #     temp_apps_manual = config.get(APPS_KEY)
+        #     # make sure we fill with default values
+        #     for app in temp_apps_manual:
+        #         temp = copy.deepcopy(self.default_freck_config())
+        #         # temp[FRECK_ITEM_NAME_KEY] = app
+        #         dict_merge(temp, temp_apps_manual)
+        #         apps[app] = temp
+        #         print(temp)
+
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
         # existing_dotfiles = check_dotfile_items(dotfiles)
         # if not existing_dotfiles:
             # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
             # return False
-        apps = create_dotfiles_dict(dotfiles, default_details=config)
-
+        apps_dotfiles = create_dotfiles_dict(dotfiles, default_details=config)
+        dict_merge(apps, apps_dotfiles)
         configs = []
 
         for app, details in apps.iteritems():
             # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
             if not details.get(PKG_MGR_KEY, False):
-                pkg_mgr = get_pkg_mgr_from_path(details[DOTFILES_DIR_KEY])
-                if pkg_mgr:
-                    details[PKG_MGR_KEY] = pkg_mgr
-                 # if the folder contains a file called .nix.frkl or .no_install.frkl or .conda.frkl than that can determine the pkg mgr too, and it'd override the path
-                pkg_mgr = get_pkg_mgr_from_marker_file(details[DOTFILES_DIR_KEY])
-                if pkg_mgr:
-                     details[PKG_MGR_KEY] = pkg_mgr
+                dotfiles_dir = details.get(DOTFILES_DIR_KEY, False)
+                if dotfiles_dir:
+                    pkg_mgr = get_pkg_mgr_from_path(dotfiles_dir)
+                    if pkg_mgr:
+                        details[PKG_MGR_KEY] = pkg_mgr
+                    # if the folder contains a file called .nix.frkl or .no_install.frkl or .conda.frkl than that can determine the pkg mgr too, and it'd override the path
+                    pkg_mgr = get_pkg_mgr_from_marker_file(details.get(DOTFILES_DIR_KEY, False))
+                    if pkg_mgr:
+                        details[PKG_MGR_KEY] = pkg_mgr
 
             # check if pkgs key exists
             if not details.get(PKGS_KEY, False):
