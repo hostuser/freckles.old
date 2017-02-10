@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
-
+import sys
 from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 from freckles import Freck
 from freckles.constants import *
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge
+from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
 import copy
 
 log = logging.getLogger("freckles")
@@ -27,16 +27,10 @@ class Install(Freck):
     def pre_process_config(self, config):
 
         # check whether there are non-dotfile apps to isntall
-        apps = {}
-        # if config.get(APPS_KEY, False):
-        #     temp_apps_manual = config.get(APPS_KEY)
-        #     # make sure we fill with default values
-        #     for app in temp_apps_manual:
-        #         temp = copy.deepcopy(self.default_freck_config())
-        #         # temp[FRECK_ITEM_NAME_KEY] = app
-        #         dict_merge(temp, temp_apps_manual)
-        #         apps[app] = temp
-        #         print(temp)
+        if config.get(APPS_KEY, False):
+            apps = create_apps_dict(config[APPS_KEY], default_details=config)
+        else:
+            apps = {}
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
         # existing_dotfiles = check_dotfile_items(dotfiles)

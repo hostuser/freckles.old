@@ -426,8 +426,39 @@ def extract_ansible_roles(playbook_items):
     return roles
 
 
-    for app, details in app_dict.iteritems():
-        pass
+def create_apps_dict(apps, default_details):
+    """Creates a dictionary that can be used by the install/stow Frecks, and potentially others.
+
+    This doesn't really do much, it just checks whether the provided list element is a string or dict. If it's a string, it will use that as the item name, otherwise it expects a dict with one element with the app name as key, and the config vars as value.
+
+    Args:
+        apps (list): a list of strings or dicts or both
+        default_details (dict): the details to seed each app item with
+
+    Results:
+        dict: a dict with the app names as keys, and the app details as values
+    """
+
+    result = {}
+    for app in apps:
+        details = copy.deepcopy(default_details)
+        if isinstance(app, dict):
+            if len(app) != 1:
+                raise FrecklesConfigError("More than one key provided in app configuration, needs to be either dict of lengths one, or string: {}".format(app), "apps", app)
+            app_name = app.keys()[0]
+            dict_merge(details, app.values()[0])
+            details[FRECK_ITEM_NAME_KEY] = app_name
+
+        elif isinstance(app, str):
+            details[FRECK_ITEM_NAME_KEY] = app
+
+        else:
+            raise FrecklesConfigError("Can't parse apps configuration: {}".format(app), "apps", app)
+
+        result[details[FRECK_ITEM_NAME_KEY]] = details
+
+    return result
+
 
 def create_dotfiles_dict(base_dirs, default_details):
     """Walks through all the provided dotfiles, and creates a dictionary with values according to what it finds, per folder.

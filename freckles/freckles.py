@@ -233,7 +233,6 @@ class Freckles(object):
                         temp = [temp]
                     freck_config_items.extend(temp)
 
-
             i = 1
             # add item_name, if not provided by freck
             for item in freck_config_items:
@@ -242,6 +241,8 @@ class Freckles(object):
                 if not item.get(FRECK_ITEM_NAME_KEY, False):
                     item[FRECK_ITEM_NAME_KEY] = "{}_{}".format(freck_type, i)
                 i = i+1
+                if not item.get(FRECK_PRIORITY_KEY, False):
+                    item[FRECK_PRIORITY_KEY] = FRECK_DEFAULT_PRIORITY
 
             playbook_items.extend(freck_config_items)
 
