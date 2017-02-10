@@ -178,7 +178,7 @@ def start_runs(config):
             success = runner.run()
             log.info("Run #{} finished.".format(run_nr))
             if not success:
-                raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr))
+                raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr), run)
 
         run_nr = run_nr + 1
 

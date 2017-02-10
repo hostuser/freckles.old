@@ -11,6 +11,7 @@ import copy
 log = logging.getLogger("freckles")
 
 SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
+INSTALL_IGNORE_KEY = "ignore"
 
 class Install(Freck):
 
@@ -32,6 +33,7 @@ class Install(Freck):
         else:
             apps = {}
 
+        ignore_list = config.get(INSTALL_IGNORE_KEY, [])
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
         # existing_dotfiles = check_dotfile_items(dotfiles)
         # if not existing_dotfiles:
@@ -42,6 +44,9 @@ class Install(Freck):
         configs = []
 
         for app, details in apps.iteritems():
+            if app in ignore_list:
+                continue
+
             # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
             if not details.get(PKG_MGR_KEY, False):
                 dotfiles_dir = details.get(DOTFILES_DIR_KEY, False)
