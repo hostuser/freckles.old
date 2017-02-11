@@ -41,6 +41,8 @@ setup(
         ],
         'freckles.frecks': [
             'install=freckles.frecks:Install',
+            'update=freckles.frecks:Update',
+            'upgrade=freckles.frecks:Upgrade',
             'checkout=freckles.frecks:Checkout',
             'stow=freckles.frecks:Stow',
             'install-nix=freckles.frecks:InstallNix',

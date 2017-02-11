@@ -5,6 +5,7 @@ import inspect
 import os
 import json
 import yaml
+import copy
 import shutil
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
@@ -74,7 +75,7 @@ class FrecklesRunner(object):
         log.debug("Creating playbook items...")
         self.playbook_items = self.freckles.create_playbook_items(self.current_run)
 
-        # check that every item has a role specified
+        # check that every item has a role specified. Also apply tags if necessary
         for item in self.playbook_items.values():
             if not item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLE_KEY, False):
                 roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
@@ -83,6 +84,7 @@ class FrecklesRunner(object):
                 item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys()[0]
             else:
                 item[FRECK_ANSIBLE_ROLE_KEY] = item[FRECK_RUNNER_KEY][FRECK_ANSIBLE_RUNNER][FRECK_ANSIBLE_ROLE_KEY]
+
 
         if not self.playbook_items:
             log.debug("No playbook items created, doing nothing in this run...")

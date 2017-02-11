@@ -74,6 +74,11 @@ FRECKLES_STATE_NO_CHANGE = "no change"
 FRECKLES_STATE_CHANGED = "changed"
 
 
+# to sort
+PKG_MGR_KEY = "pkg_mgr"
+PACKAGE_STATE_KEY = "pkg_state"
+DEFAULT_PACKAGE_STATE = "present"
+DEFAULT_PACKAGE_SUDO = True
 
 
 
@@ -112,14 +117,11 @@ DEFAULT_STOW_TARGET_BASE_DIR = os.path.expanduser("~/")
 STOW_TARGET_BASE_DIR_KEY = "stow_target_dir"
 
 #DEFAULT_DOTFILES = [DEFAULT_DOTFILE_DIR]
-DEFAULT_PACKAGE_STATE = "present"
-DEFAULT_PACKAGE_SUDO = True
 
 PKGS_KEY = "pkgs"
-PKG_MGR_KEY = "pkg_mgr"
+
 DEFAULT_PACKAGE_STATE_KEY = "default_pkg_state"
 DEFAULT_PACKAGE_SUDO_KEY = "default_pkg_sudo"
-PACKAGE_STATE_KEY = "pkg_state"
 
 
 

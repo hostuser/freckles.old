@@ -2,6 +2,8 @@
 import copy
 import logging
 
+import os
+
 from freckles import Freck
 from freckles.constants import *
 
@@ -17,7 +19,9 @@ class Delete(Freck):
         result = []
         for f in config["files"]:
             temp_config = copy.copy(config)
-            if os.path.isabs(f):
+            if f.startswith("~"):
+                temp_config[FRECK_ITEM_NAME_KEY] = os.path.expanduser(f)
+            elif os.path.isabs(f):
                 temp_config[FRECK_ITEM_NAME_KEY] = f
             else:
                 temp_config[FRECK_ITEM_NAME_KEY] = os.path.join(os.path.expanduser("~"), f)

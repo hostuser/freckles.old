@@ -11,7 +11,8 @@ import copy
 log = logging.getLogger("freckles")
 
 SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
-INSTALL_IGNORE_KEY = "ignore"
+INSTALL_IGNORE_KEY = "no_install"
+ACTION_KEY = "install_action"
 
 class Install(Freck):
 
@@ -122,6 +123,71 @@ class Install(Freck):
             DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+            ACTION_KEY: "install",
+            FRECK_RUNNER_KEY: {
+                FRECK_ANSIBLE_RUNNER: {
+                    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+                }
+            }
+        }
+
+
+class Update(Freck):
+
+    def pre_process_config(self, config):
+
+        result = []
+        for pkg_mgr in config.get("pkg_mgrs", ["default"]):
+            details = copy.deepcopy(config)
+            if pkg_mgr != "default":
+                details[PKG_MGR_KEY] = pkg_mgr
+
+            details[FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
+            result.append(details)
+
+        return result
+
+    def create_playbook_items(self, config):
+
+        return [config]
+
+    def default_freck_config(self):
+        return {
+            FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+            ACTION_KEY: "update_cache",
+            FRECK_RUNNER_KEY: {
+                FRECK_ANSIBLE_RUNNER: {
+                    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+                }
+            }
+        }
+
+
+class Upgrade(Freck):
+
+    def pre_process_config(self, config):
+
+        result = []
+        for pkg_mgr in config.get("pkg_mgrs", ["default"]):
+            details = copy.deepcopy(config)
+            if pkg_mgr != "default":
+                details[PKG_MGR_KEY] = pkg_mgr
+
+            details[FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
+            result.append(details)
+
+        return result
+
+    def create_playbook_items(self, config):
+
+        return [config]
+
+    def default_freck_config(self):
+        return {
+            FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+            ACTION_KEY: "upgrade",
             FRECK_RUNNER_KEY: {
                 FRECK_ANSIBLE_RUNNER: {
                     FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
