@@ -108,7 +108,7 @@ def get_config(config_file_url):
             config = json.loads(config_file_url)
             return config
         except:
-            raise FrecklesConfigError("Can't parse json string: {}", 'config', config_file_url)
+            raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
 
 
 def create_runs(configs):
