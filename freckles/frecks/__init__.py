@@ -6,3 +6,4 @@ from checkout import Checkout
 from install_nix import InstallNix
 from delete import Delete
 from debug_vars import DebugVars
+from role import Role

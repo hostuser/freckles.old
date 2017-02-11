@@ -52,7 +52,7 @@ DEFAULT_DOTFILE_PATHS = []
 DEFAULT_DOTFILE_REMOTE = ""
 
 ## misc keys & defaults
-APPS_KEY = "apps"
+PACKAGES_KEY = "packages"
 
 ## freck run defaults
 FRECK_DEFAULT_PRIORITY = 10000

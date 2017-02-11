@@ -47,7 +47,8 @@ setup(
             'stow=freckles.frecks:Stow',
             'install-nix=freckles.frecks:InstallNix',
             'delete=freckles.frecks:Delete',
-            'debug=freckles.frecks:DebugVars'
+            'debug=freckles.frecks:DebugVars',
+            'role=freckles.frecks:Role'
         ]
     },
     include_package_data=True,

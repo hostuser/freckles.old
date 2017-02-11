@@ -312,7 +312,7 @@ if ! command_exists freckles; then
     add_freckles_path
     echo
     echo
-    echo "Starting 'freckles' with arguments: $@..."
+    echo "Starting 'freckles' with arguments: $@"
     echo
 fi
 

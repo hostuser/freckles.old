@@ -29,8 +29,8 @@ class Install(Freck):
     def pre_process_config(self, config):
 
         # check whether there are non-dotfile apps to isntall
-        if config.get(APPS_KEY, False):
-            apps = create_apps_dict(config[APPS_KEY], default_details=config)
+        if config.get(PACKAGES_KEY, False):
+            apps = create_apps_dict(config[PACKAGES_KEY], default_details=config)
         else:
             apps = {}
 
