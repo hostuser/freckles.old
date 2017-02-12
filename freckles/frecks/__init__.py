@@ -3,7 +3,7 @@ from install import Update
 from install import Upgrade
 from stow import Stow
 from checkout import Checkout
-from install_nix import InstallNix
+from install_pkg_mgrs import InstallPkgMgrs
 from delete import Delete
 from debug_vars import DebugVars
 from role import Role

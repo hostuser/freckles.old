@@ -76,6 +76,7 @@ FRECKLES_STATE_CHANGED = "changed"
 
 # to sort
 PKG_MGR_KEY = "pkg_mgr"
+PKG_MGRS_KEY = "pkg_mgrs"
 PACKAGE_STATE_KEY = "pkg_state"
 DEFAULT_PACKAGE_STATE = "present"
 DEFAULT_PACKAGE_SUDO = True
@@ -104,8 +105,6 @@ FRECKLES_INVENTORY_FILE = "inventory.yml"
 FRECKLES_EXECUTION_SCRIPT = "freckles_run.sh"
 FRECKLES_DEFAULT_INSTALL_ROLE_NAME = "install-pkg"
 FRECKLES_DEFAULT_INSTALL_ROLE_URL = "https://github.com/makkus/ansible-install-pkgs"
-FRECKLES_DEFAULT_INSTALL_NIX_ROLE_NAME = "install-nix"
-FRECKLES_DEFAULT_INSTALL_NIX_ROLE_URL = "https://github.com/makkus/ansible-nix-single"
 DEFAULT_STOW_SUDO = False
 FRECKLES_DEFAULT_STOW_ROLE_NAME = "stow-pkg"
 FRECKLES_DEFAULT_STOW_ROLE_URL = "https://github.com/makkus/ansible-stow"
