@@ -45,7 +45,7 @@ setup(
             'upgrade=freckles.frecks:Upgrade',
             'checkout=freckles.frecks:Checkout',
             'stow=freckles.frecks:Stow',
-            'install-pkg-mgr=freckles.frecks:InstallPkgMgrs',
+            'install-pkg-mgrs=freckles.frecks:InstallPkgMgrs',
             'delete=freckles.frecks:Delete',
             'debug=freckles.frecks:DebugVars',
             'role=freckles.frecks:Role'
