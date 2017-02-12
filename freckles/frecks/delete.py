@@ -8,6 +8,7 @@ from freckles import Freck
 from freckles.constants import *
 
 log = logging.getLogger("freckles")
+FILES_TO_DELETE_KEY = "files-to-delete"
 
 class Delete(Freck):
 
@@ -17,7 +18,7 @@ class Delete(Freck):
     def create_playbook_items(self, config):
 
         result = []
-        for f in config["files"]:
+        for f in config[FILES_TO_DELETE_KEY]:
             temp_config = copy.copy(config)
             if f.startswith("~"):
                 temp_config[FRECK_ITEM_NAME_KEY] = os.path.expanduser(f)

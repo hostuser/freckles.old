@@ -446,7 +446,10 @@ def create_apps_dict(apps, default_details):
             if len(app) != 1:
                 raise FrecklesConfigError("More than one key provided in app configuration, needs to be either dict of lengths one, or string: {}".format(app), "apps", app)
             app_name = app.keys()[0]
-            dict_merge(details, app.values()[0])
+            app_details = app.values()[0]
+            if not app_details:
+                app_details = {}
+            dict_merge(details, app_details)
             details[FRECK_ITEM_NAME_KEY] = app_name
 
         elif isinstance(app, str):

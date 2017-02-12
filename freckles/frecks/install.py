@@ -28,20 +28,18 @@ class Install(Freck):
 
     def pre_process_config(self, config):
 
+        ignore_list = config.get(INSTALL_IGNORE_KEY, [])
         # check whether there are non-dotfile apps to isntall
         if config.get(PACKAGES_KEY, False):
             apps = create_apps_dict(config[PACKAGES_KEY], default_details=config)
         else:
-            apps = {}
+           dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
+           # existing_dotfiles = check_dotfile_items(dotfiles)
+           # if not existing_dotfiles:
+               # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
+               # return False
+           apps = create_dotfiles_dict(dotfiles, default_details=config)
 
-        ignore_list = config.get(INSTALL_IGNORE_KEY, [])
-        dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
-        # existing_dotfiles = check_dotfile_items(dotfiles)
-        # if not existing_dotfiles:
-            # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
-            # return False
-        apps_dotfiles = create_dotfiles_dict(dotfiles, default_details=config)
-        dict_merge(apps, apps_dotfiles)
         configs = []
 
         for app, details in apps.iteritems():
