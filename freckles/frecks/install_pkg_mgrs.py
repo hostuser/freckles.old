@@ -6,7 +6,7 @@ from freckles.constants import *
 
 log = logging.getLogger("freckles")
 
-FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgr"
+FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgrs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL = "https://github.com/makkus/ansible-install-pkg-mgrs"
 
 
