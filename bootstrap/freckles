@@ -208,6 +208,7 @@ function link_required_executables {
     link_path "$1" ansible-galaxy
 }
 
+
 function install_freckles_non_root_conda {
     if [ ! -d "$CONDA_PATH" ]; then
         echo "  * no elevated permissions detected, using conda package manager"
@@ -215,15 +216,16 @@ function install_freckles_non_root_conda {
     fi
     echo "  - installing freckles and its requirements (this will take a bit)"
     {
-    conda install -y python=2.7
-    conda update -y pip
-    conda install -y git
-    conda install -y cryptography
-    conda config --add channels conda-forge
-    conda config --add channels defaults
-    conda install -y -c freckles stow || throw CONDA_ERROR 3 "Could not install stow or one of its dependencies via conda."
+    conda create -y --name freckles python=2
+    conda install --name freckles -y python=2.7
+    conda update --name freckles -y pip
+    conda install --name freckles -y git
+    conda install --name freckles -y cryptography
+    conda install --name freckles -y -c conda-forge -c freckles stow || throw CONDA_ERROR 3 "Could not install stow or one of its dependencies via conda."
+    source activate freckles
     pip install freckles
-    link_required_executables "$CONDA_PATH"
+    source deactivate freckles
+    link_required_executables "$CONDA_BASE_DIR/envs/freckles/bin"
     } > "$SCRIPT_LOG_FILE" 2>&1
 }
 
@@ -266,10 +268,10 @@ function install_nix_non_root_src {
 
 function add_freckles_path {
 
-    if [ -e "$FRECKLES_USER_HOME/.profile" ] && ! grep -q 'load freckles environment' "$FRECKLES_USER_HOME/.profile"; then
+    if [ -e "$FRECKLES_USER_HOME/.profile" ] && ! grep -q 'add freckles environment' "$FRECKLES_USER_HOME/.profile"; then
        cat <<"EOF" >> "$FRECKLES_USER_HOME/.profile"
 
-# load freckles environment
+# add freckles environment
 FRECKLES_PATH="$HOME/.freckles/bin"
 if [ -d "$FRECKLES_PATH" ]; then
     PATH="$PATH:$FRECKLES_PATH"
