@@ -170,8 +170,7 @@ class Upgrade(Freck):
         result = []
         for pkg_mgr in config.get("pkg_mgrs", ["default"]):
             details = copy.deepcopy(config)
-            if pkg_mgr != "default":
-                details[PKG_MGR_KEY] = pkg_mgr
+            details[PKG_MGR_KEY] = pkg_mgr
 
             details[FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
             result.append(details)
