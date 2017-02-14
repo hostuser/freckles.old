@@ -33,6 +33,7 @@ FRECK_ID_KEY = "freck_id"
 FRECK_ITEM_NAME_KEY = "item_name"
 
 FRECK_SUDO_KEY = "freck_sudo"
+FRECK_BECOME_KEY = "freck_become"
 FRECK_RUNNER_KEY = "runner"
 FRECK_ANSIBLE_RUNNER = "ansible"
 FRECK_ANSIBLE_ROLES_KEY = "freck-roles"
@@ -117,7 +118,6 @@ STOW_TARGET_BASE_DIR_KEY = "stow_target_dir"
 
 #DEFAULT_DOTFILES = [DEFAULT_DOTFILE_DIR]
 
-PKGS_KEY = "pkgs"
 
 DEFAULT_PACKAGE_STATE_KEY = "default_pkg_state"
 DEFAULT_PACKAGE_SUDO_KEY = "default_pkg_sudo"

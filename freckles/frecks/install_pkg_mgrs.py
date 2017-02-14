@@ -30,7 +30,7 @@ class InstallPkgMgrs(Freck):
         if "nix" in config.get(PKG_MGRS_KEY, []):
             if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
                 config[FRECK_SUDO_KEY] = True
-        config[FRECK_ITEM_NAME_KEY] = "install package managers: {}".format(", ".join(config.get(PKG_MGRS_KEY)))
+        config[FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(config.get(PKG_MGRS_KEY)))
         return [config]
 
     def default_freck_config(self):
@@ -41,7 +41,7 @@ class InstallPkgMgrs(Freck):
             FRECK_RUNNER_KEY: {
                 FRECK_ANSIBLE_RUNNER: {
                     FRECK_ANSIBLE_ROLES_KEY: {
-                        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_NIX_ROLE_URL},
+                        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
                     FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
                 }
             }

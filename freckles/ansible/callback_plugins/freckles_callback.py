@@ -39,7 +39,9 @@ class CallbackModule(CallbackBase):
         output = {}
         output["state"] = category
         output["freck_id"] = self.get_task_detail("role._role_params.freck_id")
-        if not output.get("freck_id", False):
+        if  not output["freck_id"]:
+            output["freck_id"] = -1
+        if not output.get("freck_id", False) and not category == "failed":
             return
 
         output["action"] = self.task.serialize().get("action", "n/a")

@@ -216,19 +216,25 @@ class Freckles(object):
                 log.debug("Omitting schama check for freck '{}': no schema provided.". format(freck_name))
 
             if freck_config.get("freck_preprocess", True):
+                log.debug("Preprocessing '{}' ({}): {}".format(freck_name, freck_type, freck_config))
                 freck_config = freck.pre_process_config(freck_config)
+                log.debug("Preprocessing done, result: {}".format(freck_config))
 
             # if preprocessing returns a list, we add all those seperately.
             if isinstance(freck_config, dict):
                 freck_config["freck_preprocess"] = False
+                log.debug("Creating playbook items '{}' ({}): {}".format(freck_name, freck_type, freck_config))
                 freck_config_items = freck.create_playbook_items(freck_config)
+                log.debug("Playbook items created, result: {}".format(freck_config))
                 if isinstance(freck_config_items, dict):
                         freck_config_items = [freck_config_items]
             else:
                 freck_config_items = []
                 for item in freck_config:
                     item["freck_preprocess"] = False
+                    log.debug("Creating playbook items '{}' ({}): {}".format(freck_name, freck_type, item))
                     temp = freck.create_playbook_items(item)
+                    log.debug("Playbook items created, result: {}".format(temp))
                     if isinstance(temp, dict):
                         temp = [temp]
                     freck_config_items.extend(temp)

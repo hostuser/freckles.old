@@ -91,8 +91,9 @@ class FrecklesRunner(object):
             return
         log.debug("Playbooks created, {} playbook items created.".format(len(self.playbook_items)))
 
+        needs_sudo = playbook_needs_sudo(self.playbook_items)
         passwordless_sudo = can_passwordless_sudo()
-        if not passwordless_sudo and playbook_needs_sudo(self.playbook_items):
+        if not passwordless_sudo and needs_sudo:
             log.debug("Some playbook items will need sudo, adding parameter execution pipeline...")
             self.freckles_ask_sudo = "--ask-become-pass"
         else:
@@ -146,7 +147,12 @@ class FrecklesRunner(object):
             # log.debug(line)
 
             details = json.loads(line)
-            freckles_id = int(details[FRECK_ID_KEY])
+            freckles_id = int(details.get(FRECK_ID_KEY, latest_id))
+            if freckles_id <= 0:
+                if latest_id == 0:
+                    freckles_id = 1
+                else:
+                    freckles_id = latest_id
             changed = not freckles_id == latest_id
 
             if changed:
@@ -158,6 +164,8 @@ class FrecklesRunner(object):
                 # log title of task
                 self.print_task_title(freckles_id)
 
+            # print(freckles_id)
+            # print(details)
             self.append_log(freckles_id, details)
 
         if latest_id != 0:

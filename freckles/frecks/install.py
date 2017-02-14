@@ -13,6 +13,7 @@ log = logging.getLogger("freckles")
 SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
 INSTALL_IGNORE_KEY = "no_install"
 ACTION_KEY = "install_action"
+PKGS_KEY = "pkgs"   # this is the key that is used in the role
 
 class Install(Freck):
 

@@ -401,7 +401,6 @@ def playbook_needs_sudo(playbook_items):
 
     return bool([x for x in playbook_items.values() if x.get(FRECK_SUDO_KEY, False)])
 
-
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
     """Assembles the dictionary to create the playbook from."""
     temp_root = {}
