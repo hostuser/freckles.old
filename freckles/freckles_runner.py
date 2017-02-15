@@ -84,7 +84,6 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     current_dir = os.getcwd()
     os.chdir(role_base_path)
     role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
-    pprint.pprint(role_dict)
     cookiecutter(FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL, extra_context=role_dict, no_input=True)
     os.chdir(current_dir)
 
