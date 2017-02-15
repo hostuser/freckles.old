@@ -104,17 +104,6 @@ FRECKLES_PLAYBOOK_NAME = "freckles_playbook.yml"
 FRECKLES_INVENTORY_DIR = "inventory"
 FRECKLES_INVENTORY_FILE = "inventory.yml"
 FRECKLES_EXECUTION_SCRIPT = "freckles_run.sh"
-FRECKLES_DEFAULT_INSTALL_ROLE_NAME = "install-pkg"
-FRECKLES_DEFAULT_INSTALL_ROLE_URL = "https://github.com/makkus/ansible-install-pkgs"
-DEFAULT_STOW_SUDO = False
-FRECKLES_DEFAULT_STOW_ROLE_NAME = "stow-pkg"
-FRECKLES_DEFAULT_STOW_ROLE_URL = "https://github.com/makkus/ansible-stow"
-FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME = "checkout"
-FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "https://github.com/makkus/ansible-checkout"
-FRECKLES_DEFAULT_DELETE_ROLE_NAME = "delete"
-FRECKLES_DEFAULT_DELETE_ROLE_URL = "https://github.com/makkus/ansible-delete"
-DEFAULT_STOW_TARGET_BASE_DIR = os.path.expanduser("~/")
-STOW_TARGET_BASE_DIR_KEY = "stow_target_dir"
 
 #DEFAULT_DOTFILES = [DEFAULT_DOTFILE_DIR]
 

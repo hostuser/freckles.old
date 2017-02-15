@@ -10,6 +10,9 @@ from freckles.constants import *
 log = logging.getLogger("freckles")
 FILES_TO_DELETE_KEY = "files-to-delete"
 
+FRECKLES_DEFAULT_DELETE_ROLE_NAME = "delete"
+FRECKLES_DEFAULT_DELETE_ROLE_URL = "https://github.com/makkus/ansible-delete"
+
 class Delete(Freck):
 
     def get_config_schema(self):
