@@ -1,0 +1,9 @@
+- hosts: localhost
+  vars:
+    pkg_mgrs:
+      - nix
+  roles:
+    - install-nix
+
+
+

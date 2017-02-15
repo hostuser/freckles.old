@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-install-pkg-mgrs.git
+	branch = master
+	commit = 209119dae073c1144106cd4362890cc5061d7297
+	parent = cfe6cdeaf8f231cbdd0438c25113c8db2b8543e3
+	cmdver = 0.3.1

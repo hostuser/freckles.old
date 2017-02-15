@@ -1,0 +1,22 @@
+---
+# tasks to install standard version of nix package manager. Requires sudo to create /nix directory.
+
+- name: create /nix directory
+  file: path=/nix state=directory owner="{{ nix_user }}" group="{{ nix_group }}"
+  become: yes
+  when: nix_env_binary.stat.exists == False
+
+- name: install nix dependencies for Debian-based systems
+  apt: pkg={{item}} state=installed
+  with_items:
+    - wget
+    - bzip2
+    - ca-certificates
+  become: yes
+  when: nix_env_binary.stat.exists == False and ansible_os_family == "Debian"
+
+- name: Install nix
+  command: "{{ role_path }}/files/install_nix.sh"
+  args:
+    creates: "{{ nix_user_home  }}/.nix-profile/bin/nix-env"
+  become: no

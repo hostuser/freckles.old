@@ -1,0 +1,10 @@
+- hosts: localhost
+  vars:
+    pkg_mgrs:
+      - nix
+      - conda
+  roles:
+    - install-nix
+
+
+
