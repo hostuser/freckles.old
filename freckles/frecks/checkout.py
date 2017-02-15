@@ -10,7 +10,8 @@ log = logging.getLogger("freckles")
 from voluptuous import Schema, ALLOW_EXTRA, Any
 
 FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME = "checkout"
-FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "https://github.com/makkus/ansible-checkout"
+# FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "https://github.com/makkus/ansible-checkout"
+FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "frkl:ansible-checkout"
 
 class Checkout(Freck):
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from sets import Set
 import inspect
 import os
 import json
@@ -18,6 +19,7 @@ import logging
 import click
 import pprint
 from exceptions import FrecklesConfigError
+import shutil
 log = logging.getLogger("freckles")
 DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL = "https://github.com/makkus/cookiecutter-freckles-play.git"
 
@@ -38,9 +40,32 @@ def extract_ansible_roles(playbook_items):
         item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
-                roles[role_name] = role_url_or_dict
+                if not role_url_or_dict.startswith("frkl:"):
+                    roles[role_name] = role_url_or_dict
 
     return roles
+
+def copy_internal_roles(playbook_items, role_base_path):
+    """Copies included roles to playbook environment.
+
+    If the url of the role starts with 'frkl:', it is assumed it is an internally supported role, and will be copied to the 'internal' role path in the playbook environment.
+    """
+
+    role_urls = Set()
+    for item in playbook_items.values():
+        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        for role_name, role_url_or_dict in item_roles.iteritems():
+            if isinstance(role_url_or_dict, basestring):
+                if role_url_or_dict.startswith("frkl:"):
+                    role_urls.add((role_name, role_url_or_dict))
+
+    for role_internal_name in role_urls:
+        frkl_role_name = role_internal_name[1][5:]
+        role_path = os.path.join(os.path.dirname(__file__), "ansible", "external_roles", frkl_role_name)
+        dest = os.path.join(role_base_path, role_internal_name[0])
+        log.debug("Copying internal roles: {} -> {}".format(role_path, dest))
+        shutil.copytree(role_path, dest)
+
 
 def create_custom_roles(playbook_items, role_base_path):
     """Creates all custom ansible roles that are needed in a run.
@@ -185,6 +210,7 @@ class FrecklesRunner(object):
             cookiecutter(cookiecutter_freckles_play_url, extra_context=cookiecutter_details, no_input=True)
 
         create_custom_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
+        copy_internal_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
 
         # create custom roles
 

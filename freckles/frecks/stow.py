@@ -14,7 +14,7 @@ DEFAULT_STOW_SUDO = False
 DEFAULT_STOW_TARGET_BASE_DIR = os.path.expanduser("~/")
 STOW_TARGET_BASE_DIR_KEY = "stow_target_dir"
 FRECKLES_DEFAULT_STOW_ROLE_NAME = "stow-pkg"
-FRECKLES_DEFAULT_STOW_ROLE_URL = "https://github.com/makkus/ansible-stow"
+FRECKLES_DEFAULT_STOW_ROLE_URL = "frkl:ansible-stow"
 
 class Stow(Freck):
 

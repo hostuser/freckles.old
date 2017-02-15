@@ -16,7 +16,7 @@ ACTION_KEY = "install_action"
 PKGS_KEY = "pkgs"   # this is the key that is used in the role
 
 FRECKLES_DEFAULT_INSTALL_ROLE_NAME = "install-pkg"
-FRECKLES_DEFAULT_INSTALL_ROLE_URL = "https://github.com/makkus/ansible-install-pkgs"
+FRECKLES_DEFAULT_INSTALL_ROLE_URL = "frkl:ansible-install-pkgs"
 
 class Install(Freck):
 

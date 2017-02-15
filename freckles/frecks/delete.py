@@ -11,7 +11,7 @@ log = logging.getLogger("freckles")
 FILES_TO_DELETE_KEY = "files-to-delete"
 
 FRECKLES_DEFAULT_DELETE_ROLE_NAME = "delete"
-FRECKLES_DEFAULT_DELETE_ROLE_URL = "https://github.com/makkus/ansible-delete"
+FRECKLES_DEFAULT_DELETE_ROLE_URL = "frkl:ansible-delete"
 
 class Delete(Freck):
 

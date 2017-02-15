@@ -9,10 +9,10 @@ vars:
   pkg_mgr: conda
 
 runs:
-  # - name: install conda
-    # frecks:
-     # - install-pkg-managers
-     # - upgrade
+  - name: install conda
+    frecks:
+     - install-pkg-managers
+     - upgrade
   - name: install packages
     frecks:
      - install:
