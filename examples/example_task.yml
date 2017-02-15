@@ -1,0 +1,12 @@
+runs:
+  - name: install role
+    frecks:
+     - task:
+         vars:
+           tasks: 
+             - name: debug task
+               debug: 
+                 msg: "TEST MESSAGE"
+
+      
+ 

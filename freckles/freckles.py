@@ -73,6 +73,14 @@ class Freck(object):
 
         return freck_config
 
+    def get_custom_roles(self):
+        """Returns any custom roles this Freck might need to create on-the-fly, using dictionaries for tasks and default values.
+
+        Implementing this method is optional, and is mainly used for the 'task'-freck.
+        """
+
+        return []
+
     def get_config_schema(self):
         """The schema for the configuration of this nect.
 

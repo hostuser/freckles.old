@@ -1,0 +1,33 @@
+vars:
+  # dotfiles are used by both the install & stow freck, so we define them 'globally'. Could also define them as a 'run'-local variable though.
+  dotfiles:
+     - base_dir: ~/dotfiles-example
+       remote: https://github.com/makkus/dotfiles-example.git
+  # this holds apps where we don't have a dotfile folder, because the app does not have configuration files
+  apps:
+     - zile
+  pkg_mgrs:
+     - nix
+     - conda
+
+runs:
+  - name: checkout dotfiles
+    frecks:
+     - checkout
+     - install-pkg-managers
+  - name: install packages, stow config
+    frecks:
+     - update:
+         vars:
+           pkg_mgrs:
+             - default
+             - nix
+     - upgrade:
+         vars:
+           pkg_mgrs:
+             - default
+             - nix
+     - install
+     - stow
+      
+ 

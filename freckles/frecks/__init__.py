@@ -7,3 +7,4 @@ from install_pkg_mgrs import InstallPkgMgrs
 from delete import Delete
 from debug_vars import DebugVars
 from role import Role
+from task import Task

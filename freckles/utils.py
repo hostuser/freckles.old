@@ -411,19 +411,6 @@ def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME)
 
     return temp_root
 
-def extract_ansible_roles(playbook_items):
-    """Extracts all ansible roles that will be used in a run.
-
-    The result is used to download the roles automatically before the run starts.
-    """
-
-    roles = {}
-    for item in playbook_items.values():
-        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
-        roles.update(item_roles)
-
-    return roles
-
 
 def create_apps_dict(apps, default_details):
     """Creates a dictionary that can be used by the install/stow Frecks, and potentially others.

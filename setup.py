@@ -48,7 +48,8 @@ setup(
             'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
             'delete=freckles.frecks:Delete',
             'debug=freckles.frecks:DebugVars',
-            'role=freckles.frecks:Role'
+            'role=freckles.frecks:Role',
+            'task=freckles.frecks:Task'
         ]
     },
     include_package_data=True,

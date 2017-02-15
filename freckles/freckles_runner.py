@@ -12,15 +12,81 @@ from tempfile import NamedTemporaryFile
 from cookiecutter.main import cookiecutter
 from constants import *
 import subprocess
-from utils import playbook_needs_sudo, create_playbook_dict, extract_ansible_roles, can_passwordless_sudo
+from collections import OrderedDict
+from utils import playbook_needs_sudo, create_playbook_dict, can_passwordless_sudo
 import logging
 import click
+import pprint
 from exceptions import FrecklesConfigError
 log = logging.getLogger("freckles")
 DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL = "https://github.com/makkus/cookiecutter-freckles-play.git"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
 FRECKLES_LOG_TOKEN = "FRECKLES: "
+
+FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL = "https://github.com/makkus/ansible-role-template.git"
+
+
+def extract_ansible_roles(playbook_items):
+    """Extracts all ansible roles that will be used in a run.
+
+    The result is used to download the roles automatically before the run starts.
+    """
+
+    roles = {}
+    for item in playbook_items.values():
+        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        for role_name, role_url_or_dict in item_roles.iteritems():
+            if isinstance(role_url_or_dict, basestring):
+                roles[role_name] = role_url_or_dict
+
+    return roles
+
+def create_custom_roles(playbook_items, role_base_path):
+    """Creates all custom ansible roles that are needed in a run.
+
+    If one of the roles in one of the playbook items is a list instead of a string, it is assumed that it is a list of task descriptions (see: XXX) and a custom role is generated dynamically.
+
+    If that is the case, the role_name will not be included in the result, since that role doesn't need to be downloaded, and the internal role path that contains the role is already included in the ansible path.
+    """
+
+    for item in playbook_items.values():
+        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        for role_name, role_url_or_dict in item_roles.iteritems():
+            if not isinstance(role_url_or_dict, basestring) and isinstance(role_url_or_dict, (list, tuple)):
+                create_custom_role(role_base_path, role_name, role_url_or_dict)
+
+
+def create_custom_role(role_base_path, role_name, tasks, defaults={}):
+    """Creates a ansible role in the specified location.
+
+    Args:
+        role_path (str): the base path where the role will be created
+        role_name (str): the name of the role
+        tasks (list): a list of dicts that describe each of the tasks that should go into the role
+        defaults (dict): a dictionary of the default variables for this role
+    """
+
+    # need to convert tasks dictionary so that it works with the template
+    tasks_dict = OrderedDict()
+    for task in tasks:
+        task_id_element = task["task"]
+        if len(task_id_element) != 1:
+            raise FrecklesConfigError("Task element in task description has more than one entries, not valid: {}".format(task_id_element))
+
+        task_id = task_id_element.keys()[0]
+        task_vars = task_id_element[task_id]
+        name = task["name"]
+        type = task["type"]
+
+        tasks_dict[task_id] = { type: task_vars }
+
+    current_dir = os.getcwd()
+    os.chdir(role_base_path)
+    role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
+    pprint.pprint(role_dict)
+    cookiecutter(FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL, extra_context=role_dict, no_input=True)
+    os.chdir(current_dir)
 
 class FrecklesRunner(object):
     """ Runner that takes a freckles object, creates an ansible playbook and associated environment, then executes it.
@@ -100,6 +166,7 @@ class FrecklesRunner(object):
             self.freckles_ask_sudo = ""
 
         self.roles = extract_ansible_roles(self.playbook_items)
+
         log.debug("Roles in use: {}".format(self.roles))
         if not os.path.exists(os.path.join(self.execution_dir)):
             cookiecutter_details = {
@@ -118,6 +185,10 @@ class FrecklesRunner(object):
 
             cookiecutter(cookiecutter_freckles_play_url, extra_context=cookiecutter_details, no_input=True)
 
+        create_custom_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
+
+        # create custom roles
+
         log.debug("Creating and writing inventory...")
         self.create_inventory_dir()
 
@@ -128,7 +199,7 @@ class FrecklesRunner(object):
 
         # check if roles are already installed
         ext_role_path = os.path.join(self.execution_dir, "roles", "external")
-        if update_roles or not os.path.exists(os.path.join(ext_role_path)):
+        if self.roles and (update_roles or not os.path.exists(os.path.join(ext_role_path))):
             log.debug("Installing or updating roles in use...")
             res = subprocess.check_output([os.path.join(self.execution_dir, "extensions", "setup", "role_update.sh")])
             for line in res.splitlines():

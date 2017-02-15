@@ -10,7 +10,7 @@ import py
 import yaml
 import os
 import json
-from freckles_runner import FrecklesRunner
+from freckles_runner import FrecklesRunner, create_custom_role
 from constants import *
 import sys
 import logging
@@ -130,6 +130,14 @@ def create_config(config_file_urls):
 
     return result
 
+
+@cli.command("test")
+@pass_freckles_config
+def print_config(config):
+
+    tasks = {}
+    tasks["task1"] = {"name": "taskname", "type": "apt", "task": { "task_name": { "var1": "val1" }}}
+    create_custom_role("/tmp/", "test_role", tasks)
 
 @cli.command("print-config")
 @click.argument('config', required=False, nargs=-1)
