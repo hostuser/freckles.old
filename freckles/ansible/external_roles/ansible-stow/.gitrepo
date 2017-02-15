@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-stow.git
+	branch = master
+	commit = 89a1b8af623cf12c18fe811f044f540d6070b30d
+	parent = ef3831671c51a060e24c3d0badf42577b2aa681b
+	cmdver = 0.3.1
