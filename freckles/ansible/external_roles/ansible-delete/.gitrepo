@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-delete.git
+	branch = master
+	commit = b0041847568506e5a969f5479b9491bcc484a392
+	parent = 2425f3198007e51c8debb81b1454e167c3a95463
+	cmdver = 0.3.1
