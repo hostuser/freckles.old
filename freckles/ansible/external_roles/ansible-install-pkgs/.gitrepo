@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-install-pkgs.git
+	branch = master
+	commit = 1a8bad4b63d696fbd90d40809bef4fc61b4448d2
+	parent = 12c728052e04e48abb04a2dacee1555ee4f04014
+	cmdver = 0.3.1

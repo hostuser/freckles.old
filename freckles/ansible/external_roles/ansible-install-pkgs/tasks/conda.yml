@@ -1,0 +1,14 @@
+---
+
+- name: upgrade conda packages
+  become: no
+  conda: upgrade=yes environment="{{ conda_env }}" channels="{{ conda_channels }}"
+  when: install_action == "upgrade"
+
+- name: install conda package
+  become: no
+  conda: name="{{ item }}" state="{{ pkg_state | default("present") }}" environment="{{ conda_env }}" channels="{{ conda_channels }}"
+  with_items:
+    - "{{ pkgs['conda'] | default(pkgs['default']) }}"
+  ignore_errors: "{{ ignore_errors | default('yes') }}"
+  when: install_action == "install"

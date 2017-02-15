@@ -1,0 +1,10 @@
+---
+# defaults file for ansible-install-pkg
+
+install_action: install
+
+pkgs:
+  default: []
+
+conda_env: root
+conda_channels: []

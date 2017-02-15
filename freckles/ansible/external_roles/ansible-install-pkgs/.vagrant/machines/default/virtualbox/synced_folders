@@ -1,0 +1,1 @@
+{"virtualbox":{"ansible-roles":{"id":"ansible-roles","guestpath":"/ansible_roles","hostpath":"/home/markus/projects/ansible/roles","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/home/markus/projects/ansible/roles/install-pkg","disabled":false,"__vagrantfile":true}}}

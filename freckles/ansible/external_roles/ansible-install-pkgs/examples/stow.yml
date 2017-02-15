@@ -1,0 +1,8 @@
+- hosts: all
+
+  vars:
+    test: []
+      
+  tasks:
+    - name "stow test"
+      stow: x="xxx"

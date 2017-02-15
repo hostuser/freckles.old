@@ -1,0 +1,26 @@
+---
+# yum doesn't have a meaningful update_cache mechanism, as far as I can see
+- name: upgrade all rpm packages
+  become: yes
+  yum:
+    name: '*'
+    state: latest
+  when: install_action == "upgrade"
+
+- name: install rpm package
+  become: yes
+  yum:
+    name: "{{ item }}"
+    state: "{{ pkg_state | default(latest) }}"
+    conf_file: "{{ yum_conf_file | default(omit) }}"
+    disable_gpg_check: "{{ yum_disable_gpg_check | default(omit) }}"
+    disablerepo: "{{ yum_disablerepo | defaults(omit) }}"
+    enablerepo: "{{ yum_enablerepo | default(omit) }}"
+    exclude: "{{ yum_exclude | default(omit) }}"
+    installroot: "{{ yum_installroot | default(omit) }}"
+    updatecache: "{{ yum_updatecache | default(omit) }}"
+    validate_certs: "{{ yum_validate_certs | default(omit) }}"
+  with_items:
+    - "{{ pkgs['rpm'] | default(pkgs['default']) }}"
+  ignore_errors: "{{ ignore_errors | default('yes') }}"
+  when: install_action == "install"
