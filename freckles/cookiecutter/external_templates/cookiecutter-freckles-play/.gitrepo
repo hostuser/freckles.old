@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/cookiecutter-freckles-play.git
+	branch = master
+	commit = 3321490028d0aaedeb42609fd6999593a131643a
+	parent = c8c2c6e3cd46d6ec50921fa9f2444e3145f4ca95
+	cmdver = 0.3.1
