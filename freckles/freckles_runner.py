@@ -21,12 +21,9 @@ import pprint
 from exceptions import FrecklesConfigError
 import shutil
 log = logging.getLogger("freckles")
-DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL = "https://github.com/makkus/cookiecutter-freckles-play.git"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
 FRECKLES_LOG_TOKEN = "FRECKLES: "
-
-FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL = "https://github.com/makkus/ansible-role-template.git"
 
 
 def extract_ansible_roles(playbook_items):
@@ -109,14 +106,15 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     current_dir = os.getcwd()
     os.chdir(role_base_path)
     role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
-    cookiecutter(FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL, extra_context=role_dict, no_input=True)
+    role_local_path = os.path.join(os.path.dirname(__file__), "cookiecutter", "external_templates", "ansible_role_template")
+    cookiecutter(role_local_path, extra_context=role_dict, no_input=True)
     os.chdir(current_dir)
 
 class FrecklesRunner(object):
     """ Runner that takes a freckles object, creates an ansible playbook and associated environment, then executes it.
     """
 
-    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, cookiecutter_freckles_play_url=DEFAULT_COOKIECUTTER_FRECKLES_PLAY_URL, details=False, hosts=None):
+    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, details=False, hosts=None):
 
         self.task_result = {}
 
@@ -207,7 +205,9 @@ class FrecklesRunner(object):
             log.debug("Creating build environment from template...")
             log.debug("Using cookiecutter details: {}".format(cookiecutter_details))
 
-            cookiecutter(cookiecutter_freckles_play_url, extra_context=cookiecutter_details, no_input=True)
+            play_template_path = os.path.join(os.path.dirname(__file__), "cookiecutter", "external_templates", "cookiecutter-freckles-play")
+
+            cookiecutter(play_template_path, extra_context=cookiecutter_details, no_input=True)
 
         create_custom_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
         copy_internal_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
@@ -222,10 +222,9 @@ class FrecklesRunner(object):
         with open(self.playbook_file, 'w') as f:
             f.write(yaml.safe_dump([playbook_dict], default_flow_style=False))
 
-        # check if roles are already installed
         ext_role_path = os.path.join(self.execution_dir, "roles", "external")
-        if self.roles and (update_roles or not os.path.exists(os.path.join(ext_role_path))):
-            log.debug("Installing or updating roles in use...")
+        if self.roles:
+            click.echo("Downloading and installing external roles...")
             res = subprocess.check_output([os.path.join(self.execution_dir, "extensions", "setup", "role_update.sh")])
             for line in res.splitlines():
                 log.debug("Installing role: {}".format(line))
