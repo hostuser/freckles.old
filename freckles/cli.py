@@ -112,7 +112,12 @@ def run(freckles_config, config):
 
     freckles = Freckles(*config)
 
-    freckles.prepare_run(0)
+    for run_nr in freckles.runs.keys():
+        freckles.run(run_nr)
+
+
+
+
 
 
 

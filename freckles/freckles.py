@@ -19,7 +19,7 @@ import logging
 log = logging.getLogger("freckles")
 from operator import itemgetter
 import uuid
-from exceptions import FrecklesConfigError
+from exceptions import FrecklesConfigError, FrecklesRunError
 
 
 FRECKLES_RUNNERS = {
@@ -69,7 +69,7 @@ def create_runs(configs):
         configs (list): a list of configs (paths, urls, etc.)
     """
 
-    result_runs = []
+    result_runs = OrderedDict()
 
     current_default_vars = {}  # copy.deepcopy(seed_vars)
 
@@ -122,8 +122,8 @@ def create_runs(configs):
                  dict_merge(freck_vars, freck_inner_vars)
                  run_frecks.append({"name": freck_name, "vars": freck_vars, "type": freck_type})
                  j = j + 1
-            run = {"name": name, "frecks": run_frecks, "nr": number}
-            result_runs.append(run)
+            run = {"name": name, "frecks": run_frecks}
+            result_runs[number] = run
 
     return result_runs
 
@@ -375,6 +375,7 @@ class FrecklesRunCallback(object):
         self.total_tasks = -1
         self.current_freck_id = -1
         self.details = details
+        self.success = True
 
     def set_total_tasks(self, total):
         self.total_tasks = total
@@ -384,7 +385,9 @@ class FrecklesRunCallback(object):
         log.debug("Details for freck '{}': {}".format(freck_id, details))
 
         if details == RUN_FINISHED:
-            self.log_freck_complete(self.current_freck_id)
+            freck_success = self.log_freck_complete(self.current_freck_id)
+            if not freck_success:
+                self.success = False
             return
 
 
@@ -393,12 +396,12 @@ class FrecklesRunCallback(object):
         if self.current_freck_id != freck_id:
             # means new task
             if self.current_freck_id > 0:
-                self.log_freck_complete(self.current_freck_id)
+                freck_success = self.log_freck_complete(self.current_freck_id)
+                if not freck_success:
+                    self.success = False
             self.current_freck_id = freck_id
             self.print_task_title(self.current_freck_id)
 
-        # print(freck_id)
-        # print(details)
 
     def handle_task_output(self, task_item, output_details):
         """Converts ansible output into something human-readable.
@@ -478,8 +481,10 @@ class Freckles(object):
         self.configs = config_items
         self.runs = create_runs(config_items)
         self.run_items = {}
+        self.callbacks = {}
+        self.runners = {}
 
-    def prepare_run(self, run_nr):
+    def create_runner(self, run_nr):
         """Prepares run with the provided index number."""
 
         items = create_run_items(self.frecks, self.runs[run_nr])
@@ -504,6 +509,24 @@ class Freckles(object):
         if not runner_class:
             raise FrecklesConfigError("Can't find runner with name: {}".format(runner_name))
 
-        runner = runner_class(items, FrecklesRunCallback(self.frecks, items))
-        runner.prepare_run()
-        runner.run()
+        self.callbacks[run_nr] = FrecklesRunCallback(self.frecks, items)
+
+        runner = runner_class(items, self.callbacks[run_nr])
+        self.runners[run_nr] = runner
+
+    def run(self, run_nr):
+
+        log.info("Reading configuration for run #{}".format(run_nr))
+        self.create_runner(run_nr)
+        if not self.runners[run_nr].items:
+            log.info("No config found, doing nothing...")
+            return
+
+        log.info("Preparing run...")
+        self.runners[run_nr].prepare_run()
+        log.info("Starting run #{}...".format(run_nr))
+        self.runners[run_nr].run()
+        log.info("Run #{} finished.".format(run_nr))
+
+        if not self.callbacks[run_nr].success:
+            raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr), self.runs[run_nr])
