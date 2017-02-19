@@ -10,7 +10,7 @@ class DebugVars(Freck):
     def get_config_scheme(self):
         return False
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         log.debug("Entering debug create_playbook_items...")
         log.debug(config)

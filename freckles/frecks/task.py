@@ -6,6 +6,7 @@ from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 from freckles.exceptions import FrecklesConfigError
 from freckles import Freck
 from freckles.constants import *
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
 import copy
 
@@ -18,7 +19,7 @@ GENERATED_ROLE_PREFIX = "freckles_custom_role_"
 
 class Task(Freck):
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         global GENERATED_ROLE_ID_COUNTER
 
@@ -55,9 +56,5 @@ class Task(Freck):
     def default_freck_config(self):
         return {
             FRECK_SUDO_KEY: False,
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: {}
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
         }

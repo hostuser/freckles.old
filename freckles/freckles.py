@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import os
+import click
 from collections import OrderedDict
+from sets import Set
 import yaml
 import pprint
 import json
-from freckles_runner import FrecklesRunner
-from utils import get_pkg_mgr_from_path, load_extensions, dict_merge
+from runners.ansible_runner import AnsibleRunner
+from utils import get_pkg_mgr_from_path, load_extensions, dict_merge, expand_config_url
 import six
 import abc
 from constants import *
@@ -17,13 +19,226 @@ import logging
 log = logging.getLogger("freckles")
 from operator import itemgetter
 import uuid
+from exceptions import FrecklesConfigError
+
+
+FRECKLES_RUNNERS = {
+    FRECKLES_ANSIBLE_RUNNER: AnsibleRunner
+}
+
+def get_config(config_file_url):
+    """Retrieves the config (if necessary), and converts it to a dict.
+
+    Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
+
+    For the case that a url is provided, there are a few abbreviations available:
+
+    TODO
+    """
+
+    config_file_url = expand_config_url(config_file_url)
+
+    # check if file first
+    if os.path.exists(config_file_url):
+        log.debug("Opening as file: {}".format(config_file_url))
+        with open(config_file_url) as f:
+            config_yaml = yaml.load(f)
+        return config_yaml
+    # check if url
+    elif config_file_url.startswith("http"):
+        # TODO: exception handling
+        log.debug("Opening as url: {}".format(config_file_url))
+        response = urllib2.urlopen(config_file_url)
+        content = response.read()
+        return yaml.load(content)
+    else:
+        # try to convert a json string
+        try:
+            config = json.loads(config_file_url)
+            return config
+        except:
+            raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
+
+
+def create_runs(configs):
+    """Creates all runs using the list of provided configs.
+
+    Configs will be overlayed (as described in XXX).
+
+    Args:
+        configs (list): a list of configs (paths, urls, etc.)
+    """
+
+    result_runs = []
+
+    current_default_vars = {}  # copy.deepcopy(seed_vars)
+
+    for config in configs:
+
+        config_dict = get_config(config)
+
+        runs = config_dict.get("runs", {})
+        vars = config_dict.get("vars", {})
+
+        # first we merge the 'file-global' vars
+        dict_merge(current_default_vars, vars)
+
+        # now we create a set of vars for each freck in each run
+        i = 1
+        for run_item in runs:
+
+            name = run_item.get("name", False)
+            number = i
+            if not name:
+                name = "run_{}".format(i)
+
+            i = i+1
+
+            vars = run_item.get("vars", {})
+            frecks = run_item.get("frecks", [])
+            run_vars = copy.deepcopy(current_default_vars)
+            dict_merge(run_vars, vars)
+            run_frecks = []
+            j = 1
+            for freck in frecks:
+                 if isinstance(freck, dict):
+                    if len(freck) != 1:
+                        raise FrecklesConfigError("Can't read freck configuration in run {}, not exactly one key in dict.".fromat(name), "config", freck)
+                    freck_type = freck.keys()[0]
+                    freck_metadata = freck[freck_type]
+                    if not isinstance(freck_metadata, dict):
+                        raise FrecklesConfigError("Freck configuration for type {} in run {} not a dict, don't know what to do with that...".format(freck_type, name), "config", freck_metadata)
+
+                    freck_name = freck_metadata.get("name", "freck_{}_{}".format(j, freck_type))
+                    freck_inner_vars = freck_metadata.get("vars", {})
+                 elif not isinstance(freck, basestring):
+                     raise FrecklesConfigError("Can't parse config in run {}".format(name), "config", freck)
+                 else:
+                     freck_type = freck
+                     freck_inner_vars = {}
+                     freck_name = "freck_{}_{}".format(j, freck_type)
+
+                 freck_vars = copy.deepcopy(run_vars)
+                 dict_merge(freck_vars, freck_inner_vars)
+                 run_frecks.append({"name": freck_name, "vars": freck_vars, "type": freck_type})
+                 j = j + 1
+            run = {"name": name, "frecks": run_frecks, "nr": number}
+            result_runs.append(run)
+
+    return result_runs
+
+def create_config(config_file_urls):
+    """Create runs from the list of configs.
+
+    If no config is provided a default one will be calculated (not implemented yet)."""
+
+    if config_file_urls:
+        result  = create_runs(config_file_urls)
+    else:
+        # TODO: auto-magic config creation
+        pass
+
+    return result
+
+def create_run_items(all_frecks, run):
+        """Create a list of sorted run items that can be included in a playbook section.
+
+        Args:
+            run (dict): the description of the run and associated configs that is about to be executed.
+
+        Returns
+            list: a sorted list of all run items that were calculated out of the input configs
+        """
+
+        log.debug("Parsing configuration...")
+
+        playbook_items = []
+
+        run_name = run["name"]
+        frecks = run["frecks"]
+
+        for freck in frecks:
+
+            freck_type = freck["type"]
+            freck_name = freck["name"]
+            freck_vars = freck["vars"]
+
+            freck = all_frecks.get(freck_type, False)
+            if not freck:
+                logging.error("Can't find freckles plugin: {}".format(freck_type))
+                sys.exit(2)
+
+            log.debug("\tAdding: {}".format(freck_type))
+            freck_config = freck.calculate_freck_config(freck_vars)
+
+            log.debug("Calculated config for '{}': {}".format(freck_name, freck_config))
+
+            config_schema = freck.get_config_schema()
+            if config_schema:
+                log.debug("Checking schema for freck '{}'...".format(freck_name))
+                config_schema(freck_config)
+                log.debug("Schema ok")
+            else:
+                log.debug("Omitting schama check for freck '{}': no schema provided.". format(freck_name))
+
+            if freck_config.get("freck_preprocess", True):
+                log.debug("Preprocessing '{}' ({}): {}".format(freck_name, freck_type, freck_config))
+                freck_config = freck.pre_process_config(freck_config)
+                log.debug("Preprocessing done, result: {}".format(freck_config))
+
+            # if preprocessing returns a list, we add all those seperately.
+            if isinstance(freck_config, dict):
+                freck_config["freck_preprocess"] = False
+                log.debug("Creating run items '{}' ({}): {}".format(freck_name, freck_type, freck_config))
+                freck_config_items = freck.create_run_items(freck_config)
+                log.debug("Run items created, result: {}".format(freck_config))
+                if isinstance(freck_config_items, dict):
+                        freck_config_items = [freck_config_items]
+            else:
+                freck_config_items = []
+                for item in freck_config:
+                    item["freck_preprocess"] = False
+                    log.debug("Creating run items '{}' ({}): {}".format(freck_name, freck_type, item))
+                    temp = freck.create_run_items(item)
+                    log.debug("Run items created, result: {}".format(temp))
+                    if isinstance(temp, dict):
+                        temp = [temp]
+                    freck_config_items.extend(temp)
+
+            i = 1
+            # add item_name, if not provided by freck
+            for item in freck_config_items:
+                item[FRECK_TYPE_KEY] = freck_type
+                item[FRECK_NAME_KEY] = freck_name
+                if not item.get(FRECK_ITEM_NAME_KEY, False):
+                    item[FRECK_ITEM_NAME_KEY] = "{}_{}".format(freck_type, i)
+                i = i+1
+                if not item.get(FRECK_PRIORITY_KEY, False):
+                    item[FRECK_PRIORITY_KEY] = FRECK_DEFAULT_PRIORITY
+
+            playbook_items.extend(freck_config_items)
+
+        if not playbook_items:
+            return {}
+
+        sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY))
+
+        # add ids to every item
+        id = 1
+        result_items = OrderedDict()
+        for item in sorted_playbook_items:
+            item[FRECK_ID_KEY] = str(id)
+            result_items[id] = item
+            id = id+1
+
+        return result_items
 
 
 @six.add_metaclass(abc.ABCMeta)
 class Freck(object):
-    """Base class for freckles plugins ("Frecks"). Used to create playbook items and handle the output in order to display meaningful messages to the user.
+    """Base class for freckles plugins ("Frecks"). Used to create run items and handle the output in order to display meaningful messages to the user.
 
-    The only method that needs to be overwritten is the 'create_playbook_items' one. It is recommended to overwrite most of the others too.
+    The only method that needs to be overwritten is the 'create_run_items' one. It is recommended to overwrite most of the others too.
     """
 
     def __init__(self):
@@ -41,9 +256,9 @@ class Freck(object):
 
 
     def pre_process_config(self, config):
-        """(Optionally) pre-process or augment the config that will be injected in the 'create_playbook_itmes' method.
+        """(Optionally) pre-process or augment the config that will be injected in the 'create_run_itmes' method.
 
-        This is used mostly for Frecks that create multiple Freck runs out of a single configuration, as is the case with most Frecks that use a dotfiles directory. In that case, usually one playbook item is created out of every sub-folder of a dotfile directory (one run per application), and this method will return a list of configs that is calculated from the single input config.
+        This is used mostly for Frecks that create multiple Freck runs out of a single configuration, as is the case with most Frecks that use a dotfiles directory. In that case, usually one run item is created out of every sub-folder of a dotfile directory (one run per application), and this method will return a list of configs that is calculated from the single input config.
 
         Args:
             config (dict): the base config for a Freck run
@@ -90,8 +305,8 @@ class Freck(object):
         return False
 
     @abc.abstractmethod
-    def create_playbook_items(self, config):
-        """List of items to be included in the playbook.
+    def create_run_items(self, config):
+        """List of items to be included in the run.
 
         This is the main method in every Freck. In some cases all the work is already done in the 'pre_process_config' method, but most of the time you'll want to create a list of dicts here which describe the items to be executed.
 
@@ -151,21 +366,44 @@ class Freck(object):
         return result
 
 
-class Freckles(object):
-    """The central class in this project. This calculates the items to execute out of the default values and overlayed user provided configuration.
+class FrecklesRunCallback(object):
 
-    TODO: more doc
-    """
+    def __init__(self, frecks, items, details=False):
+        self.frecks = frecks
+        self.items = items
+        self.task_result = {}
+        self.total_tasks = -1
+        self.current_freck_id = -1
+        self.details = details
 
-    def __init__(self):
+    def set_total_tasks(self, total):
+        self.total_tasks = total
 
-        self.frecks = load_extensions()
+    def log(self, freck_id, details):
 
+        log.debug("Details for freck '{}': {}".format(freck_id, details))
+
+        if details == RUN_FINISHED:
+            self.log_freck_complete(self.current_freck_id)
+            return
+
+
+        self.task_result.setdefault(freck_id, []).append(details)
+
+        if self.current_freck_id != freck_id:
+            # means new task
+            if self.current_freck_id > 0:
+                self.log_freck_complete(self.current_freck_id)
+            self.current_freck_id = freck_id
+            self.print_task_title(self.current_freck_id)
+
+        # print(freck_id)
+        # print(details)
 
     def handle_task_output(self, task_item, output_details):
         """Converts ansible output into something human-readable.
 
-        Internally, this forwards the output to the Freck that created the playbook item.
+        Internally, this forwards the output to the Freck that created the run item.
 
         Args:
             task_item (dict): details about the task that was executed
@@ -182,95 +420,90 @@ class Freckles(object):
 
         return result
 
-    def create_playbook_items(self, run):
-        """Create a list of sorted playbook items that can be included in a playbook section.
+    def print_task_title(self, freckles_id):
 
-        Args:
-            run (dict): the description of the run and associated configs that is about to be executed.
+        task_item = self.items[freckles_id]
+        item_name = task_item[FRECK_ITEM_NAME_KEY]
+        task_desc = task_item[FRECK_TASK_DESC]
 
-        Returns
-            list: a sorted list of all playbook items that were calculated out of the input configs
-        """
+        task_title = "- task {:02d}/{:02d}: {} '{}'".format(freckles_id, len(self.items), task_desc, item_name)
+        click.echo(task_title, nl=False)
 
-        log.debug("Parsing configuration...")
 
-        playbook_items = []
+    def log_freck_complete(self, freckles_id):
 
-        run_name = run["name"]
-        frecks = run["frecks"]
+        failed = False
+        task_item = self.items[freckles_id]
+        output_details = self.task_result[freckles_id]
 
-        for freck in frecks:
+        output = self.handle_task_output(task_item, output_details)
 
-            freck_type = freck["type"]
-            freck_name = freck["name"]
-            freck_vars = freck["vars"]
+        state_string = output[FRECKLES_STATE_KEY]
 
-            freck = self.frecks.get(freck_type, False)
-            if not freck:
-                logging.error("Can't find freckles plugin: {}".format(freck_type))
-                sys.exit(2)
+        click.echo("\t=> {}".format(state_string))
 
-            log.debug("\tAdding: {}".format(freck_type))
-            freck_config = freck.calculate_freck_config(freck_vars)
+        if not self.details and state_string != FRECKLES_STATE_FAILED:
+            return True
 
-            log.debug("Calculated config for '{}': {}".format(freck_name, freck_config))
-
-            config_schema = freck.get_config_schema()
-            if config_schema:
-                log.debug("Checking schema for freck '{}'...".format(freck_name))
-                config_schema(freck_config)
-                log.debug("Schema ok")
+        if state_string == FRECKLES_STATE_SKIPPED:
+            return True
+        elif state_string == FRECKLES_STATE_FAILED:
+            failed = True
+            if output.get("stderr", False):
+                log.error("Error:")
+                for line in output["stderr"]:
+                    log.error("\t{}".format(line))
+                if output.get("stdout", False):
+                    log.info("Standard output:")
+                    for line in output.get("stdout", []):
+                        log.error("\t{}".format(line))
             else:
-                log.debug("Omitting schama check for freck '{}': no schema provided.". format(freck_name))
+                for line in output.get("stdout", []):
+                    log.error("\t{}".format(line))
+        else:
+            for line in output.get("stdout", []):
+                log.info("\t{}".format(line))
 
-            if freck_config.get("freck_preprocess", True):
-                log.debug("Preprocessing '{}' ({}): {}".format(freck_name, freck_type, freck_config))
-                freck_config = freck.pre_process_config(freck_config)
-                log.debug("Preprocessing done, result: {}".format(freck_config))
+        return not failed
 
-            # if preprocessing returns a list, we add all those seperately.
-            if isinstance(freck_config, dict):
-                freck_config["freck_preprocess"] = False
-                log.debug("Creating playbook items '{}' ({}): {}".format(freck_name, freck_type, freck_config))
-                freck_config_items = freck.create_playbook_items(freck_config)
-                log.debug("Playbook items created, result: {}".format(freck_config))
-                if isinstance(freck_config_items, dict):
-                        freck_config_items = [freck_config_items]
-            else:
-                freck_config_items = []
-                for item in freck_config:
-                    item["freck_preprocess"] = False
-                    log.debug("Creating playbook items '{}' ({}): {}".format(freck_name, freck_type, item))
-                    temp = freck.create_playbook_items(item)
-                    log.debug("Playbook items created, result: {}".format(temp))
-                    if isinstance(temp, dict):
-                        temp = [temp]
-                    freck_config_items.extend(temp)
 
-            i = 1
-            # add item_name, if not provided by freck
-            for item in freck_config_items:
-                item[FRECK_TYPE_KEY] = freck_type
-                item[FRECK_NAME_KEY] = freck_name
-                if not item.get(FRECK_ITEM_NAME_KEY, False):
-                    item[FRECK_ITEM_NAME_KEY] = "{}_{}".format(freck_type, i)
-                i = i+1
-                if not item.get(FRECK_PRIORITY_KEY, False):
-                    item[FRECK_PRIORITY_KEY] = FRECK_DEFAULT_PRIORITY
+class Freckles(object):
+    """The central class in this project. This calculates the items to execute out of the default values and overlayed user provided configuration.
 
-            playbook_items.extend(freck_config_items)
+    TODO: more doc
+    """
 
-        if not playbook_items:
-            return {}
+    def __init__(self, *config_items):
+        self.frecks = load_extensions()
+        self.configs = config_items
+        self.runs = create_runs(config_items)
+        self.run_items = {}
 
-        sorted_playbook_items = sorted(playbook_items, key=itemgetter(FRECK_PRIORITY_KEY))
+    def prepare_run(self, run_nr):
+        """Prepares run with the provided index number."""
 
-        # add ids to every item
-        id = 1
-        result_items = OrderedDict()
-        for item in sorted_playbook_items:
-            item[FRECK_ID_KEY] = str(id)
-            result_items[id] = item
-            id = id+1
+        items = create_run_items(self.frecks, self.runs[run_nr])
+        if not items:
+            log.debug("No run items created, doing nothing in this run...")
+            return
 
-        return result_items
+        log.debug("Run created, {} run items created.".format(len(items)))
+
+        # make sure we only have one runner type for a run
+        runners = Set()
+        for key, item in items.iteritems():
+            if not item.get(FRECK_RUNNER_KEY, False):
+                item[FRECK_RUNNER_KEY] = FRECKLES_DEFAULT_RUNNER
+            runners.add(item[FRECK_RUNNER_KEY])
+
+        if len(runners) != 1:
+            raise FrecklesConfigError("Config error in run nr. {}, more than one type of runner for the runs' frecks: {}".format(run_nr, items))
+
+        runner_name = runners.pop()
+        runner_class = FRECKLES_RUNNERS.get(runner_name, False)
+        if not runner_class:
+            raise FrecklesConfigError("Can't find runner with name: {}".format(runner_name))
+
+        runner = runner_class(items, FrecklesRunCallback(self.frecks, items))
+        runner.prepare_run()
+        runner.run()

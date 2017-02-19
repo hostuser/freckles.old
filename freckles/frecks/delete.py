@@ -6,6 +6,7 @@ import os
 
 from freckles import Freck
 from freckles.constants import *
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 
 log = logging.getLogger("freckles")
 FILES_TO_DELETE_KEY = "files-to-delete"
@@ -18,7 +19,7 @@ class Delete(Freck):
     def get_config_schema(self):
         return False
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         result = []
         for f in config[FILES_TO_DELETE_KEY]:
@@ -39,11 +40,8 @@ class Delete(Freck):
         return {
             FRECK_SUDO_KEY: False,
             FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+99,
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: {
-                        FRECKLES_DEFAULT_DELETE_ROLE_NAME: FRECKLES_DEFAULT_DELETE_ROLE_URL },
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_DELETE_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: {
+                FRECKLES_DEFAULT_DELETE_ROLE_NAME: FRECKLES_DEFAULT_DELETE_ROLE_URL },
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_DELETE_ROLE_NAME
         }

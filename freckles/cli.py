@@ -10,11 +10,9 @@ import py
 import yaml
 import os
 import json
-from freckles_runner import FrecklesRunner, create_custom_role
 from constants import *
 import sys
 import logging
-from utils import create_runs
 from copy import copy
 from exceptions import FrecklesRunError
 
@@ -100,7 +98,6 @@ def augment_config(freckles_config, details=False):
     """Helper method to make sure the configuration is complete."""
 
     freckles_config.details = details
-    freckles_config.freckles = Freckles()
 
 @cli.command()
 @click.argument('config', required=False, nargs=-1)
@@ -113,22 +110,10 @@ def run(freckles_config, config):
     Configurations are overlayed in the order they are provided. Read more about configuration files and format by visiting XXX``).
     """
 
-    freckles_config.runs = create_config(config)
-    start_runs(freckles_config)
+    freckles = Freckles(*config)
 
+    freckles.prepare_run(0)
 
-def create_config(config_file_urls):
-    """Create runs from the list of configs.
-
-    If no config is provided a default one will be calculated (not implemented yet)."""
-
-    if config_file_urls:
-        result  = create_runs(config_file_urls)
-    else:
-        # TODO: auto-magic config creation
-        pass
-
-    return result
 
 
 @cli.command("test")

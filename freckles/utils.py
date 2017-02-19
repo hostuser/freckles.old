@@ -77,107 +77,6 @@ def expand_config_url(url):
         raise Exception("Not implemented")
 
 
-def get_config(config_file_url):
-    """Retrieves the config (if necessary), and converts it to a dict.
-
-    Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
-
-    For the case that a url is provided, there are a few abbreviations available:
-
-    TODO
-    """
-
-    config_file_url = expand_config_url(config_file_url)
-
-    # check if file first
-    if os.path.exists(config_file_url):
-        log.debug("Opening as file: {}".format(config_file_url))
-        with open(config_file_url) as f:
-            config_yaml = yaml.load(f)
-        return config_yaml
-    # check if url
-    elif config_file_url.startswith("http"):
-        # TODO: exception handling
-        log.debug("Opening as url: {}".format(config_file_url))
-        response = urllib2.urlopen(config_file_url)
-        content = response.read()
-        return yaml.load(content)
-    else:
-        # try to convert a json string
-        try:
-            config = json.loads(config_file_url)
-            return config
-        except:
-            raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
-
-
-def create_runs(configs):
-    """Creates all runs using the list of provided configs.
-
-    Configs will be overlayed (as described in XXX).
-
-    Args:
-        configs (list): a list of configs (paths, urls, etc.)
-    """
-
-    result_runs = []
-
-    current_default_vars = {}  # copy.deepcopy(seed_vars)
-
-    for config in configs:
-
-        config_dict = get_config(config)
-
-        runs = config_dict.get("runs", {})
-        vars = config_dict.get("vars", {})
-
-        # first we merge the 'file-global' vars
-        dict_merge(current_default_vars, vars)
-
-        # now we create a set of vars for each freck in each run
-        i = 1
-        for run_item in runs:
-
-            name = run_item.get("name", False)
-            number = i
-            if not name:
-                name = "run_{}".format(i)
-
-            i = i+1
-
-            vars = run_item.get("vars", {})
-            frecks = run_item.get("frecks", [])
-            run_vars = copy.deepcopy(current_default_vars)
-            dict_merge(run_vars, vars)
-            run_frecks = []
-            j = 1
-            for freck in frecks:
-                 if isinstance(freck, dict):
-                    if len(freck) != 1:
-                        raise FrecklesConfigError("Can't read freck configuration in run {}, not exactly one key in dict.".fromat(name), "config", freck)
-                    freck_type = freck.keys()[0]
-                    freck_metadata = freck[freck_type]
-                    if not isinstance(freck_metadata, dict):
-                        raise FrecklesConfigError("Freck configuration for type {} in run {} not a dict, don't know what to do with that...".format(freck_type, name), "config", freck_metadata)
-
-                    freck_name = freck_metadata.get("name", "freck_{}_{}".format(j, freck_type))
-                    freck_inner_vars = freck_metadata.get("vars", {})
-                 elif not isinstance(freck, basestring):
-                     raise FrecklesConfigError("Can't parse config in run {}".format(name), "config", freck)
-                 else:
-                     freck_type = freck
-                     freck_inner_vars = {}
-                     freck_name = "freck_{}_{}".format(j, freck_type)
-
-                 freck_vars = copy.deepcopy(run_vars)
-                 dict_merge(freck_vars, freck_inner_vars)
-                 run_frecks.append({"name": freck_name, "vars": freck_vars, "type": freck_type})
-                 j = j + 1
-            run = {"name": name, "frecks": run_frecks, "nr": number}
-            result_runs.append(run)
-
-    return result_runs
-
 
 # def guess_local_default_config(base_dir=None, paths=None, remote=None):
 
@@ -400,16 +299,6 @@ def playbook_needs_sudo(playbook_items):
     """Checks whether a playbook needs to use 'become' or not."""
 
     return bool([x for x in playbook_items.values() if x.get(FRECK_SUDO_KEY, False)])
-
-def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
-    """Assembles the dictionary to create the playbook from."""
-    temp_root = {}
-    temp_root["hosts"] = host_group
-    temp_root["gather_facts"] = True
-
-    temp_root["roles"] = playbook_items.values()
-
-    return temp_root
 
 
 def create_apps_dict(apps, default_details):

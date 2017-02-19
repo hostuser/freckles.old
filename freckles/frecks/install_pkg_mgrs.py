@@ -3,6 +3,7 @@ import logging
 
 from freckles import Freck
 from freckles.constants import *
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 
 log = logging.getLogger("freckles")
 
@@ -14,7 +15,7 @@ class InstallPkgMgrs(Freck):
     def get_config_schema(self):
         return False
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
 
         while True:
@@ -37,11 +38,8 @@ class InstallPkgMgrs(Freck):
         return {
             FRECK_PRIORITY_KEY:100,
             FRECK_SUDO_KEY: False,
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: {
-                        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: {
+                FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
         }

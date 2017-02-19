@@ -16,7 +16,6 @@ FRECKLES_METADATA_FILENAME = ".frkl"
 
 # freckles defaults/conventions
 FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH = "freckles/.freckles/default.yml"
-FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 FRECKLES_DEFAULT_EXECUTION_BASE_DIR = os.path.join(FRECKLES_DEFAULT_DIR, "runs")
 FRECKLES_DEFAULT_EXECUTION_DIR_NAME = "current"
 FRECKLES_DEFAULT_ARCHIVE_PLAYS = False
@@ -31,18 +30,18 @@ FRECKLES_BUG_EXIT_CODE = 7
 FRECK_TYPE_KEY = "freck_type"
 FRECK_NAME_KEY = "freck_name"
 FRECK_ID_KEY = "freck_id"
+FRECK_TASK_DESC = "freck_task_desc"
 
 FRECK_ITEM_NAME_KEY = "item_name"
 
 FRECK_SUDO_KEY = "freck_sudo"
 FRECK_BECOME_KEY = "freck_become"
-FRECK_RUNNER_KEY = "runner"
-FRECK_ANSIBLE_RUNNER = "ansible"
-FRECK_ANSIBLE_ROLES_KEY = "freck-roles"
-FRECK_ANSIBLE_ROLE_KEY = "role"
+FRECK_RUNNER_KEY = "FRECK_RUNNER"
 FRECK_PRIORITY_KEY = "freck_priority"
 
 # configuration keys & defaults
+FRECKLES_ANSIBLE_RUNNER = "ansible"
+FRECKLES_DEFAULT_RUNNER = FRECKLES_ANSIBLE_RUNNER
 
 ## dotfiles keys & defaults
 DOTFILES_BASE_KEY = "base_dir"
@@ -59,6 +58,7 @@ PACKAGES_KEY = "packages"
 
 ## freck run defaults
 FRECK_DEFAULT_PRIORITY = 10000
+RUN_FINISHED = "Run finished"
 
 ## general defaults
 FRECK_DEFAULT_CONFIG = {

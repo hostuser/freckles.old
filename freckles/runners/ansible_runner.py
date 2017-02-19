@@ -11,20 +11,58 @@ import shutil
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
 from cookiecutter.main import cookiecutter
-from constants import *
+from freckles.constants import *
 import subprocess
 from collections import OrderedDict
-from utils import playbook_needs_sudo, create_playbook_dict, can_passwordless_sudo
+from freckles.utils import playbook_needs_sudo, can_passwordless_sudo
 import logging
 import click
 import pprint
-from exceptions import FrecklesConfigError
+from freckles.exceptions import FrecklesConfigError
 import shutil
 log = logging.getLogger("freckles")
+
+FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL = "https://github.com/makkus/ansible-role-template.git"
+
+ANSIBLE_RUNNER_PREFIX = "ANSIBLE"
+FRECK_ANSIBLE_ROLES_KEY = "{}_ROLES".format(ANSIBLE_RUNNER_PREFIX)
+FRECK_ANSIBLE_ROLE_KEY = "{}_ROLE".format(ANSIBLE_RUNNER_PREFIX)
+
+FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
 FRECKLES_LOG_TOKEN = "FRECKLES: "
 
+def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP_NAME):
+
+        group_base_dir = os.path.join(inventory_dir, "group_vars")
+        os.makedirs(group_base_dir)
+
+        for host in hosts.keys():
+            host_dir = os.path.join(inventory_dir, "host_vars", host)
+            os.makedirs(host_dir)
+
+            freckles_host_file = os.path.join(host_dir, "freckles.yml")
+            with open(freckles_host_file, 'w') as f:
+                f.write(yaml.safe_dump(hosts.get(host, {}), default_flow_style=False))
+
+        inventory_file = os.path.join(inventory_dir, "inventory.ini")
+        with open(inventory_file, 'w') as f:
+            f.write("""[{}]
+
+{}
+
+""".format(group_name, "\n".join(hosts.keys())))
+
+def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
+    """Assembles the dictionary to create the playbook from."""
+    temp_root = {}
+    temp_root["hosts"] = host_group
+    temp_root["gather_facts"] = True
+
+    temp_root["roles"] = playbook_items.values()
+
+    return temp_root
 
 def extract_ansible_roles(playbook_items):
     """Extracts all ansible roles that will be used in a run.
@@ -34,7 +72,7 @@ def extract_ansible_roles(playbook_items):
 
     roles = {}
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
                 if not role_url_or_dict.startswith("frkl:"):
@@ -50,7 +88,7 @@ def copy_internal_roles(playbook_items, role_base_path):
 
     role_urls = Set()
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
                 if role_url_or_dict.startswith("frkl:"):
@@ -58,7 +96,7 @@ def copy_internal_roles(playbook_items, role_base_path):
 
     for role_internal_name in role_urls:
         frkl_role_name = role_internal_name[1][5:]
-        role_path = os.path.join(os.path.dirname(__file__), "ansible", "external_roles", frkl_role_name)
+        role_path = os.path.join(os.path.dirname(__file__), "..", "ansible", "external_roles", frkl_role_name)
         dest = os.path.join(role_base_path, role_internal_name[0])
         log.debug("Copying internal roles: {} -> {}".format(role_path, dest))
         shutil.copytree(role_path, dest)
@@ -73,7 +111,7 @@ def create_custom_roles(playbook_items, role_base_path):
     """
 
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if not isinstance(role_url_or_dict, basestring) and isinstance(role_url_or_dict, (list, tuple)):
                 create_custom_role(role_base_path, role_name, role_url_or_dict)
@@ -110,14 +148,28 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     cookiecutter(role_local_path, extra_context=role_dict, no_input=True)
     os.chdir(current_dir)
 
-class FrecklesRunner(object):
-    """ Runner that takes a freckles object, creates an ansible playbook and associated environment, then executes it.
+
+class AnsibleRunner(object):
+    """ Runner that executes a series of frecks that use ansible as a backend execution engine.
+
+    This is the default runner, and there might never be a different type. Just abstracted it because it was easy to do at this stage, and it might prove useful later on.
     """
 
-    def __init__(self, freckles, current_run, clear_build_dir=False, update_roles=False, execution_base_dir=None, execution_dir_name=None, details=False, hosts=None):
+    def __init__(self, items, callback):
+        self.items = items
+        self.callback = callback
 
-        self.task_result = {}
+    def prepare_run(self):
 
+        self.create_playbook_environment()
+
+
+    def create_playbook_environment(self, execution_base_dir=None, execution_dir_name=None, hosts=None):
+        """
+        Creates a directory containing the playbook to execute, all the required roles (downloaded if necessary), and a script to kick of the run.
+        """
+
+        # for now, only localhost is supported. haven't thought about how easy/hard it'd be to also support remote hosts
         if not hosts:
             hosts = FRECKLES_DEFAULT_HOSTS
 
@@ -128,30 +180,26 @@ class FrecklesRunner(object):
             else:
                 self.hosts[host] = {}
 
-
         if not execution_base_dir:
             execution_base_dir = FRECKLES_DEFAULT_EXECUTION_BASE_DIR
         if not execution_dir_name:
             execution_dir_name = FRECKLES_DEFAULT_EXECUTION_DIR_NAME
 
-        self.details = details
         self.execution_base_dir = execution_base_dir
         self.execution_dir_name = execution_dir_name
         self.execution_dir = os.path.join(execution_base_dir, execution_dir_name)
 
-        log.debug("Build dir: {}".format(self.execution_dir))
+        log.debug("Run directory: {}".format(self.execution_dir))
 
         #TODO: exception handling
         if not os.path.exists(self.execution_base_dir):
             os.makedirs(self.execution_base_dir)
-        if clear_build_dir and os.path.exists(self.execution_dir):
+        if os.path.exists(self.execution_dir):
             log.debug("Clearing previous build dir...")
             shutil.rmtree(self.execution_dir)
 
         os.chdir(self.execution_base_dir)
 
-        self.freckles = freckles
-        self.current_run = current_run
         self.freckles_group_name = FRECKLES_DEFAULT_GROUP_NAME
         self.playbook_dir = os.path.join(self.execution_dir, FRECKLES_PLAYBOOK_DIR)
         self.playbook_file = os.path.join(self.playbook_dir, FRECKLES_PLAYBOOK_NAME)
@@ -159,39 +207,33 @@ class FrecklesRunner(object):
         self.execution_script_file = os.path.join(self.execution_dir, FRECKLES_EXECUTION_SCRIPT)
         runner_file = inspect.stack()[0][1]
         runner_folder = os.path.abspath(os.path.join(runner_file, os.pardir))
-        self.callback_plugins_folder = os.path.join(runner_folder, "ansible", "callback_plugins")
-        log.debug("Creating playbook items...")
-        self.playbook_items = self.freckles.create_playbook_items(self.current_run)
+        self.callback_plugins_folder = os.path.join(runner_folder, "..",  "ansible", "callback_plugins")
 
         # check that every item has a role specified. Also apply tags if necessary
-        for item in self.playbook_items.values():
-            if not item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLE_KEY, False):
-                roles = item.get(FRECK_RUNNER_KEY, {}).get(FRECK_ANSIBLE_RUNNER, {}).get(FRECK_ANSIBLE_ROLES_KEY, {})
+        for item in self.items.values():
+            if not item.get(FRECK_ANSIBLE_ROLE_KEY, False):
+                roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
                 if len(roles) != 1:
                     raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]), FRECK_ANSIBLE_ROLE_KEY, roles)
+
                 item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys()[0]
-            else:
-                item[FRECK_ANSIBLE_ROLE_KEY] = item[FRECK_RUNNER_KEY][FRECK_ANSIBLE_RUNNER][FRECK_ANSIBLE_ROLE_KEY]
 
+            # copy role key to ansible-usable 'role' variable
+            item["role"] = item[FRECK_ANSIBLE_ROLE_KEY]
+            item[FRECK_TASK_DESC] = item[FRECK_ANSIBLE_ROLE_KEY]
 
-        if not self.playbook_items:
-            log.debug("No playbook items created, doing nothing in this run...")
-            return
-        log.debug("Playbooks created, {} playbook items created.".format(len(self.playbook_items)))
-
-        needs_sudo = playbook_needs_sudo(self.playbook_items)
+        needs_sudo = playbook_needs_sudo(self.items)
         passwordless_sudo = can_passwordless_sudo()
         if not passwordless_sudo and needs_sudo:
-            log.debug("Some playbook items will need sudo, adding parameter execution pipeline...")
+            log.debug("Some playbook items will need sudo, adding parameter to execution pipeline...")
             self.freckles_ask_sudo = "--ask-become-pass"
         else:
             self.freckles_ask_sudo = ""
 
-        self.roles = extract_ansible_roles(self.playbook_items)
-
+        self.roles = extract_ansible_roles(self.items)
         log.debug("Roles in use: {}".format(self.roles))
-        if not os.path.exists(os.path.join(self.execution_dir)):
-            cookiecutter_details = {
+
+        cookiecutter_details = {
                 "execution_dir": self.execution_dir_name,
                 "freckles_group_name": self.freckles_group_name,
                 "freckles_playbook_dir": self.playbook_dir,
@@ -202,32 +244,32 @@ class FrecklesRunner(object):
                 "freckles_callback_plugins": self.callback_plugins_folder,
                 "freckles_callback_plugin_name": FRECKLES_CALLBACK_PLUGIN_NAME
             }
-            log.debug("Creating build environment from template...")
-            log.debug("Using cookiecutter details: {}".format(cookiecutter_details))
+        log.debug("Creating build environment from template...")
+        log.debug("Using cookiecutter details: {}".format(cookiecutter_details))
 
-            play_template_path = os.path.join(os.path.dirname(__file__), "cookiecutter", "external_templates", "cookiecutter-freckles-play")
+        play_template_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "cookiecutter-freckles-play")
 
-            cookiecutter(play_template_path, extra_context=cookiecutter_details, no_input=True)
+        cookiecutter(play_template_path, extra_context=cookiecutter_details, no_input=True)
 
-        create_custom_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
-        copy_internal_roles(self.playbook_items, os.path.join(self.execution_dir, "roles", "internal"))
-
-        # create custom roles
+        # create custom & internal roles
+        create_custom_roles(self.items, os.path.join(self.execution_dir, "roles", "internal"))
+        copy_internal_roles(self.items, os.path.join(self.execution_dir, "roles", "internal"))
 
         log.debug("Creating and writing inventory...")
-        self.create_inventory_dir()
+        create_inventory_dir(self.hosts, self.inventory_dir)
 
         log.debug("Creating and writing playbook...")
-        playbook_dict = create_playbook_dict(self.playbook_items, self.freckles_group_name)
+        playbook_dict = create_playbook_dict(self.items, self.freckles_group_name)
         with open(self.playbook_file, 'w') as f:
             f.write(yaml.safe_dump([playbook_dict], default_flow_style=False))
 
-        ext_role_path = os.path.join(self.execution_dir, "roles", "external")
+        # ext_role_path = os.path.join(self.execution_dir, "roles", "external")
         if self.roles:
             click.echo("Downloading and installing external roles...")
             res = subprocess.check_output([os.path.join(self.execution_dir, "extensions", "setup", "role_update.sh")])
             for line in res.splitlines():
                 log.debug("Installing role: {}".format(line))
+
 
     def run(self):
 
@@ -236,38 +278,18 @@ class FrecklesRunner(object):
             log.info("Freckles needs sudo password for certain parts of the pipeline, please provide below:")
         proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE, shell=True)
 
-        total_tasks = (len(self.playbook_items))
-        latest_id = 0
+        total_tasks = (len(self.items))
+        self.callback.set_total_tasks(total_tasks)
         for line in iter(proc.stdout.readline, ''):
-            # log.debug(line)
-
             details = json.loads(line)
-            freckles_id = int(details.get(FRECK_ID_KEY, latest_id))
-            if freckles_id <= 0:
-                if latest_id == 0:
-                    freckles_id = 1
-                else:
-                    freckles_id = latest_id
-            changed = not freckles_id == latest_id
+            freck_id = int(details.get(FRECK_ID_KEY))
+            self.callback.log(freck_id, details)
 
-            if changed:
-                if latest_id != 0:
-                    if not self.log(freckles_id-1):
-                        success = False
+        self.callback.log(freck_id, RUN_FINISHED)
 
-                latest_id = freckles_id
-                # log title of task
-                self.print_task_title(freckles_id)
-
-            # print(freckles_id)
-            # print(details)
-            self.append_log(freckles_id, details)
-
-        if latest_id != 0:
-            if not self.log(latest_id):
-                success = False
-
+        # TODO: check success
         return success
+
 
     def append_log(self, freckles_id, details):
         if not self.task_result.get(freckles_id, False):
@@ -276,14 +298,6 @@ class FrecklesRunner(object):
         self.task_result[freckles_id].append(details)
         log.debug(details)
 
-    def print_task_title(self, freckles_id):
-
-        task_item = self.playbook_items[freckles_id]
-        item_name = task_item[FRECK_ITEM_NAME_KEY]
-        role_name = task_item[FRECK_ANSIBLE_ROLE_KEY]
-
-        task_title = "- task {:02d}/{:02d}: {} '{}'".format(freckles_id, len(self.playbook_items), role_name, item_name)
-        click.echo(task_title, nl=False)
 
     def log(self, freckles_id):
 
@@ -320,24 +334,3 @@ class FrecklesRunner(object):
                 log.info("\t{}".format(line))
 
         return not failed
-
-    def create_inventory_dir(self):
-
-        group_base_dir = os.path.join(self.inventory_dir, "group_vars")
-        os.makedirs(group_base_dir)
-
-        for host in self.hosts.keys():
-            host_dir = os.path.join(self.inventory_dir, "host_vars", host)
-            os.makedirs(host_dir)
-
-            freckles_host_file = os.path.join(host_dir, "freckles.yml")
-            with open(freckles_host_file, 'w') as f:
-                f.write(yaml.safe_dump(self.hosts.get(host, {}), default_flow_style=False))
-
-        inventory_file = os.path.join(self.inventory_dir, "inventory.ini")
-        with open(inventory_file, 'w') as f:
-            f.write("""[{}]
-
-{}
-
-""".format(self.freckles_group_name, "\n".join(self.hosts.keys())))

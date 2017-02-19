@@ -5,6 +5,7 @@ from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
 from freckles import Freck
 from freckles.constants import *
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
 import copy
 
@@ -84,7 +85,7 @@ class Install(Freck):
 
         return configs
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         return [config]
 
@@ -126,12 +127,9 @@ class Install(Freck):
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
             ACTION_KEY: "install",
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
         }
 
 
@@ -150,7 +148,7 @@ class Update(Freck):
 
         return result
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         return [config]
 
@@ -158,12 +156,9 @@ class Update(Freck):
         return {
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
             ACTION_KEY: "update_cache",
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
         }
 
 
@@ -181,7 +176,7 @@ class Upgrade(Freck):
 
         return result
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         return [config]
 
@@ -189,10 +184,8 @@ class Upgrade(Freck):
         return {
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
             ACTION_KEY: "upgrade",
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_RUNNER: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
         }

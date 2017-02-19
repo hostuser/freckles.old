@@ -5,6 +5,7 @@ from voluptuous import Schema, ALLOW_EXTRA, Required
 
 from freckles import Freck
 from freckles.constants import *
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 from freckles.utils import parse_dotfiles_item, create_dotfiles_dict
 
 log = logging.getLogger("freckles")
@@ -36,7 +37,7 @@ class Stow(Freck):
 
         return apps.values()
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         return [config]
 
@@ -74,10 +75,7 @@ class Stow(Freck):
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
             FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+100,
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME
         }

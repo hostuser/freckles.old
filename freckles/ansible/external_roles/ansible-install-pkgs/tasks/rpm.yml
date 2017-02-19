@@ -14,7 +14,7 @@
     state: "{{ pkg_state | default(latest) }}"
     conf_file: "{{ yum_conf_file | default(omit) }}"
     disable_gpg_check: "{{ yum_disable_gpg_check | default(omit) }}"
-    disablerepo: "{{ yum_disablerepo | defaults(omit) }}"
+    disablerepo: "{{ yum_disablerepo | default(omit) }}"
     enablerepo: "{{ yum_enablerepo | default(omit) }}"
     exclude: "{{ yum_exclude | default(omit) }}"
     installroot: "{{ yum_installroot | default(omit) }}"

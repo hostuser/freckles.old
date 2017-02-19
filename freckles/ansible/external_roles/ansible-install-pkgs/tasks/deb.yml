@@ -26,7 +26,7 @@
     force: "{{ apt_force | default(omit) }}"
     install_recommends: "{{ apt_install_recommends | default(omit) }}"
     only_upgrade: "{{ apt_only_upgrade | default(omit) }}"
-    purge:: "{{ apt_purge: | default(omit) }}"
+    purge: "{{ apt_purge | default(omit) }}"
   with_items:
     - "{{ pkgs['deb'] | default(pkgs['default']) }}"
   ignore_errors: "{{ ignore_errors | default('yes') }}"

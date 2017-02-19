@@ -8,6 +8,7 @@ import copy
 import logging
 log = logging.getLogger("freckles")
 from voluptuous import Schema, ALLOW_EXTRA, Any
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 
 FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME = "checkout"
 # FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "https://github.com/makkus/ansible-checkout"
@@ -18,7 +19,7 @@ class Checkout(Freck):
     def get_config_schema(self):
         return False
 
-    def create_playbook_items(self, config):
+    def create_run_items(self, config):
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
 
@@ -52,10 +53,7 @@ class Checkout(Freck):
         return {
             FRECK_SUDO_KEY: False,
             DOTFILES_KEY: DEFAULT_DOTFILE_DIR,
-            FRECK_RUNNER_KEY: {
-                FRECK_ANSIBLE_RUNNER: {
-                    FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME: FRECKLES_DEFAULT_CHECKOUT_ROLE_URL},
-                    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME
-                }
-            }
+            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME: FRECKLES_DEFAULT_CHECKOUT_ROLE_URL},
+            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME
         }
