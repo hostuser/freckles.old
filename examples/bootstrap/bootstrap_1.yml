@@ -1,0 +1,22 @@
+# don't run this on your 'real' machine, since it will delete your '.profile' file
+vars:
+  dotfiles:   # installs 'zsh' and 'bash' using default and 'zile' using nix package manager (has .nix.frkl marker file in folder)
+    base_dir: ~/dotfiles-bootstrap-simple
+    remote: https://github.com/makkus/dotfiles-bootstrap-simple.git
+  packages:
+    - bash-completion
+    - ranger:
+        pkg_mgr: nix
+
+runs:
+  - name: checkout dotfiles
+    tasks:
+      - checkout-dotfiles
+  - name: install applications, delete conflicting files and stow configs
+    tasks:
+      - install
+      - delete:
+          vars:
+            files-to-delete:
+              - ~/.profile
+      - stow
