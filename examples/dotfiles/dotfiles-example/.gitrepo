@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/dotfiles-example.git
+	branch = master
+	commit = 0601aff050155ee8112226be83bc2e4b1708774f
+	parent = 17fb04268b2332b415e4c49dbbfa31a5795bd263
+	cmdver = 0.3.1
