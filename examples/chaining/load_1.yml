@@ -6,9 +6,8 @@ runs:
     vars:
       dotfiles:
         - ~/dotfiles-example
-      packages:
-        - htop
-        - zile:
-            pkg_mgr: nix
     tasks:
       - install
+
+load:
+  - gh:makkus:freckles:examples/chaining/load_2.yml
