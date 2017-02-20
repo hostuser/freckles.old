@@ -33,6 +33,8 @@ class Delete(Freck):
 
             result.append(temp_config)
 
+            temp_config["item_name"] = temp_config[INT_FRECK_ITEM_NAME_KEY]
+
         return result
 
     def default_freck_config(self):

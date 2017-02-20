@@ -122,6 +122,7 @@ def create_runs(orig_configs, load_external=True):
         for run_item in runs:
 
             run_config_list = copy.deepcopy(config_list)
+            print(runs)
             name = run_item.get(RUN_DESC_KEY, False)
             run_type = run_item.get(RUN_RUNNER_KEY, FRECKLES_DEFAULT_RUNNER)
             number = i
