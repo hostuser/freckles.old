@@ -28,6 +28,12 @@ ANSIBLE_RUNNER_PREFIX = "ANSIBLE"
 FRECK_ANSIBLE_ROLES_KEY = "{}_ROLES".format(ANSIBLE_RUNNER_PREFIX)
 FRECK_ANSIBLE_ROLE_KEY = "{}_ROLE".format(ANSIBLE_RUNNER_PREFIX)
 
+ROLE_TO_USE_KEY = "role_to_use"
+ROLE_ROLES_KEY = "roles"
+
+ANSIBLE_TASK_TYPE = "ansible_task"
+ANSIBLE_ROLE_TYPE = "ansible_role"
+
 FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
@@ -54,13 +60,33 @@ def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP
 
 """.format(group_name, "\n".join(hosts.keys())))
 
+def cleanup_playbook_items(playbook_items):
+
+    result = OrderedDict()
+    for item_nr, item in playbook_items.iteritems():
+        i = {}
+        for key, value in item.iteritems():
+            if key.startswith(ANSIBLE_RUNNER_PREFIX):
+                continue
+            elif key != INT_FRECK_ID_KEY and key.startswith("freck_"):
+                continue
+
+            i[key] = value
+
+        result[item_nr] = i
+
+    return result
+
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
     """Assembles the dictionary to create the playbook from."""
     temp_root = {}
     temp_root["hosts"] = host_group
     temp_root["gather_facts"] = True
 
-    temp_root["roles"] = playbook_items.values()
+    cleaned = cleanup_playbook_items(playbook_items)
+    # cleaned = playbook_items
+
+    temp_root["roles"] = cleaned.values()
 
     return temp_root
 
@@ -128,7 +154,8 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     """
 
     # need to convert tasks dictionary so that it works with the template
-    tasks_dict = OrderedDict()
+    # tasks_dict = OrderedDict()
+    tasks_dict = {}
     for task in tasks:
         task_id_element = task["task"]
         if len(task_id_element) != 1:
@@ -144,7 +171,8 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     current_dir = os.getcwd()
     os.chdir(role_base_path)
     role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
-    role_local_path = os.path.join(os.path.dirname(__file__), "cookiecutter", "external_templates", "ansible_role_template")
+    role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
+
     cookiecutter(role_local_path, extra_context=role_dict, no_input=True)
     os.chdir(current_dir)
 
@@ -155,9 +183,36 @@ class AnsibleRunner(object):
     This is the default runner, and there might never be a different type. Just abstracted it because it was easy to do at this stage, and it might prove useful later on.
     """
 
-    def __init__(self, items, callback):
+    def __init__(self, frecks):
+        self.frecks = frecks
+
+    def set_items(self, items):
         self.items = items
+
+    def set_callback(self, callback):
         self.callback = callback
+
+    def get_freck(self, freck_name, freck_type, freck_configs):
+
+        if not freck_type == FRECK_DEFAULT_TYPE:
+            if freck_type == ANSIBLE_TASK_TYPE:
+                return self.frecks.get("task")
+            elif freck_type == ANSIBLE_ROLE_TYPE:
+                return self.frecks.get("role")
+            else:
+                raise FrecklesConfigError("Freck type '{}' not supported for ansible runner.".format(freck_type), FRECK_TYPE_KEY, freck_type)
+        else:
+            freck = self.frecks.get(freck_name, False)
+            if not freck:
+                last_config = freck_configs[-1]
+                if last_config.get(ROLE_ROLES_KEY, False):
+                        roles = last_config[ROLE_ROLES_KEY].keys()
+                        if freck_name in roles:
+                                return self.frecks.get("role")
+
+                        return False
+
+            return freck
 
     def prepare_run(self):
 
@@ -214,7 +269,7 @@ class AnsibleRunner(object):
             if not item.get(FRECK_ANSIBLE_ROLE_KEY, False):
                 roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
                 if len(roles) != 1:
-                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]), FRECK_ANSIBLE_ROLE_KEY, roles)
+                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[INT_FRECK_ITEM_NAME_KEY]), FRECK_ANSIBLE_ROLE_KEY, roles)
 
                 item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys()[0]
 
@@ -282,55 +337,12 @@ class AnsibleRunner(object):
         self.callback.set_total_tasks(total_tasks)
         for line in iter(proc.stdout.readline, ''):
             details = json.loads(line)
-            freck_id = int(details.get(FRECK_ID_KEY))
+            freck_id = int(details.get(INT_FRECK_ID_KEY))
             self.callback.log(freck_id, details)
 
         self.callback.log(freck_id, RUN_FINISHED)
 
-        # TODO: check success
+        # TODO: check success?
         return success
 
 
-    def append_log(self, freckles_id, details):
-        if not self.task_result.get(freckles_id, False):
-            self.task_result[freckles_id] = []
-
-        self.task_result[freckles_id].append(details)
-        log.debug(details)
-
-
-    def log(self, freckles_id):
-
-        failed = False
-        task_item = self.playbook_items[freckles_id]
-        output_details = self.task_result[freckles_id]
-
-        output = self.freckles.handle_task_output(task_item, output_details)
-
-        state_string = output[FRECKLES_STATE_KEY]
-
-        click.echo("\t=> {}".format(state_string))
-
-        if not self.details and state_string != FRECKLES_STATE_FAILED:
-            return True
-
-        if state_string == FRECKLES_STATE_SKIPPED:
-            return True
-        elif state_string == FRECKLES_STATE_FAILED:
-            failed = True
-            if output.get("stderr", False):
-                log.error("Error:")
-                for line in output["stderr"]:
-                    log.error("\t{}".format(line))
-                if output.get("stdout", False):
-                    log.info("Standard output:")
-                    for line in output.get("stdout", []):
-                        log.error("\t{}".format(line))
-            else:
-                for line in output.get("stdout", []):
-                    log.error("\t{}".format(line))
-        else:
-            for line in output.get("stdout", []):
-                log.info("\t{}".format(line))
-
-        return not failed

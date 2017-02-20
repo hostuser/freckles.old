@@ -15,8 +15,7 @@ class InstallPkgMgrs(Freck):
     def get_config_schema(self):
         return False
 
-    def create_run_items(self, config):
-
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         while True:
             try:
@@ -30,7 +29,7 @@ class InstallPkgMgrs(Freck):
         if "nix" in config.get(PKG_MGRS_KEY, []):
             if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
                 config[FRECK_SUDO_KEY] = True
-        config[FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(config.get(PKG_MGRS_KEY)))
+        config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(config.get(PKG_MGRS_KEY)))
         return [config]
 
     def default_freck_config(self):

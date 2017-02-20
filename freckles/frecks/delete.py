@@ -19,17 +19,17 @@ class Delete(Freck):
     def get_config_schema(self):
         return False
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         result = []
         for f in config[FILES_TO_DELETE_KEY]:
             temp_config = copy.copy(config)
             if f.startswith("~"):
-                temp_config[FRECK_ITEM_NAME_KEY] = os.path.expanduser(f)
+                temp_config[INT_FRECK_ITEM_NAME_KEY] = os.path.expanduser(f)
             elif os.path.isabs(f):
-                temp_config[FRECK_ITEM_NAME_KEY] = f
+                temp_config[INT_FRECK_ITEM_NAME_KEY] = f
             else:
-                temp_config[FRECK_ITEM_NAME_KEY] = os.path.join(os.path.expanduser("~"), f)
+                temp_config[INT_FRECK_ITEM_NAME_KEY] = os.path.join(os.path.expanduser("~"), f)
 
             result.append(temp_config)
 

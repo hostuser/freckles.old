@@ -100,9 +100,11 @@ def augment_config(freckles_config, details=False):
     freckles_config.details = details
 
 @cli.command()
+@click.option('--run_nr', '-r', required=False, help='only kick off one run, using it\'s index', default=0)
+@click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
-def run(freckles_config, config):
+def run(freckles_config, run_nr, only_prepare, config):
     """Executes one or multiple runs.
 
     A config can either be a local yaml file, a url to a remote yaml file, or a json string.
@@ -111,23 +113,11 @@ def run(freckles_config, config):
     """
 
     freckles = Freckles(*config)
+    if run_nr > 0:
+        freckles.run(run_nr, only_prepare=only_prepare)
+    else:
+        freckles.run(only_prepare=only_prepare)
 
-    for run_nr in freckles.runs.keys():
-        freckles.run(run_nr)
-
-
-
-
-
-
-
-@cli.command("test")
-@pass_freckles_config
-def print_config(config):
-
-    tasks = {}
-    tasks["task1"] = {"name": "taskname", "type": "apt", "task": { "task_name": { "var1": "val1" }}}
-    create_custom_role("/tmp/", "test_role", tasks)
 
 @cli.command("print-config")
 @click.argument('config', required=False, nargs=-1)
@@ -139,25 +129,50 @@ def print_config(freckles_config, config):
 
     The output to this command could be piped into a yaml file, and then used with the ``run`` command. Although, in practice that doesn't make much sense of course. """
 
-    runs = create_runs(config)
-
+    freckles = Freckles(*config)
     result_runs = []
+    for run, run_details in freckles.runs.iteritems():
 
-    for run in runs:
-        run_name = run["name"]
-        run_nr = run["nr"]
-        playbook_items = freckles_config.freckles.create_playbook_items(run)
-        frecks = []
-        for item_nr, item in playbook_items.iteritems():
-            freck_type = item.pop(FRECK_TYPE_KEY)
-            freck_name = item.pop(FRECK_NAME_KEY)
-            freckles_id = item.pop(FRECK_ID_KEY) # we don't need this id, still pulling it out
+        output_frecks = []
+        run_name = run_details[RUN_DESC_KEY]
+        run_nr = run
+        frecks = run_details[RUN_FRECKS_KEY]
 
-            frecks.append({freck_type: {"name": freck_name, "vars": item}})
+        freckles.create_runner_and_items(run_nr)
+        run_items = freckles.run_items[run_nr]
+        for run_item_nr, run_item in run_items.iteritems():
+            freck_name = run_item.pop(INT_FRECK_NAME_KEY, None)
+            freck_type = run_item.pop(INT_FRECK_TYPE_KEY, None)
+            freck_desc = run_item.pop(INT_FRECK_DESC_KEY, None)
+            freck_object = run_item.pop(INT_FRECK_KEY, None)
 
-        result_runs.append({"name": run_name, "frecks": frecks})
+            output_frecks.append({freck_name: {FRECK_TYPE_KEY: freck_type, FRECK_DESC_KEY: freck_desc, FRECK_VARS_KEY: run_item}})
+
+        result_runs.append({RUN_DESC_KEY: run_name, RUN_FRECKS_KEY: output_frecks})
 
     print(yaml.dump({"runs": result_runs}, default_flow_style=False))
+
+
+
+    # runs = create_runs(config)
+
+    # result_runs = []
+
+    # for run in runs:
+    #     run_name = run["name"]
+    #     run_nr = run["nr"]
+    #     playbook_items = freckles_config.freckles.create_playbook_items(run)
+    #     frecks = []
+    #     for item_nr, item in playbook_items.iteritems():
+    #         freck_type = item.pop(FRECK_TYPE_KEY)
+    #         freck_name = item.pop(FRECK_NAME_KEY)
+    #         freckles_id = item.pop(FRECK_ID_KEY) # we don't need this id, still pulling it out
+
+    #         frecks.append({freck_type: {"name": freck_name, "vars": item}})
+
+    #     result_runs.append({"name": run_name, "frecks": frecks})
+
+
 
 
 

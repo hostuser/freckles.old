@@ -34,10 +34,12 @@ class Stow(Freck):
             # return []
 
         apps = create_dotfiles_dict(dotfiles, default_details=config)
+        for app, value in apps.iteritems():
+            value["item_name"] = value[INT_FRECK_ITEM_NAME_KEY]
 
         return apps.values()
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         return [config]
 

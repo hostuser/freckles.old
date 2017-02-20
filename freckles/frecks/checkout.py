@@ -19,7 +19,7 @@ class Checkout(Freck):
     def get_config_schema(self):
         return False
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
 
@@ -43,7 +43,7 @@ class Checkout(Freck):
             temp_config = copy.copy(config)
             temp_config[DOTFILES_REMOTE_KEY] = remote
             temp_config[DOTFILES_BASE_KEY] = base_dir
-            temp_config[FRECK_ITEM_NAME_KEY] = "{} => {}".format(remote, base_dir)
+            temp_config[INT_FRECK_ITEM_NAME_KEY] = "{} => {}".format(remote, base_dir)
             result.append(temp_config)
 
         return result

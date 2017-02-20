@@ -27,16 +27,38 @@ FRECKLES_BUG_EXIT_CODE = 7
 
 
 # freck configuration keys
-FRECK_TYPE_KEY = "freck_type"
-FRECK_NAME_KEY = "freck_name"
-FRECK_ID_KEY = "freck_id"
+GLOBAL_RUNS_KEY = "runs"
+GLOBAL_VARS_KEY = "vars"
+
+RUN_RUNNER_KEY = "type"
+RUN_DESC_KEY = "desc"
+RUN_FRECKS_KEY = "tasks"
+RUN_VARS_KEY = "vars"
+
+FRECK_RUNNER_KEY = "runner" # TODO: add supported runners check
+
+
+FRECK_DESC_KEY = "desc"
+FRECK_VARS_KEY = "vars"
+FRECK_TYPE_KEY = "type"
+
+INT_FRECK_KEY = "freck_object"
+INT_FRECK_NAME_KEY = "freck_name"
+INT_FRECK_CONFIGS_KEY = "freck_configs"
+INT_FRECK_DESC_KEY = "freck_desc"
+INT_FRECK_TYPE_KEY = "freck_type"
+
+FRECK_DEFAULT_TYPE = "default"
+
+
+INT_FRECK_ID_KEY = "freck_id"
 FRECK_TASK_DESC = "freck_task_desc"
 
-FRECK_ITEM_NAME_KEY = "item_name"
+INT_FRECK_ITEM_NAME_KEY = "freck_item_name"
 
 FRECK_SUDO_KEY = "freck_sudo"
 FRECK_BECOME_KEY = "freck_become"
-FRECK_RUNNER_KEY = "FRECK_RUNNER"
+
 FRECK_PRIORITY_KEY = "freck_priority"
 
 # configuration keys & defaults

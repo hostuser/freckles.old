@@ -3,8 +3,10 @@ import logging
 import sys
 from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
+from sets import Set
 from freckles import Freck
 from freckles.constants import *
+from freckles.exceptions import FrecklesConfigError
 from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
 import copy
@@ -15,6 +17,17 @@ SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "default"]
 INSTALL_IGNORE_KEY = "no_install"
 ACTION_KEY = "install_action"
 PKGS_KEY = "pkgs"   # this is the key that is used in the role
+
+USE_DOTFILES_KEY = "use_dotfiles"
+USE_DOTFILES_DEFAULT = True
+USE_PACKAGES_KEY = "use_packages_var"
+USE_PACKAGES_DEFAULT = True
+
+ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
+ENSURE_PACKAGE_MANAGER_DEFAULT = False
+
+PRIORITY_SOURCE_KEY = "priority_source"
+PRIORITY_SOURCE_DEFAULT = PACKAGES_KEY
 
 FRECKLES_DEFAULT_INSTALL_ROLE_NAME = "install-pkg"
 FRECKLES_DEFAULT_INSTALL_ROLE_URL = "frkl:ansible-install-pkgs"
@@ -35,41 +48,60 @@ class Install(Freck):
 
         ignore_list = config.get(INSTALL_IGNORE_KEY, [])
         # check whether there are non-dotfile apps to isntall
-        if config.get(PACKAGES_KEY, False):
-            apps = create_apps_dict(config[PACKAGES_KEY], default_details=config)
+        apps = {}
+        if config.get(USE_DOTFILES_KEY, USE_DOTFILES_DEFAULT) and config.get(DOTFILES_KEY, False):
+            dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
+            apps_dotfiles = create_dotfiles_dict(dotfiles, default_details=config)
+            for app, details in apps_dotfiles.iteritems():
+                # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
+                if not details.get(PKG_MGR_KEY, False):
+                    dotfiles_dir = details.get(DOTFILES_DIR_KEY, False)
+                    if dotfiles_dir:
+                        pkg_mgr = get_pkg_mgr_from_path(dotfiles_dir)
+                        if pkg_mgr:
+                            details[PKG_MGR_KEY] = pkg_mgr
+                        # if the folder contains a file called .nix.frkl or .no_install.frkl or .conda.frkl than that can determine the pkg mgr too, and it'd override the path
+                        pkg_mgr = get_pkg_mgr_from_marker_file(details.get(DOTFILES_DIR_KEY, False))
+                        if pkg_mgr:
+                            details[PKG_MGR_KEY] = pkg_mgr
         else:
-           dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
-           # existing_dotfiles = check_dotfile_items(dotfiles)
-           # if not existing_dotfiles:
-               # log.info("\t -> No existing or configured dotfile directories. Not installing anything...")
-               # return False
-           apps = create_dotfiles_dict(dotfiles, default_details=config)
+            apps_dotfiles = {}
+
+        if config.get(USE_PACKAGES_KEY, USE_PACKAGES_DEFAULT) and config.get(PACKAGES_KEY, False):
+            apps_packages = create_apps_dict(config[PACKAGES_KEY], default_details=config)
+        else:
+            apps_packages = {}
+
+
+        priority_source = config.get(PRIORITY_SOURCE_KEY, PRIORITY_SOURCE_DEFAULT)
+        if priority_source != PACKAGES_KEY and priority_source != DOTFILES_KEY:
+            raise FrecklesConfigError("priority source key needs to either be '{}' or '{}', but is: {}".format(PACKAGES_KEY, DOTFILES_KEY, priority_source), PRIORITY_SOURCE_KEY, priority_source)
+
+        if priority_source == PACKAGES_KEY:
+            dict_merge(apps, apps_dotfiles)
+            dict_merge(apps, apps_packages)
+        else:
+            dict_merge(apps, apps_packages)
+            dict_merge(apps, apps_dotfiles)
 
         configs = []
+
+        package_mgrs_to_install = Set()
 
         for app, details in apps.iteritems():
             if app in ignore_list:
                 continue
 
-            # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
-            if not details.get(PKG_MGR_KEY, False):
-                dotfiles_dir = details.get(DOTFILES_DIR_KEY, False)
-                if dotfiles_dir:
-                    pkg_mgr = get_pkg_mgr_from_path(dotfiles_dir)
-                    if pkg_mgr:
-                        details[PKG_MGR_KEY] = pkg_mgr
-                    # if the folder contains a file called .nix.frkl or .no_install.frkl or .conda.frkl than that can determine the pkg mgr too, and it'd override the path
-                    pkg_mgr = get_pkg_mgr_from_marker_file(details.get(DOTFILES_DIR_KEY, False))
-                    if pkg_mgr:
-                        details[PKG_MGR_KEY] = pkg_mgr
-
             # check if pkgs key exists
             if not details.get(PKGS_KEY, False):
-                details[PKGS_KEY] = {"default": [details[FRECK_ITEM_NAME_KEY]]}
+                details[PKGS_KEY] = {"default": [details[INT_FRECK_ITEM_NAME_KEY]]}
 
             if details.get(PKG_MGR_KEY, False):
                 sudo = get_pkg_mgr_sudo(details[PKG_MGR_KEY])
                 details[FRECK_SUDO_KEY] = sudo
+
+                if details.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
+                    package_mgrs_to_install.add(details[PKG_MGR_KEY])
 
             # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
             if not type(details["pkgs"]) == dict:
@@ -79,13 +111,14 @@ class Install(Freck):
 
             # check if an 'default' pkgs key exists, if not, use the package name
             if not details.get("pkgs").get("default", False):
-                details["pkgs"]["default"] = [details[FRECK_ITEM_NAME_KEY]]
+                details["pkgs"]["default"] = [details[INT_FRECK_ITEM_NAME_KEY]]
 
             configs.append(details)
 
+
         return configs
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         return [config]
 
@@ -143,12 +176,12 @@ class Update(Freck):
             if pkg_mgr != "default":
                 details[PKG_MGR_KEY] = pkg_mgr
 
-            details[FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
+            details[INT_FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
             result.append(details)
 
         return result
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         return [config]
 
@@ -171,12 +204,12 @@ class Upgrade(Freck):
             details = copy.deepcopy(config)
             details[PKG_MGR_KEY] = pkg_mgr
 
-            details[FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
+            details[INT_FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
             result.append(details)
 
         return result
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         return [config]
 

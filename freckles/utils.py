@@ -325,15 +325,15 @@ def create_apps_dict(apps, default_details):
             if not app_details:
                 app_details = {}
             dict_merge(details, app_details)
-            details[FRECK_ITEM_NAME_KEY] = app_name
+            details[INT_FRECK_ITEM_NAME_KEY] = app_name
 
         elif isinstance(app, str):
-            details[FRECK_ITEM_NAME_KEY] = app
+            details[INT_FRECK_ITEM_NAME_KEY] = app
 
         else:
             raise FrecklesConfigError("Can't parse apps configuration: {}".format(app), "apps", app)
 
-        result[details[FRECK_ITEM_NAME_KEY]] = details
+        result[details[INT_FRECK_ITEM_NAME_KEY]] = details
 
     return result
 
@@ -373,7 +373,7 @@ def create_dotfiles_dict(base_dirs, default_details):
                     # defaults
                     dotfile_dir = path.join(temp_full_path, item)
                     apps[item] = copy.deepcopy(default_details)
-                    apps[item][FRECK_ITEM_NAME_KEY] = item
+                    apps[item][INT_FRECK_ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
                     apps[item][DOTFILES_BASE_KEY] = temp_full_path
                     if remote:

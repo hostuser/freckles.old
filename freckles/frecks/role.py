@@ -6,33 +6,37 @@ from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 from freckles.exceptions import FrecklesConfigError
 from freckles import Freck
 from freckles.constants import *
-from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
+from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY, ANSIBLE_TASK_TYPE, ANSIBLE_ROLE_TYPE, ROLE_ROLES_KEY, ROLE_TO_USE_KEY
 from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
 import copy
+
 
 log = logging.getLogger("freckles")
 
 ROLE_VARS_KEY = "role_vars"
-ROLE_TO_USE_KEY = "role_to_use"
-ROLE_ROLES_KEY = "roles"
 
 class Role(Freck):
 
-    def create_run_items(self, config):
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
         # we're going the opposite direction this time, filling up the 'default' runner values instead of reading them...
-        role_to_use = config[ROLE_TO_USE_KEY]
+
+        if freck_type == ANSIBLE_ROLE_TYPE:
+            role_to_use = freck_name
+            role_vars = {}
+        elif freck_type != FRECK_DEFAULT_TYPE:
+            raise FrecklesConfigError("Freck type is neither {} nor {}, can't continue".format(FRECK_DEFAULT_TYPE, ANSIBLE_ROLE_TYPE), FRECK_TYPE_KEY, freck_type)
+        else:
+            role_to_use = config.get(ROLE_TO_USE_KEY, False)
+            if not role_to_use:
+                role_to_use = freck_name
+            role_vars = config.get(ROLE_VARS_KEY, False)
+            if not role_vars:
+                role_vars = config
+
         roles = config[ROLE_ROLES_KEY]
-
-        roles_dict = { FRECK_ANSIBLE_ROLE_KEY: role_to_use, FRECK_ANSIBLE_ROLES_KEY: roles }
-
-        # config[FRECK_RUNNER_KEY][FRECK_ANSIBLE_RUNNER] = roles_dict
-
-
-        # vars
-        role_vars = config.get(ROLE_VARS_KEY, False)
-        if not role_vars:
-            return [config]
+        config[FRECK_ANSIBLE_ROLES_KEY] = roles
+        config[FRECK_ANSIBLE_ROLE_KEY] = role_to_use
 
         if isinstance(role_vars, dict):
             # means only one freck
