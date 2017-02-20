@@ -11,10 +11,9 @@ from voluptuous import Schema, ALLOW_EXTRA, Any
 from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
 
 FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME = "checkout"
-# FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "https://github.com/makkus/ansible-checkout"
 FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "frkl:ansible-checkout"
 
-class Checkout(Freck):
+class CheckoutDotfiles(Freck):
 
     def get_config_schema(self):
         return False

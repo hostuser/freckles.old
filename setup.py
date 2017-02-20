@@ -43,7 +43,7 @@ setup(
             'install=freckles.frecks:Install',
             'update=freckles.frecks:Update',
             'upgrade=freckles.frecks:Upgrade',
-            'checkout=freckles.frecks:Checkout',
+            'checkout-dotfiles=freckles.frecks:CheckoutDotfiles',
             'stow=freckles.frecks:Stow',
             'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
             'delete=freckles.frecks:Delete',
