@@ -9,6 +9,7 @@ import pprint
 import json
 from runners.ansible_runner import AnsibleRunner
 from utils import get_pkg_mgr_from_path, load_extensions, dict_merge, expand_config_url
+import urllib2
 import six
 import abc
 from constants import *
@@ -64,6 +65,7 @@ def get_and_load_configs(config_url, load_external=True):
     """ Retrieves and loads config from url, parses it and downloads 'load' configs if applicable.
     """
 
+    log.debug("Loading config: {}".format(config_url))
     config_dict = get_config(config_url)
     result = [config_dict]
 
@@ -103,6 +105,7 @@ def create_runs(orig_configs, load_external=True):
 
     current_default_vars = {}  # copy.deepcopy(seed_vars)
 
+    i = 1
     for config_dict in configs:
 
         if current_default_vars:
@@ -116,7 +119,6 @@ def create_runs(orig_configs, load_external=True):
         if vars:
             config_list.append(copy.deepcopy(vars))
 
-        i = 1
         for run_item in runs:
 
             run_config_list = copy.deepcopy(config_list)
@@ -162,6 +164,8 @@ def create_runs(orig_configs, load_external=True):
                 j = j + 1
             run = {RUN_DESC_KEY: name, RUN_FRECKS_KEY: run_frecks, RUN_RUNNER_KEY: run_type}
             result_runs[number] = run
+
+
 
     return result_runs
 

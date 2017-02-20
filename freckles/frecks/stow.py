@@ -73,7 +73,6 @@ class Stow(Freck):
     def default_freck_config(self):
 
         return {
-            DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
             FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+100,

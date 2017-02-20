@@ -135,7 +135,8 @@ class Install(Freck):
     def get_config_schema(self):
 
         s = Schema({
-            Required(DOTFILES_KEY): list,
+            PACKAGES_KEY: list,
+            DOTFILES_KEY: list,
             PKG_MGR_KEY: Any(*SUPPORTED_PKG_MGRS),
             PKGS_KEY: dict
         }, extra=ALLOW_EXTRA)
@@ -266,7 +267,6 @@ class Install(Freck):
 
     def default_freck_config(self):
         return {
-            DOTFILES_KEY: [DEFAULT_DOTFILE_DIR],
             PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
             FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
             ACTION_KEY: "install",
