@@ -29,6 +29,7 @@ FRECKLES_BUG_EXIT_CODE = 7
 # freck configuration keys
 GLOBAL_RUNS_KEY = "runs"
 GLOBAL_VARS_KEY = "vars"
+GLOBAL_LOAD_KEY = "load"
 
 RUN_RUNNER_KEY = "type"
 RUN_DESC_KEY = "desc"

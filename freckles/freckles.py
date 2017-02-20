@@ -60,7 +60,29 @@ def get_config(config_file_url):
             raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
 
 
-def create_runs(configs):
+def get_and_load_configs(config_url, load_external=True):
+    """ Retrieves and loads config from url, parses it and downloads 'load' configs if applicable.
+    """
+
+    config_dict = get_config(config_url)
+    result = [config_dict]
+
+    load = config_dict.get(GLOBAL_LOAD_KEY, [])
+    if load and load_external:
+        if isinstance(load, basestring):
+            new_configs = get_and_load_configs(load)
+            result.extend(new_configs)
+        elif isinstance(load, (tuple, list)):
+            for config in load:
+                new_configs = get_and_load_configs(config)
+                result.extend(new_configs)
+        else:
+            raise FrecklesConfigError("Can't load external config, type not recognized: {}".format(load), GLOBAL_LOAD_KEY, load)
+
+    return result
+
+
+def create_runs(orig_configs, load_external=True):
     """Creates all runs using the list of provided configs.
 
     Configs will be overlayed (as described in XXX).
@@ -69,18 +91,24 @@ def create_runs(configs):
         configs (list): a list of configs (paths, urls, etc.)
     """
 
+    configs = []
+
+    # load external configs if applicable
+    for config in orig_configs:
+
+        config_dicts = get_and_load_configs(config, load_external)
+        configs.extend(config_dicts)
+
     result_runs = OrderedDict()
 
     current_default_vars = {}  # copy.deepcopy(seed_vars)
 
-    for config in configs:
+    for config_dict in configs:
 
         if current_default_vars:
             config_list = [copy.deepcopy(current_default_vars)]
         else:
             config_list = []
-
-        config_dict = get_config(config)
 
         runs = config_dict.get(GLOBAL_RUNS_KEY, {})
         vars = config_dict.get(GLOBAL_VARS_KEY, {})
