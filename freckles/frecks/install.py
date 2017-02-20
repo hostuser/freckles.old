@@ -26,11 +26,109 @@ USE_PACKAGES_DEFAULT = True
 ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
 ENSURE_PACKAGE_MANAGER_DEFAULT = False
 
+UPDATE_PACKAGE_CACHE_KEY = "update_cache"
+UPDATE_PACKAGE_CACHE_DEFAULT = True
+UPGRADE_PACKAGES_KEY = "upgrade_packages"
+UPGRADE_PACKAGES_DEFAULT = False
+
 PRIORITY_SOURCE_KEY = "priority_source"
 PRIORITY_SOURCE_DEFAULT = PACKAGES_KEY
 
 FRECKLES_DEFAULT_INSTALL_ROLE_NAME = "install-pkg"
 FRECKLES_DEFAULT_INSTALL_ROLE_URL = "frkl:ansible-install-pkgs"
+
+FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgrs"
+FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL = "frkl:ansible-install-pkg-mgrs"
+
+UPDATE_DEFAULT_CONFIG = {
+    FRECK_PRIORITY_KEY: 100,
+    FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+    ACTION_KEY: "update_cache",
+    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+}
+
+UPGRADE_DEFAULT_CONFIG = {
+    FRECK_PRIORITY_KEY: 200,
+    FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+    ACTION_KEY: "upgrade",
+    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+    FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+}
+
+INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
+    FRECK_PRIORITY_KEY: 10,
+    FRECK_SUDO_KEY: False,
+    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+    FRECK_ANSIBLE_ROLES_KEY: {
+        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
+    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
+}
+
+def create_pkg_mgr_install_config(pkg_mgrs):
+
+    pkg_mgrs = copy.deepcopy(pkg_mgrs)
+    try:
+        pkg_mgrs.remove(DEFAULT_PACKAGE_MANAGER_STRING)
+    except:
+        pass
+    try:
+        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
+    except:
+        pass
+
+    if not pkg_mgrs:
+        return []
+
+    config = copy.deepcopy(INSTALL_PKG_MANAGERS_DEFAULT_CONFIG)
+
+    config[PKG_MGRS_KEY] = list(pkg_mgrs)
+
+    # TAG: local-only
+    if "nix" in pkg_mgrs:
+        if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
+            config[FRECK_SUDO_KEY] = True
+    config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(pkg_mgrs))
+    return config
+
+def update_package_cache(pkg_mgrs):
+
+    pkg_mgrs = copy.deepcopy(pkg_mgrs)
+    try:
+        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
+    except:
+        pass
+
+    result = []
+    for pkg_mgr in pkg_mgrs:
+        details = copy.deepcopy(UPDATE_DEFAULT_CONFIG)
+        if pkg_mgr != "default":
+            details[PKG_MGR_KEY] = pkg_mgr
+
+        details[INT_FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
+        result.append(details)
+
+    return result
+
+def upgrade_packages(pkg_mgrs):
+
+    pkg_mgrs = copy.deepcopy(pkg_mgrs)
+    try:
+        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
+    except:
+        pass
+
+    result = []
+    for pkg_mgr in pkg_mgrs:
+        details = copy.deepcopy(UPGRADE_DEFAULT_CONFIG)
+        details[PKG_MGR_KEY] = pkg_mgr
+
+        details[INT_FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
+        result.append(details)
+
+    return result
 
 class Install(Freck):
 
@@ -86,7 +184,7 @@ class Install(Freck):
 
         configs = []
 
-        package_mgrs_to_install = Set()
+        package_mgrs = Set()
 
         for app, details in apps.iteritems():
             if app in ignore_list:
@@ -99,9 +197,10 @@ class Install(Freck):
             if details.get(PKG_MGR_KEY, False):
                 sudo = get_pkg_mgr_sudo(details[PKG_MGR_KEY])
                 details[FRECK_SUDO_KEY] = sudo
+            else:
+                details[PKG_MGR_KEY] = DEFAULT_PACKAGE_MANAGER_STRING
 
-                if details.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
-                    package_mgrs_to_install.add(details[PKG_MGR_KEY])
+            package_mgrs.add(details[PKG_MGR_KEY])
 
             # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
             if not type(details["pkgs"]) == dict:
@@ -115,6 +214,17 @@ class Install(Freck):
 
             configs.append(details)
 
+        if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
+            extra_config = create_pkg_mgr_install_config(package_mgrs)
+            configs.append(extra_config)
+
+        if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
+            extra_configs = update_package_cache(package_mgrs)
+            configs.extend(extra_configs)
+
+        if config.get(UPGRADE_PACKAGES_KEY, UPGRADE_PACKAGES_DEFAULT):
+            extra_configs = upgrade_packages(package_mgrs)
+            configs.extend(extra_configs)
 
         return configs
 
@@ -145,7 +255,7 @@ class Install(Freck):
                 temp_changed = details["result"][FRECKLES_CHANGED_KEY]
                 if temp_changed:
                     pkg_mgr = details["action"]
-                    state = "installed (using '{}')".format(pkg_mgr)
+                    state = "ok (using '{}')".format(pkg_mgr)
                     changed = True
                 else:
                     state = "already present"
@@ -179,6 +289,7 @@ class Update(Freck):
             details[INT_FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
             result.append(details)
 
+        result = update_package_cache(config.get("pkg_mgrs", DEFAULT_PACKAGE_MANAGER_STRING))
         return result
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
@@ -186,13 +297,7 @@ class Update(Freck):
         return [config]
 
     def default_freck_config(self):
-        return {
-            FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ACTION_KEY: "update_cache",
-            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-        }
+        return UPDATE_DEFAULT_CONFIG
 
 
 class Upgrade(Freck):
@@ -214,10 +319,26 @@ class Upgrade(Freck):
         return [config]
 
     def default_freck_config(self):
-        return {
-            FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ACTION_KEY: "upgrade",
-            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-            FRECK_ANSIBLE_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-        }
+        return UPGRADE_DEFAULT_CONFIG
+
+
+class InstallPkgMgrs(Freck):
+
+    def get_config_schema(self):
+        return False
+
+    def create_run_items(self, freck_name, freck_type, freck_desc, config):
+
+        while True:
+            try:
+                config.get(PKG_MGRS_KEY, []).remove("default")
+            except ValueError:
+                break
+
+        new_config = create_pkg_mgr_install_config(config.get(PKG_MGRS_KEY, []))
+        dict_merge(config, new_config)
+        return [config]
+
+    def default_freck_config(self):
+
+        return INSTALL_PKG_MANAGERS_DEFAULT_CONFIG

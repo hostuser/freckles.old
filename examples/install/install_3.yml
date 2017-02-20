@@ -1,0 +1,19 @@
+---
+# a very simple exaample of how to install packages using both an (existing) dotfiles directory and a list of packages. By default, values in the 'packages' var overwrite ones that are calculated via dotfile directories. That can be changed using the 'priority_source' variable
+
+# This example also shows a way to automatically install all package managers are required (as defined by the pkg_mgr variable, either on global, run or task level.
+
+runs:
+  - desc: install applications according to dotfiles directory
+    vars:
+      ensure_pkg_manager: yes   # default is 'no'
+      update_cache: yes   # this is default anyway
+      upgrade_packages: yes   # default is 'no'
+      dotfiles:
+        - ~/dotfiles-example
+      packages:
+        - htop   # this will be installed using the default package manager (apt or yum probably)
+        - zile:
+            pkg_mgr: nix
+    tasks:
+      - install

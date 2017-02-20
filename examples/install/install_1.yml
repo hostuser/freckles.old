@@ -1,0 +1,12 @@
+---
+# a very simple exaample of how to install 2 packages by using the 'packages' key and providing a list
+
+vars:
+  packages:
+    - zile
+    - htop
+
+runs:
+  - desc: install 2 sample applications
+    tasks:
+      - install

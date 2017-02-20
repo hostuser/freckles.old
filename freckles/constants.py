@@ -102,6 +102,7 @@ FRECKLES_STATE_CHANGED = "changed"
 # to sort
 PKG_MGR_KEY = "pkg_mgr"
 PKG_MGRS_KEY = "pkg_mgrs"
+DEFAULT_PACKAGE_MANAGER_STRING = "default"
 PACKAGE_STATE_KEY = "pkg_state"
 DEFAULT_PACKAGE_STATE = "present"
 DEFAULT_PACKAGE_SUDO = True
