@@ -2,5 +2,7 @@
 # tasks file for ansible-role-template
 {% for task_name, details in cookiecutter.tasks | dictsort -%}
 - name: {{ task_name }}
-  {{ details | to_nice_yaml(indent=4) }}
+  {{ details.module_name }}: {{ details.free_form | default("") }}
+  args:
+    {{ details.args | to_nice_yaml(indent=4) }}
 {% endfor %}

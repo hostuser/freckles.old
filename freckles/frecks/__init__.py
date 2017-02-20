@@ -4,7 +4,7 @@ from install import Upgrade
 from stow import Stow
 from checkout import CheckoutDotfiles
 from install import InstallPkgMgrs
-from file import Delete
+from files import Delete
 from debug_vars import DebugVars
 from role import Role
 from task import Task

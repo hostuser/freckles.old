@@ -3,6 +3,7 @@
 
 from sets import Set
 import inspect
+import sys
 import os
 import json
 import yaml
@@ -33,6 +34,8 @@ ROLE_ROLES_KEY = "roles"
 
 ANSIBLE_TASK_TYPE = "ansible_task"
 ANSIBLE_ROLE_TYPE = "ansible_role"
+
+TASK_FREE_FORM_KEY = "free_form"
 
 FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
@@ -164,13 +167,28 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
         task_id = task_id_element.keys()[0]
         task_vars = task_id_element[task_id]
         name = task["name"]
-        type = task["type"]
+        task_type = task["type"]
 
-        tasks_dict[task_id] = { type: task_vars }
+        tasks_dict[task_id] = { task_type: task_vars }
 
     current_dir = os.getcwd()
     os.chdir(role_base_path)
-    role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
+
+    rearranged_tasks = {}
+    print(tasks_dict)
+    for task, task_detail in tasks_dict.iteritems():
+            ansible_module = task_detail.keys()[0]
+            if task_detail[ansible_module].get(TASK_FREE_FORM_KEY, False):
+                free_form = task_detail[ansible_module].pop(TASK_FREE_FORM_KEY)
+                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module]}
+                rearranged_tasks[task] = new_dict
+            else:
+                ansible_module = task_detail.keys()[0]
+                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module]}
+
+    print(rearranged_tasks)
+    # role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
+    role_dict = { "role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults }
     role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
 
     cookiecutter(role_local_path, extra_context=role_dict, no_input=True)
@@ -194,10 +212,13 @@ class AnsibleRunner(object):
 
     def get_freck(self, freck_name, freck_type, freck_configs):
 
+        log.debug("Finding freck for: {}, {}, {}".format(freck_name, freck_type, freck_configs))
         if not freck_type == FRECK_DEFAULT_TYPE:
             if freck_type == ANSIBLE_TASK_TYPE:
+                log.debug("Using freck: task")
                 return self.frecks.get("task")
             elif freck_type == ANSIBLE_ROLE_TYPE:
+                log.debug("Using freck: role")
                 return self.frecks.get("role")
             else:
                 raise FrecklesConfigError("Freck type '{}' not supported for ansible runner.".format(freck_type), FRECK_TYPE_KEY, freck_type)
@@ -208,6 +229,7 @@ class AnsibleRunner(object):
                 if last_config.get(ROLE_ROLES_KEY, False):
                         roles = last_config[ROLE_ROLES_KEY].keys()
                         if freck_name in roles:
+                                log.debug("Using freck: role")
                                 return self.frecks.get("role")
 
                         return False

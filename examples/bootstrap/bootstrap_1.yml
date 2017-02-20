@@ -1,11 +1,14 @@
 # don't run this on your 'real' machine, since it will delete your '.profile' file
 vars:
-  dotfiles:   # installs 'zsh' and 'bash' using default and 'zile' using nix package manager (has .nix.frkl marker file in folder)
-    base_dir: ~/dotfiles-bootstrap-simple
-    remote: https://github.com/makkus/dotfiles-bootstrap-simple.git
-  packages:
+  ensure_pkg_manager: yes     # necessary, because we are using nix and didn't install it seperately (which we could do)
+  upgrade_packages: yes       # might as well, since bootstrapping is usually done just after install
+  dotfiles:
+    # installs 'zsh' and 'bash' using default and 'zile' using nix package manager (has .nix.frkl marker file in folder)
+    - base_dir: ~/dotfiles-bootstrap-simple
+      remote: https://github.com/makkus/dotfiles-bootstrap-simple.git
+  packages:  # packages that don't have config files
     - bash-completion
-    - ranger:
+    - cowsay:
         pkg_mgr: nix
 
 runs:

@@ -122,7 +122,6 @@ def create_runs(orig_configs, load_external=True):
         for run_item in runs:
 
             run_config_list = copy.deepcopy(config_list)
-            print(runs)
             name = run_item.get(RUN_DESC_KEY, False)
             run_type = run_item.get(RUN_RUNNER_KEY, FRECKLES_DEFAULT_RUNNER)
             number = i
@@ -160,7 +159,6 @@ def create_runs(orig_configs, load_external=True):
 
                 if freck_inner_vars:
                     freck_config_list.append(freck_inner_vars)
-                test = INT_FRECK_TYPE_KEY
                 run_frecks.append({INT_FRECK_DESC_KEY: freck_desc, INT_FRECK_TYPE_KEY: freck_type, INT_FRECK_NAME_KEY: freck_name, INT_FRECK_CONFIGS_KEY: freck_config_list})
                 j = j + 1
             run = {RUN_DESC_KEY: name, RUN_FRECKS_KEY: run_frecks, RUN_RUNNER_KEY: run_type}
@@ -194,7 +192,7 @@ def create_run_items(run, runner):
             freck_name = freck[INT_FRECK_NAME_KEY]
             freck_desc = freck[INT_FRECK_DESC_KEY]
             freck_configs = freck[INT_FRECK_CONFIGS_KEY]
-            freck_configs.append({INT_FRECK_TYPE_KEY: freck_type, INT_FRECK_NAME_KEY: freck_name, INT_FRECK_DESC_KEY: freck_desc})
+            # freck_configs.append({INT_FRECK_TYPE_KEY: freck_type, INT_FRECK_NAME_KEY: freck_name, INT_FRECK_DESC_KEY: freck_desc})
 
             freck = runner.get_freck(freck_name, freck_type, freck_configs)
             if not freck:

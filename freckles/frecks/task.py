@@ -15,7 +15,7 @@ log = logging.getLogger("freckles")
 
 TASKS_NAME_KEY = "tasks"
 
-GENERATED_ROLE_ID_COUNTER = 1
+GENERATED_ROLE_ID_COUNTER = 0
 GENERATED_ROLE_PREFIX = "freckles_custom_role_"
 
 def create_run_using_freck_name(freck_name, freck_desc, task_vars):
@@ -71,6 +71,7 @@ class Task(Freck):
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
+        print(config)
         if freck_type == ANSIBLE_TASK_TYPE and config.get(TASKS_NAME_KEY, False):
             raise FrecklesConfigError("Task freck has both type and {} variable set, this is invalid".format(TASKS_NAME_KEY), TASKS_NAME_KEY, config[TASKS_NAME_KEY])
         elif freck_type == ANSIBLE_TASK_TYPE:
