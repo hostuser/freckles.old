@@ -365,4 +365,4 @@ class InstallPkgMgrs(Freck):
 
     def default_freck_config(self):
 
-        return INSTALL_PKG_MANAGERS_DEFAULT_CONFIG
+        return {}
