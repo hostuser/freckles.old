@@ -1,0 +1,17 @@
+runs:
+  - name: install zsh and oh-my-zsh
+    tasks:
+     - install:
+         vars:
+           packages:
+             - zsh
+     - user:   # change default shell to zsh
+         type: ansible_task
+         vars:
+           name: vagrant
+           become: yes
+           shell: /usr/bin/zsh
+     - shell:             # install oh-my-zsh, might fail because it can't change the users default shell, can be ignored though
+         type: ansible_task
+         vars:
+           free_form: 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"'

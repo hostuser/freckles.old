@@ -34,7 +34,6 @@ sudo easy_install pip
 sudo pip install --upgrade pip setuptools wheel requests freckles --ignore-installed six
 
 
-
 Stable release
 --------------
 

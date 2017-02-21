@@ -67,35 +67,37 @@ INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
     FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
 }
 
-def create_pkg_mgr_install_config(pkg_mgrs):
+INSTALL_MAC_BREW_DEFAULT_CONFIG = {
+    INT_FRECK_PRIORITY_KEY: 10,
+    FRECK_SUDO_KEY: True,
+    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+    FRECK_ANSIBLE_ROLES_KEY: {
+        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: "https://github.com/geerlingguy/ansible-role-homebrew.git",
+        "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"
+    },
+    FRECKLES_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
+}
 
-    pkg_mgrs = copy.deepcopy(pkg_mgrs)
-    try:
-        pkg_mgrs.remove(DEFAULT_PACKAGE_MANAGER_STRING)
-    except:
-        pass
-    try:
-        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
-    except:
-        pass
+def create_pkg_mgr_install_config(pkg_mgr):
 
-    if not pkg_mgrs:
+    if pkg_mgr == DEFAULT_PACKAGE_MANAGER_STRING or pkg_mgr == INSTALL_IGNORE_KEY:
         return []
 
-    config = copy.deepcopy(INSTALL_PKG_MANAGERS_DEFAULT_CONFIG)
+    if pkg_mgr == "brew":
+        config = copy.deepcopy(INSTALL_MAC_BREW_DEFAULT_CONFIG)
+    else:
+        config = copy.deepcopy(INSTALL_PKG_MANAGERS_DEFAULT_CONFIG)
 
-    config[PKG_MGRS_KEY] = list(pkg_mgrs)
+    config[PKG_MGRS_KEY] = pkg_mgr
 
     # TAG: local-only
-    if "nix" in pkg_mgrs:
+    if "nix" == pkg_mgr:
         if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
             config[FRECK_SUDO_KEY] = True
-    config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(pkg_mgrs))
-    if len(pkg_mgrs) > 1:
-        config[INT_FRECK_DESC_KEY] = "install package managers"
-    else:
-        config[INT_FRECK_DESC_KEY] = "install package manager"
-    return config
+
+    config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(pkg_mgr)
+    config[INT_FRECK_DESC_KEY] = "install package manager"
+    return [config]
 
 def update_package_cache(pkg_mgrs):
 
@@ -224,8 +226,9 @@ class Install(Freck):
             configs.append(details)
 
         if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
-            extra_config = create_pkg_mgr_install_config(package_mgrs)
-            configs.append(extra_config)
+            for pkg_mgr in package_mgrs:
+                extra_configs = create_pkg_mgr_install_config(package_mgrs)
+                configs.extend(extra_configs)
 
         if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
             extra_configs = update_package_cache(package_mgrs)
@@ -345,9 +348,14 @@ class InstallPkgMgrs(Freck):
             except ValueError:
                 break
 
-        new_config = create_pkg_mgr_install_config(config.get(PKG_MGRS_KEY, []))
-        dict_merge(config, new_config)
-        return [config]
+        result = []
+        for pkg_mgr in config.get(PKG_MGRS_KEY, []):
+            new_configs = create_pkg_mgr_install_config(pkg_mgr)
+            for c in new_configs:
+                dict_merge(c, config)
+                result.append(c)
+
+        return result
 
     def default_freck_config(self):
 

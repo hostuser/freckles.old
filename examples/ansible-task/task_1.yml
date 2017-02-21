@@ -1,0 +1,7 @@
+runs:
+  - name: debug msg
+    tasks:
+      - debug:
+          type: ansible_task
+          vars:
+            msg: "SSSSS"

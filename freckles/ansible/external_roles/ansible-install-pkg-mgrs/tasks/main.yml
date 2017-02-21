@@ -2,7 +2,7 @@
 # tasks file for install-pkg-mgr
 
 - include: nix.yml
-  when: "'nix' in pkg_mgrs"
+  when: pkg_mgr == 'nix'
 
 - include: conda.yml
-  when: "'conda' in pkg_mgrs"
+  when: pkg_mgr == 'conda'

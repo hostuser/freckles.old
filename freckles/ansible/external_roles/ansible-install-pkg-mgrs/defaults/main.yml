@@ -7,8 +7,7 @@ freckles_user: "{{ ansible_env.USER }}"
 freckles_group: "{{ ansible_env.USER }}"
 freckles_user_home: "{{ ansible_env.HOME }}"
 
-pkg_mgrs:
-  - "default"
+pkg_mgr: "default"
 
 # using conda rel path in home dir to be able to use $HOME in .profile PATH=.. lineinfile directive
 conda_rel_path: ".freckles/opt"

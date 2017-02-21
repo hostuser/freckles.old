@@ -1,0 +1,20 @@
+---
+# install packages using brew on mac os x
+
+runs:
+  - desc: install applications according to dotfiles directory
+
+      # ensure_pkg_manager: yes   # default is 'no'
+      # update_cache: yes   # this is default anyway
+      # upgrade_packages: yes   # default is 'no'
+      # dotfiles:
+      #   - ~/dotfiles-example
+      # packages:
+      #   - htop   # this will be installed using the default package manager (apt or yum probably)
+      #   - zile:
+      #       pkg_mgr: nix
+    tasks:
+      - install-pkg-managers:
+          vars:
+            pkg_mgr:
+              - brew
