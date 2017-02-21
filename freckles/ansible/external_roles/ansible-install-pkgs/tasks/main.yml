@@ -12,10 +12,10 @@
   # debug: var=app_name
 
 - include: deb.yml
-  when: (pkg_mgr is defined and pkg_mgr == 'deb') or (pkg_mgr is not defined and ansible_os_family == "Debian") or (pkg_mgr == 'default' and ansible_os_family == "Debian")
+  when: (pkg_mgr is defined and pkg_mgr == 'deb') or (pkg_mgr is not defined and ansible_os_family == "Debian") or (pkg_mgr is defined and pkg_mgr == 'default' and ansible_os_family == "Debian")
 
 - include: rpm.yml
-  when: (pkg_mgr is defined and pkg_mgr == 'rpm') or (pkg_mgr is not defined and ansible_os_family == "RedHat") or (pkg_mgr == 'default' and ansible_os_family == "RedHat")
+  when: (pkg_mgr is defined and pkg_mgr == 'rpm') or (pkg_mgr is not defined and ansible_os_family == "RedHat") or (pkg_mgr is defined and pkg_mgr == 'default' and ansible_os_family == "RedHat")
 
 - include: nix.yml
   when: pkg_mgr is defined and pkg_mgr == 'nix'
