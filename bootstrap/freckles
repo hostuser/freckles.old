@@ -179,7 +179,7 @@ function install_freckles_root {
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         install_freckles_linux_root
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "Sorry, MacOS X platform is not supported (at the moment, anyway). Exiting..."
+        echo "Sorry, bootstrapping on  MacOS X with elevated privileges not supported (at the moment). Try to run without 'sudo' and everything should work fine..."
         exit 6
     elif [[ "$OSTYPE" == "cygwin" ]]; then
         # POSIX compatibility layer and Linux environment emulation for Windows

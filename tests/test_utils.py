@@ -56,7 +56,7 @@ def ensure_dotfiles_dir():
 ])
 def test_get_config(url, expected):
 
-    config = utils.get_config(url)
+    config = freckles.get_config(url)
     assert config == expected
 
 @pytest.mark.parametrize("item, expected", [
