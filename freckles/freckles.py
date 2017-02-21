@@ -515,17 +515,17 @@ class FrecklesRunCallback(object):
             if output.get("stderr", False):
                 log.error("Error:")
                 for line in output["stderr"]:
-                    log.error("\t{}".format(line))
+                    log.error("\t{}".format(line.encode('utf8')))
                 if output.get("stdout", False):
                     log.info("Standard output:")
                     for line in output.get("stdout", []):
-                        log.error("\t{}".format(line))
+                        log.error("\t{}".format(line.encode('utf8')))
             else:
                 for line in output.get("stdout", []):
-                    log.error("\t{}".format(line))
+                    log.error("\t{}".format(line.encode('utf8')))
         else:
             for line in output.get("stdout", []):
-                log.info("\t{}".format(line))
+                log.info("\t{}".format(line.encode('utf8')))
 
         return not failed
 
