@@ -4,17 +4,14 @@
 runs:
   - desc: install applications according to dotfiles directory
 
-      # ensure_pkg_manager: yes   # default is 'no'
+      ensure_pkg_manager: yes   # default is 'no'
       # update_cache: yes   # this is default anyway
       # upgrade_packages: yes   # default is 'no'
       # dotfiles:
       #   - ~/dotfiles-example
-      # packages:
-      #   - htop   # this will be installed using the default package manager (apt or yum probably)
-      #   - zile:
-      #       pkg_mgr: nix
+      packages:
+        - htop
+        - zile
+      pkg_mgr: brew
     tasks:
-      - install-pkg-managers:
-          vars:
-            pkg_mgr:
-              - brew
+      - install
