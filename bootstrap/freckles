@@ -15,35 +15,40 @@ if [ "$DEBUG" = true ]; then
 fi
 
 # event/error handling
-declare -A LISTENERS
+# declare -A LISTENERS
+# function throw {
+#     EVENT=$1; shift; for listener in "${LISTENERS[$EVENT]}"; do eval "$listener $@"; done
+# }
+# function addListener {
+#     if ! test "${LISTENERS['$1']+isset}"; then LISTENERS["$1"]=""; fi
+#     LISTENERS["$1"]+="$2 " # we can get away with this since functionnames never contain spaces
+# }
+# function error_message {
+#     echo
+#     exit_code=$1
+#     shift
+#     echo " ** $@"
+#     echo "   Refer to $SCRIPT_LOG_FILE for more details. Exiting..."
+#     echo
+#     exit $exit_code
+# }
+# function log_message {
+#     echo "$@" >> "$SCRIPT_LOG_FILE"
+# }
+
+# # convert exitcodes to events
+# # trap "throw EXIT"    EXIT
+# # trap "throw SIGINT"  SIGINT
+# # trap "throw SIGTERM" SIGTERM
+
+# addListener VIRTUALENV_ERROR error_message
+# addListener CONDA_ERROR error_message
+
+
 function throw {
-    EVENT=$1; shift; for listener in "${LISTENERS[$EVENT]}"; do eval "$listener $@"; done
+    echo "$@"
+    exit 1
 }
-function addListener {
-    if ! test "${LISTENERS['$1']+isset}"; then LISTENERS["$1"]=""; fi
-    LISTENERS["$1"]+="$2 " # we can get away with this since functionnames never contain spaces
-}
-function error_message {
-    echo
-    exit_code=$1
-    shift
-    echo " ** $@"
-    echo "   Refer to $SCRIPT_LOG_FILE for more details. Exiting..."
-    echo
-    exit $exit_code
-}
-function log_message {
-    echo "$@" >> "$SCRIPT_LOG_FILE"
-}
-
-# convert exitcodes to events
-# trap "throw EXIT"    EXIT
-# trap "throw SIGINT"  SIGINT
-# trap "throw SIGTERM" SIGTERM
-
-addListener VIRTUALENV_ERROR error_message
-addListener CONDA_ERROR error_message
-
 # determine whether we run with sudo, or not
 if [ "$EUID" != 0 ]; then
     using_sudo=false
