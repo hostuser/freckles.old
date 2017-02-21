@@ -48,19 +48,20 @@ INT_FRECK_NAME_KEY = "freck_name"
 INT_FRECK_CONFIGS_KEY = "freck_configs"
 INT_FRECK_DESC_KEY = "freck_desc"
 INT_FRECK_TYPE_KEY = "freck_type"
+INT_FRECK_ID_KEY = "freck_id"
+INT_FRECK_ITEM_NAME_KEY = "freck_item_name"
+INT_FRECK_PRIORITY_KEY = "freck_priority"
 
+FRECK_TASK_DESC = "freck_task_desc"
 FRECK_DEFAULT_TYPE = "default"
 
 
-INT_FRECK_ID_KEY = "freck_id"
-FRECK_TASK_DESC = "freck_task_desc"
 
-INT_FRECK_ITEM_NAME_KEY = "freck_item_name"
 
 FRECK_SUDO_KEY = "freck_sudo"
 FRECK_BECOME_KEY = "freck_become"
 
-FRECK_PRIORITY_KEY = "freck_priority"
+FRECK_PRIORITY_KEY = "priority"
 
 # configuration keys & defaults
 FRECKLES_ANSIBLE_RUNNER = "ansible"
@@ -85,7 +86,6 @@ RUN_FINISHED = "Run finished"
 
 ## general defaults
 FRECK_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY
 }
 
 # freck run output keys & defaults

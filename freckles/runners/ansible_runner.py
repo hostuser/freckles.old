@@ -21,6 +21,8 @@ import click
 import pprint
 from freckles.exceptions import FrecklesConfigError
 import shutil
+from freckles.freckles_runner import FrecklesRunner
+
 log = logging.getLogger("freckles")
 
 FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL = "https://github.com/makkus/ansible-role-template.git"
@@ -189,6 +191,7 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
                 ansible_module = task_detail.keys()[0]
                 rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module], "become": become}
 
+
     role_dict = { "role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults }
     role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
 
@@ -196,7 +199,7 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     os.chdir(current_dir)
 
 
-class AnsibleRunner(object):
+class AnsibleRunner(FrecklesRunner):
     """ Runner that executes a series of frecks that use ansible as a backend execution engine.
 
     This is the default runner, and there might never be a different type. Just abstracted it because it was easy to do at this stage, and it might prove useful later on.

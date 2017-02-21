@@ -43,6 +43,7 @@ class CheckoutDotfiles(Freck):
             temp_config[DOTFILES_REMOTE_KEY] = remote
             temp_config[DOTFILES_BASE_KEY] = base_dir
             temp_config[INT_FRECK_ITEM_NAME_KEY] = "{} => {}".format(remote, base_dir)
+            temp_config[INT_FRECK_DESC_KEY] = "checkout dotfile repo"
             result.append(temp_config)
 
         return result

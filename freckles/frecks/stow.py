@@ -40,7 +40,7 @@ class Stow(Freck):
         return apps.values()
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
-
+        config[INT_FRECK_DESC_KEY] = "stow (from: {})".format(config["base_dir"])
         return [config]
 
     def handle_task_output(self, task, output_details):
@@ -75,7 +75,6 @@ class Stow(Freck):
         return {
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
-            FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+100,
             FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
             FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
             FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME

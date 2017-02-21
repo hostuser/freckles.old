@@ -81,8 +81,12 @@ class Task(Freck):
             raise FrecklesConfigError("Can't determine which task to run, neither {} nor {} defined".format(ANSIBLE_TASK_TYPE, TASKS_NAME_KEY), TASKS_NAME_KEY, None)
 
         generated_role_name = "{}{}".format(GENERATED_ROLE_PREFIX, GENERATED_ROLE_ID_COUNTER)
+
         config[FRECK_ANSIBLE_ROLE_KEY] = generated_role_name
         config[FRECK_ANSIBLE_ROLES_KEY][generated_role_name] = role_tasks
+
+        config[INT_FRECK_ITEM_NAME_KEY] = freck_name
+        config[INT_FRECK_DESC_KEY] = "ansible task"
 
         return [config]
 

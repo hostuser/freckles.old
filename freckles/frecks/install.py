@@ -41,7 +41,7 @@ FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgrs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL = "frkl:ansible-install-pkg-mgrs"
 
 UPDATE_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 100,
+    INT_FRECK_PRIORITY_KEY: 100,
     FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
     ACTION_KEY: "update_cache",
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
@@ -50,7 +50,7 @@ UPDATE_DEFAULT_CONFIG = {
 }
 
 UPGRADE_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 200,
+    INT_FRECK_PRIORITY_KEY: 200,
     FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
     ACTION_KEY: "upgrade",
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
@@ -59,7 +59,7 @@ UPGRADE_DEFAULT_CONFIG = {
 }
 
 INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 10,
+    INT_FRECK_PRIORITY_KEY: 10,
     FRECK_SUDO_KEY: False,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
     FRECK_ANSIBLE_ROLES_KEY: {
@@ -91,6 +91,10 @@ def create_pkg_mgr_install_config(pkg_mgrs):
         if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
             config[FRECK_SUDO_KEY] = True
     config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(", ".join(pkg_mgrs))
+    if len(pkg_mgrs) > 1:
+        config[INT_FRECK_DESC_KEY] = "install package managers"
+    else:
+        config[INT_FRECK_DESC_KEY] = "install package manager"
     return config
 
 def update_package_cache(pkg_mgrs):
@@ -107,7 +111,8 @@ def update_package_cache(pkg_mgrs):
         if pkg_mgr != "default":
             details[PKG_MGR_KEY] = pkg_mgr
 
-        details[INT_FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
+        details[INT_FRECK_ITEM_NAME_KEY] = "{} package cache".format(pkg_mgr)
+        details[INT_FRECK_DESC_KEY] = "update"
         result.append(details)
 
     return result
@@ -125,7 +130,8 @@ def upgrade_packages(pkg_mgrs):
         details = copy.deepcopy(UPGRADE_DEFAULT_CONFIG)
         details[PKG_MGR_KEY] = pkg_mgr
 
-        details[INT_FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
+        details[INT_FRECK_ITEM_NAME_KEY] = "{} packages".format(pkg_mgr)
+        details[INT_FRECK_DESC_KEY] = "upgrade"
         result.append(details)
 
     return result
@@ -213,6 +219,8 @@ class Install(Freck):
             if not details.get("pkgs").get("default", False):
                 details["pkgs"]["default"] = [details[INT_FRECK_ITEM_NAME_KEY]]
 
+            details[INT_FRECK_DESC_KEY] = "install package"
+
             configs.append(details)
 
         if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
@@ -294,6 +302,7 @@ class Update(Freck):
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
+        config[INT_FRECK_DESC_KEY] = "update"
         return [config]
 
     def default_freck_config(self):
@@ -316,6 +325,7 @@ class Upgrade(Freck):
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
+        config[INT_FRECK_DESC_KEY] = "upgrade"
         return [config]
 
     def default_freck_config(self):

@@ -24,6 +24,8 @@ class Delete(Freck):
         result = []
         for f in config[FILES_TO_DELETE_KEY]:
             temp_config = copy.copy(config)
+            temp_config[INT_FRECK_DESC_KEY] = "delete"
+
             if f.startswith("~"):
                 temp_config[INT_FRECK_ITEM_NAME_KEY] = os.path.expanduser(f)
             elif os.path.isabs(f):
@@ -35,13 +37,13 @@ class Delete(Freck):
 
             temp_config["item_name"] = temp_config[INT_FRECK_ITEM_NAME_KEY]
 
+
         return result
 
     def default_freck_config(self):
 
         return {
             FRECK_SUDO_KEY: False,
-            FRECK_PRIORITY_KEY: FRECK_DEFAULT_PRIORITY+99,
             FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
             FRECK_ANSIBLE_ROLES_KEY: {
                 FRECKLES_DEFAULT_DELETE_ROLE_NAME: FRECKLES_DEFAULT_DELETE_ROLE_URL },

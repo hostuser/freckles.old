@@ -19,6 +19,7 @@ runs:
     tasks:
       - install
       - user:     # change default shell to zsh
+         desc: "change shell to zsh"
          type: ansible_task
          vars:
            name: vagrant
