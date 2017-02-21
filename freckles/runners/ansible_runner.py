@@ -37,6 +37,9 @@ ANSIBLE_ROLE_TYPE = "ansible_role"
 
 TASK_FREE_FORM_KEY = "free_form"
 
+TASK_BECOME_KEY = "become"
+TASK_DEFAULT_BECOME = False
+
 FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
@@ -175,19 +178,17 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     os.chdir(role_base_path)
 
     rearranged_tasks = {}
-    print(tasks_dict)
     for task, task_detail in tasks_dict.iteritems():
             ansible_module = task_detail.keys()[0]
+            become = task_detail[ansible_module].pop(TASK_BECOME_KEY, TASK_DEFAULT_BECOME)
             if task_detail[ansible_module].get(TASK_FREE_FORM_KEY, False):
                 free_form = task_detail[ansible_module].pop(TASK_FREE_FORM_KEY)
-                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module]}
+                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module], "become": become}
                 rearranged_tasks[task] = new_dict
             else:
                 ansible_module = task_detail.keys()[0]
-                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module]}
+                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module], "become": become}
 
-    print(rearranged_tasks)
-    # role_dict = { "role_name": role_name, "tasks": tasks_dict, "defaults": defaults }
     role_dict = { "role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults }
     role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
 

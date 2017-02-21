@@ -71,7 +71,6 @@ class Task(Freck):
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
-        print(config)
         if freck_type == ANSIBLE_TASK_TYPE and config.get(TASKS_NAME_KEY, False):
             raise FrecklesConfigError("Task freck has both type and {} variable set, this is invalid".format(TASKS_NAME_KEY), TASKS_NAME_KEY, config[TASKS_NAME_KEY])
         elif freck_type == ANSIBLE_TASK_TYPE:
