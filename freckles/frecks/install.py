@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
+import copy
 import logging
 import sys
-from voluptuous import Schema, ALLOW_EXTRA, Any, Required
 
-from sets import Set
 from freckles import Freck
 from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
-from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
-import copy
+from freckles.runners.ansible_runner import (FRECK_ANSIBLE_ROLE_KEY,
+                                             FRECK_ANSIBLE_ROLES_KEY)
+from freckles.utils import (create_apps_dict, create_dotfiles_dict, dict_merge,
+                            get_pkg_mgr_from_marker_file,
+                            get_pkg_mgr_from_path, get_pkg_mgr_sudo,
+                            parse_dotfiles_item)
+from sets import Set
+from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
@@ -75,7 +79,7 @@ INSTALL_MAC_BREW_DEFAULT_CONFIG = {
         FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: "https://github.com/geerlingguy/ansible-role-homebrew.git",
         "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"
     },
-    FRECKLES_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
+    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
 }
 
 def create_pkg_mgr_install_config(pkg_mgr):
