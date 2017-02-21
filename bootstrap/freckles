@@ -226,6 +226,8 @@ function install_freckles_non_root_conda {
     conda update --name freckles -y pip
     conda install --name freckles -y git
     conda install --name freckles -y cryptography
+    conda install --name freckles -y pycrypto
+    conda install --name freckles -y cryptography # I know this is stupid, but without this the Ubuntu on Window bootstrapping didn't work
     conda install --name freckles -y -c conda-forge -c freckles stow || throw CONDA_ERROR 3 "Could not install stow or one of its dependencies via conda."
     source activate freckles
     pip install freckles
