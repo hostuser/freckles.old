@@ -44,6 +44,8 @@ FRECKLES_DEFAULT_INSTALL_ROLE_URL = "frkl:ansible-install-pkgs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgrs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL = "frkl:ansible-install-pkg-mgrs"
 
+INSTALL_BREW_KEY = "install-brew"
+
 UPDATE_DEFAULT_CONFIG = {
     INT_FRECK_PRIORITY_KEY: 100,
     FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
@@ -76,10 +78,10 @@ INSTALL_MAC_BREW_DEFAULT_CONFIG = {
     FRECK_SUDO_KEY: True,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
     FRECK_ANSIBLE_ROLES_KEY: {
-        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: "https://github.com/geerlingguy/ansible-role-homebrew.git",
+        INSTALL_BREW_KEY: "https://github.com/geerlingguy/ansible-role-homebrew.git",
         "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"
     },
-    FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
+    FRECK_ANSIBLE_ROLE_KEY: INSTALL_BREW_KEY
 }
 
 def create_pkg_mgr_install_config(pkg_mgr):
