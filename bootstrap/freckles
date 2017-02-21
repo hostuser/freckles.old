@@ -84,7 +84,8 @@ NIX_SRC_STORE_DIR="$BASE_DIR/nix"
 NIX_ENV_EXE="$HOME/.nix-profile/bin/nix-env"
 
 # conda related variables
-CONDA_DOWNLOAD_URL="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh"
+CONDA_DOWNLOAD_URL_LINUX="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh"
+CONDA_DOWNLOAD_URL_MAC="https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh"
 CONDA_BASE_DIR="$BASE_DIR/opt/conda"
 CONDA_PATH="$CONDA_BASE_DIR/bin"
 STOW_SRC_DOWNLOAD_URL="http://ftp.gnu.org/gnu/stow/stow-2.2.2.tar.gz"
@@ -240,7 +241,11 @@ function install_conda_non_root {
     echo "  - bootstrapping conda package manager"
     {
     cd "$TEMP_DIR"
-    download "$CONDA_DOWNLOAD_URL" "$TEMP_DIR/miniconda.sh"
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        download "$CONDA_DOWNLOAD_URL_LINUX" "$TEMP_DIR/miniconda.sh"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        download "$CONDA_DOWNLOAD_URL_MAC" "$TEMP_DIR/miniconda.sh"
+    fi
     } > "$SCRIPT_LOG_FILE" 2>&1
     mkdir -p "$FRECKLES_DATA_DIR"
     echo "  - installing conda"
