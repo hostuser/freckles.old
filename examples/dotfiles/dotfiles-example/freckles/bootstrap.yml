@@ -1,0 +1,40 @@
+# don't run this on your 'real' machine, since it will delete your '.profile' file
+vars:
+  upgrade_packages: yes       # might as well, since bootstrapping is usually done just after install
+  dotfiles:
+    # installs 'zsh' and 'bash' using default and 'zile' using nix package manager (has .nix.frkl marker file in folder)
+    - base_dir: ~/dotfiles-bootstrap-simple
+      remote: https://github.com/makkus/dotfiles-bootstrap-simple.git
+  packages:  # packages that don't have config files
+    - bash-completion
+    - cowsay:
+        pkg_mgr: nix
+
+runs:
+  - name: checkout dotfiles & install necessary package managers
+    vars:
+      pkg_mgrs:
+        - nix
+    tasks:
+      - install-pkg-managers
+      - checkout-dotfiles
+  - name: install applications, delete conflicting files and stow configs
+    tasks:
+      - install
+      - user:     # change default shell to zsh
+         desc: "change shell to zsh"
+         type: ansible_task
+         vars:
+           name: vagrant
+           become: yes
+           shell: /usr/bin/zsh
+      - shell:                # install oh-my-zsh, might fail because it can't change the users default shell, can be ignored though
+         type: ansible_task
+         vars:
+           free_form: 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"'
+      - delete:
+          vars:
+            files-to-delete:
+              - ~/.profile
+              - ~/.zshrc
+      - stow
