@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-install-pkg-mgrs.git
 	branch = master
-	commit = 209119dae073c1144106cd4362890cc5061d7297
-	parent = cfe6cdeaf8f231cbdd0438c25113c8db2b8543e3
+	commit = 920e1135e7087c71e707cbe8dc690b8bd457295a
+	parent = d65ba21acae32b1c83d8c5ea7b4b312d49654d54
 	cmdver = 0.3.1
