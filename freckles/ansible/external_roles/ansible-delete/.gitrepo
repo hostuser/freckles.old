@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-delete.git
 	branch = master
 	commit = b0041847568506e5a969f5479b9491bcc484a392
-	parent = b51e8dcc862ccd8c1653038499e4b71967b8916a
+	parent = 881592360ec016d8331c3bb5dfadfedb2832ab53
 	cmdver = 0.3.1
