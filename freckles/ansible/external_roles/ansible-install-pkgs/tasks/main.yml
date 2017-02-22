@@ -26,5 +26,5 @@
 - include: pip.yml
   when: pkg_mgr is defined and pkg_mgr == 'pip'
 
-- include brew.yml
+- include: brew.yml
   when: pkg_mgr is defined and pkg_mgr == 'brew'
