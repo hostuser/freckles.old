@@ -233,7 +233,7 @@ class Install(Freck):
 
         if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
             for pkg_mgr in package_mgrs:
-                extra_configs = create_pkg_mgr_install_config(package_mgr)
+                extra_configs = create_pkg_mgr_install_config(pkg_mgr)
                 configs.extend(extra_configs)
 
         if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
