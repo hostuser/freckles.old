@@ -1,27 +1,30 @@
 # -*- coding: utf-8 -*-
 
-import os
-import click
-from collections import OrderedDict
-from sets import Set
-import yaml
-import pprint
-import json
-from runners.ansible_runner import AnsibleRunner
-from utils import get_pkg_mgr_from_path, load_extensions, dict_merge, expand_config_url
-import urllib2
-import six
 import abc
-from constants import *
-import sys
 import copy
-import pprint
+import json
 import logging
-log = logging.getLogger("freckles")
-from operator import itemgetter
+import os
+import pprint
+import sys
+import urllib2
 import uuid
-from freckles_runner import FrecklesRunner
+from collections import OrderedDict
 from exceptions import FrecklesConfigError, FrecklesRunError
+from operator import itemgetter
+
+import click
+import six
+import yaml
+
+from constants import *
+from freckles_runner import FrecklesRunner
+from runners.ansible_runner import AnsibleRunner
+from sets import Set
+from utils import (dict_merge, expand_config_url, get_pkg_mgr_from_path,
+                   load_extensions)
+
+log = logging.getLogger("freckles")
 
 
 FRECKLES_RUNNERS = {
@@ -251,13 +254,13 @@ def create_run_items(run, runner):
             item_nr = 1
             for item in freck_config_items:
                 item[INT_FRECK_KEY] = freck
-                if not item.get(INT_FRECK_NAME_KEY, False):
+                if INT_FRECK_NAME_KEY not in item.keys():
                     item[INT_FRECK_NAME_KEY] = freck_name
-                if not item.get(INT_FRECK_DESC_KEY, False):
+                if INT_FRECK_DESC_KEY not in item.keys():
                     item[INT_FRECK_DESC_KEY] = freck_desc
-                if not item.get(INT_FRECK_ITEM_NAME_KEY, False):
+                if INT_FRECK_ITEM_NAME_KEY not in item.keys():
                     item[INT_FRECK_ITEM_NAME_KEY] = "{}_{}".format(freck_name, item_nr)
-                if item.get(INT_FRECK_PRIORITY_KEY, -1) < 0:
+                if INT_FRECK_PRIORITY_KEY not in item.keys():
                     if freck_prio >= 0:
                         item[INT_FRECK_PRIORITY_KEY] = freck_prio
                     else:

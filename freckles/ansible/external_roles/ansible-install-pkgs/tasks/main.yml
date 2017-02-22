@@ -17,6 +17,9 @@
 - include: rpm.yml
   when: (pkg_mgr is defined and pkg_mgr == 'rpm') or (pkg_mgr is not defined and ansible_os_family == "RedHat") or (pkg_mgr is defined and pkg_mgr == 'default' and ansible_os_family == "RedHat")
 
+- include: brew.yml
+  when: (pkg_mgr is defined and pkg_mgr == 'brew') or (pkg_mgr is not defined and ansible_os_family == "Darwin") or (pkg_mgr is defined and pkg_mgr == 'default' and ansible_os_family == "Darwin")
+
 - include: nix.yml
   when: pkg_mgr is defined and pkg_mgr == 'nix'
 
@@ -26,5 +29,5 @@
 - include: pip.yml
   when: pkg_mgr is defined and pkg_mgr == 'pip'
 
-- include: brew.yml
-  when: pkg_mgr is defined and pkg_mgr == 'brew'
+- include: git.yml
+  when: pkg_mgr is defined and pkg_mgr == 'git'

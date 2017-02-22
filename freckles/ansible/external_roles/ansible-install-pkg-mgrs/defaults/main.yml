@@ -13,4 +13,3 @@ pkg_mgr: "default"
 conda_rel_path: ".freckles/opt"
 conda_parent_dir: "{{ ansible_env.HOME }}/{{ conda_rel_path }}"
 
-add_conda_path_to_profile: True

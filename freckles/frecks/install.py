@@ -17,7 +17,7 @@ from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
-SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "no_install", "conda", "brew", "default"]
+SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "pip", "git", "no_install", "conda", "brew", "default"]
 INSTALL_IGNORE_KEY = "no_install"
 ACTION_KEY = "install_action"
 PKGS_KEY = "pkgs"   # this is the key that is used in the role
@@ -44,6 +44,12 @@ FRECKLES_DEFAULT_INSTALL_ROLE_URL = "frkl:ansible-install-pkgs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME = "install-pkg-mgrs"
 FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL = "frkl:ansible-install-pkg-mgrs"
 
+ADD_PKG_MGR_PATH_KEY = "add_path"
+ADD_PKG_MGR_PATH_DEFAULT = True
+ADD_PKG_MGR_PATH_DEFAULT_WHEN_AUTO_INSTALL_PKG_MGR = False
+
+GIT_CONFIG_UPDATE_DEFAULT = True
+
 INSTALL_BREW_KEY = "install-brew"
 
 UPDATE_DEFAULT_CONFIG = {
@@ -67,6 +73,7 @@ UPGRADE_DEFAULT_CONFIG = {
 INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
     INT_FRECK_PRIORITY_KEY: 10,
     FRECK_SUDO_KEY: False,
+    ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
     FRECK_ANSIBLE_ROLES_KEY: {
         FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
@@ -76,6 +83,7 @@ INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
 INSTALL_MAC_BREW_DEFAULT_CONFIG = {
     INT_FRECK_PRIORITY_KEY: 10,
     FRECK_SUDO_KEY: True,
+    ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
     FRECK_ANSIBLE_ROLES_KEY: {
         INSTALL_BREW_KEY: "https://github.com/geerlingguy/ansible-role-homebrew.git",
@@ -84,9 +92,10 @@ INSTALL_MAC_BREW_DEFAULT_CONFIG = {
     FRECK_ANSIBLE_ROLE_KEY: INSTALL_BREW_KEY
 }
 
+
 def create_pkg_mgr_install_config(pkg_mgr):
 
-    if pkg_mgr == DEFAULT_PACKAGE_MANAGER_STRING or pkg_mgr == INSTALL_IGNORE_KEY:
+    if pkg_mgr == DEFAULT_PACKAGE_MANAGER_STRING or pkg_mgr == INSTALL_IGNORE_KEY or pkg_mgr == "git":
         return []
 
     if pkg_mgr == "brew":
@@ -112,6 +121,10 @@ def update_package_cache(pkg_mgrs):
         pkg_mgrs.remove(INSTALL_IGNORE_KEY)
     except:
         pass
+    try:
+        pkg_mgrs.remove("git")
+    except:
+        pass
 
     result = []
     for pkg_mgr in pkg_mgrs:
@@ -130,6 +143,10 @@ def upgrade_packages(pkg_mgrs):
     pkg_mgrs = copy.deepcopy(pkg_mgrs)
     try:
         pkg_mgrs.remove(INSTALL_IGNORE_KEY)
+    except:
+        pass
+    try:
+        pkg_mgrs.remove("git")
     except:
         pass
 
@@ -234,6 +251,13 @@ class Install(Freck):
         if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
             for pkg_mgr in package_mgrs:
                 extra_configs = create_pkg_mgr_install_config(pkg_mgr)
+                if ADD_PKG_MGR_PATH_KEY in config.keys():
+                    add_path = config[ADD_PKG_MGR_PATH_KEY]
+                else:
+                    add_path = ADD_PKG_MGR_PATH_DEFAULT_WHEN_AUTO_INSTALL_PKG_MGR
+                for c in extra_configs:
+                    c[ADD_PKG_MGR_PATH_KEY] = add_path
+
                 configs.extend(extra_configs)
 
         if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
@@ -247,6 +271,13 @@ class Install(Freck):
         return configs
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
+
+        if config[PKG_MGR_KEY] == 'git':
+            # this is needed, otherwise ansible tries to use the udpate method of a dict and fails
+            for pkg_mgr in ['default', 'git']:
+                for item in config[PKGS_KEY].get('default', []):
+                    if not "update" in config.keys():
+                        item["git_update"] = GIT_CONFIG_UPDATE_DEFAULT
 
         return [config]
 

@@ -20,4 +20,4 @@ function download {
 mkdir -p "$TEMP_DIR"
 cd "$TEMP_DIR"
 download https://nixos.org/nix/install "$TEMP_DIR/install_nix"
-sh install_nix
+NIX_INSTALLER_NO_MODIFY_PROFILE=true sh install_nix

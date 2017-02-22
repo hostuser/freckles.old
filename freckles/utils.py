@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-from os import sep, path, listdir
-from constants import FRECKLES_METADATA_FILENAME
-from stevedore import extension
-import sys
-import pprint
-import yaml
-import json
-import copy
-import subprocess
-from constants import *
 import collections
+import copy
+import json
+import logging
 import os
+import pprint
+import subprocess
+import sys
 import urllib2
 from exceptions import FrecklesConfigError
+from os import listdir, path, sep
 
-import logging
+import yaml
+
+from constants import *
+from constants import FRECKLES_METADATA_FILENAME
+from stevedore import extension
+
 log = logging.getLogger("freckles")
 
 DEB_MARKER_FILE = ".{}{}".format('deb', FRECKLES_METADATA_FILENAME)
