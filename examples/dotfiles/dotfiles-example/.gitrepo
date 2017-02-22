@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/dotfiles-example.git
 	branch = master
 	commit = 2e5626b880359a727e10418f78ad3c3c057835c8
-	parent = a995af3d3f3e3ead5e3113e2ca1b1e4defa84066
+	parent = 0e56025d6f88d271cd28ec8dc9cdd54469ab5961
 	cmdver = 0.3.1
