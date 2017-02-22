@@ -1,0 +1,9 @@
+runs:
+  - name: install role
+    tasks:
+     - task:
+         vars:
+           tasks: 
+             - name: debug task
+               debug:
+                   msg: "TEST MESSAGE"

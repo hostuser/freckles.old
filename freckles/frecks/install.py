@@ -94,7 +94,7 @@ def create_pkg_mgr_install_config(pkg_mgr):
     else:
         config = copy.deepcopy(INSTALL_PKG_MANAGERS_DEFAULT_CONFIG)
 
-    config[PKG_MGRS_KEY] = pkg_mgr
+    config[PKG_MGR_KEY] = pkg_mgr
 
     # TAG: local-only
     if "nix" == pkg_mgr:

@@ -14,16 +14,26 @@ EXAMPLES = '''
 
 import json
 import os
-from ansible.module_utils.basic import *
 
+from ansible.module_utils.basic import *
 
 NIX_PATH = os.path.join(os.environ['HOME'], ".nix-profile/bin")
 NIX_ENV_PATH = os.path.join(NIX_PATH, "nix-env")
 NIX_CHANNEL_PATH = os.path.join(NIX_PATH, "nix-channel")
 
+# this creates the nix env in case the run was started without that environment set
+#NIX_WRAPPER_PATH = os.path.join(os.path.realpath(__file__), "../files/nix_wrap.sh")
+NIX_WRAPPER_PATH = os.path.join("nix_wrap.sh")
+WRAP = True
+
 def query_package(module, name, state="present"):
     if state == "present":
-        cmd = "{} -q {}".format(NIX_ENV_PATH, name)
+        if WRAP:
+            cmd = "{} {} -q {}".format(NIX_WRAPPER_PATH, NIX_ENV_PATH, name)
+        else:
+            cmd = "{} -q {}".format(NIX_ENV_PATH, name)
+
+
         rc, stdout, stderr = module.run_command(cmd, check_rc=False)
 
         if rc == 0:
@@ -33,16 +43,24 @@ def query_package(module, name, state="present"):
 
 def update_cache(module):
 
-    cmd = "{} --update".format(NIX_CHANNEL_PATH)
+    if WRAP:
+        cmd = "{} {} --update".format(NIX_WRAPPER_PATH, NIX_CHANNEL_PATH)
+    else:
+        cmd = "{} --update".format(NIX_CHANNEL_PATH)
+
     rc, stdout, stderr = module.run_command(cmd, check_rc=False)
     if rc != 0:
-        module.fail_json(msg="failed to update cache: {}".format(stderr))
+        module.fail_json(msg="failed to update cache: {} {}".format(stderr))
 
     module.exit_json(changed=True, msg="Updated nix cache.")
 
 def upgrade_packages(module):
 
-    cmd = "{} --upgrade".format(NIX_ENV_PATH)
+    if WRAP:
+        cmd = "{} {} --upgrade".format(NIX_WRAPPER_PATH, NIX_ENV_PATH)
+    else:
+        cmd = "{} --upgrade".format(NIX_ENV_PATH)
+
     rc, stdout, stderr = module.run_command(cmd, check_rc=False)
     if rc != 0:
         module.fail_json(msg="failed to upgrade packages: {}".format(stderr))
@@ -65,7 +83,11 @@ def install_packages(module, packages):
         if query_package(module, package):
             continue
 
-        cmd = "{} -i {}".format(NIX_ENV_PATH, package)
+        if WRAP:
+            cmd = "{} {} -i {}".format(NIX_WRAPPER_PATH, NIX_ENV_PATH, package)
+        else:
+            cmd = "{} -i {}".format(NIX_ENV_PATH, package)
+
         rc, stdout, stderr = module.run_command(cmd, check_rc=False)
 
         if rc != 0:

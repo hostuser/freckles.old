@@ -9,11 +9,13 @@ runs:
       ensure_pkg_manager: yes   # default is 'no'
       update_cache: yes   # this is default anyway
       upgrade_packages: yes   # default is 'no'
-      # dotfiles:
-        # - ~/dotfiles-example
+      pkg_mgr: conda
+      conda_channels:
+        - conda-forge
       packages:
         - htop   # this will be installed using the default package manager (apt or yum probably)
-        - zile:
-            pkg_mgr: conda
+        - babel
+        - cowsay:
+            pkg_mgr: nix
     tasks:
       - install

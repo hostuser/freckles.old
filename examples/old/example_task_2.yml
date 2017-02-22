@@ -1,0 +1,15 @@
+runs:
+  - name: install role
+    tasks:
+     - install:
+         packages:
+           - zsh
+     - user:
+         type: ansible_task
+         vars:
+           name: vagrant
+           shell: /usr/bin/zsh
+     - shell:
+         type: ansible_task
+         vars:
+           free_form: 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"'

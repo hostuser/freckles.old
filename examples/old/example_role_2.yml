@@ -1,0 +1,18 @@
+runs:
+  - name: install role
+    frecks:
+     - nodejs:
+         freck_sudo: True
+         vars:
+           become: True
+           node_packages:
+             - bower
+             - brunch
+             - babel
+             - xxdsf3
+           roles:
+             nodejs: telusdigital.nodejs
+             telusdigital.apt-repository: telusdigital.apt-repository
+
+      
+ 

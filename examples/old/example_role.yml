@@ -1,0 +1,17 @@
+runs:
+  - name: install role
+    frecks:
+     - nodejs:
+         freck_sudo: True
+         type: ansible_role
+         vars:
+           become: True
+           node_packages:
+             - bower
+             - brunch
+           roles:
+             nodejs: telusdigital.nodejs
+             telusdigital.apt-repository: telusdigital.apt-repository
+
+      
+ 
