@@ -17,5 +17,7 @@ runs:
         - babel
         - cowsay:
             pkg_mgr: nix
+        - zile:
+            pkg_mgr: nix
     tasks:
       - install

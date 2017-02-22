@@ -37,6 +37,7 @@
     dest: "{{ freckles_user_home }}/.profile"
     line: "if [ -e \"$HOME/{{ conda_rel_path }}/conda/bin/conda\" ]; then export PATH=\"$HOME/{{ conda_rel_path }}/conda/bin:$PATH\"; fi"
   when: "{{ add_conda_path_to_profile }}"
+  ignore_error: true
 
 
 - name: update conda
