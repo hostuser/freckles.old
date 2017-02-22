@@ -1,5 +1,4 @@
 ---
-
 - name: update nix package cache
   become: no
   nix: update_cache=yes
