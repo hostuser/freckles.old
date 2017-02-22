@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sets import Set
-import inspect
-import sys
-import os
-import json
-import yaml
 import copy
+import inspect
+import json
+import logging
+import os
+import pprint
 import shutil
-from collections import namedtuple
+import subprocess
+import sys
+from collections import OrderedDict, namedtuple
 from tempfile import NamedTemporaryFile
+
+import click
+import yaml
+
 from cookiecutter.main import cookiecutter
 from freckles.constants import *
-import subprocess
-from collections import OrderedDict
-from freckles.utils import playbook_needs_sudo, can_passwordless_sudo
-import logging
-import click
-import pprint
 from freckles.exceptions import FrecklesConfigError
-import shutil
 from freckles.freckles_runner import FrecklesRunner
+from freckles.utils import can_passwordless_sudo, playbook_needs_sudo
+from sets import Set
 
 log = logging.getLogger("freckles")
 
@@ -349,7 +349,7 @@ class AnsibleRunner(FrecklesRunner):
             click.echo("Downloading and installing external roles...")
             res = subprocess.check_output([os.path.join(self.execution_dir, "extensions", "setup", "role_update.sh")])
             for line in res.splitlines():
-                log.debug("Installing role: {}".format(line))
+                log.debug("Installing role: {}".format(line.encode('utf8')))
 
 
     def run(self):
@@ -370,5 +370,3 @@ class AnsibleRunner(FrecklesRunner):
 
         # TODO: check success?
         return success
-
-

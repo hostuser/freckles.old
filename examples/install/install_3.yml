@@ -9,11 +9,11 @@ runs:
       ensure_pkg_manager: yes   # default is 'no'
       update_cache: yes   # this is default anyway
       upgrade_packages: yes   # default is 'no'
-      dotfiles:
-        - ~/dotfiles-example
+      # dotfiles:
+        # - ~/dotfiles-example
       packages:
         - htop   # this will be installed using the default package manager (apt or yum probably)
         - zile:
-            pkg_mgr: nix
+            pkg_mgr: conda
     tasks:
       - install

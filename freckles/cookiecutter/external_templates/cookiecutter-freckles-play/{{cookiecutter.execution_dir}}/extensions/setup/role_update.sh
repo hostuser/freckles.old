@@ -2,8 +2,6 @@
 set -e
 #TODO: Support python virtual environments for now global
 
-export PATH="$HOME/.freckles/bin:$PATH"
-
 COLOR_END='\e[0m'
 COLOR_RED='\e[0;31m'
 
