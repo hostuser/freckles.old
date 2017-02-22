@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-install-pkg-mgrs.git
 	branch = master
 	commit = 920e1135e7087c71e707cbe8dc690b8bd457295a
-	parent = 1b5b37f4f089350f0ae163b88127c1d71e131c6b
+	parent = 1a5d454091edf69d1f41c6bdda97d4013bf3ec4d
 	cmdver = 0.3.1
