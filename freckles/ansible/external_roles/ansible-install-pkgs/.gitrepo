@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-install-pkgs.git
 	branch = master
 	commit = 81715ad49b2e04fa5c2b0d8eaf23fa2869313f06
-	parent = 57722a74d3edde2379e48aca5d65b55410c0805d
+	parent = 4779a614ac5358455211f61d7de55854002c5595
 	cmdver = 0.3.1
