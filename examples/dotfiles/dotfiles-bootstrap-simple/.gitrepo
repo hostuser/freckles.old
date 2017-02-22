@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/dotfiles-bootstrap-simple.git
 	branch = master
-	commit = 3f3f6a423473233bffa97f890c6aa692aba80dbf
-	parent = 8c4ea696136f688a7472550460c638014f42aa7e
+	commit = b55643f614c348fe9bc83eeef789234d030b3069
+	parent = 166354709aab03f0c20fe8d5fd309c85d7f1f7fe
 	cmdver = 0.3.1
