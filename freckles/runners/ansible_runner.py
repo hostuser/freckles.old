@@ -356,7 +356,7 @@ class AnsibleRunner(FrecklesRunner):
 
         success = True
         if self.freckles_ask_sudo:
-            log.info("Freckles needs sudo password for certain parts of the pipeline, please provide below:")
+            click.echo("\nLooks like we need a sudo password for some parts of the pipeline, this might interrupt the execution process, depending on how sudo is configured on this machine. Please provide your password below if necessary.\n")
         proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE, shell=True)
 
         total_tasks = (len(self.items))
