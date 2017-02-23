@@ -1,14 +1,17 @@
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
+import datetime
+import decimal
+import json
+import pprint
+import uuid
+
+import ansible
+from ansible.executor.task_result import TaskResult
+from ansible.plugins.callback import CallbackBase
+
 __metaclass__ = type
 
-from ansible.plugins.callback import CallbackBase
-from ansible.executor.task_result import TaskResult
-import pprint
-import json
-import datetime
-import uuid
-import decimal
-import ansible
 
 
 class CallbackModule(CallbackBase):
@@ -45,6 +48,7 @@ class CallbackModule(CallbackBase):
             return
 
         output["action"] = self.task.serialize().get("action", "n/a")
+        output["task_name"] = self.get_task_detail("name")
         # output["task"] = self.task.serialize()
         # output["play"] = self.play.serialize()
         output["result"] = result._result

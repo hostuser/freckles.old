@@ -254,6 +254,7 @@ def create_run_items(run, runner):
             item_nr = 1
             for item in freck_config_items:
                 item[INT_FRECK_KEY] = freck
+                item[INT_FRECK_ORIG_CONFIGS] = freck_configs
                 if INT_FRECK_NAME_KEY not in item.keys():
                     item[INT_FRECK_NAME_KEY] = freck_name
                 if INT_FRECK_DESC_KEY not in item.keys():
@@ -383,6 +384,13 @@ class Freck(object):
         """Method to convert the output of a Freck run to something freckles can display nicely.
 
         For examples on how to implement this method, check out the 'install' and 'stow' implementations.
+
+        Args:
+            task (dict): the task details
+            output_details (list): all the information that was recorded during the execution of that task (list of dicts)
+
+        Result:
+            dict: information about whether the task succeeded, or not, and also other details
         """
 
         skipped = True
@@ -395,6 +403,12 @@ class Freck(object):
         result = {}
 
         for details in output_details:
+
+            task_name = details[TASK_NAME_KEY]
+            if TASK_IGNORE_STRING in task_name:
+                log.debug("Ignoring detail for task: {}".format(task_name))
+                continue
+
             if details[FRECKLES_STATE_KEY] != FRECKLES_STATE_SKIPPED:
                 skipped = False
 
@@ -443,7 +457,7 @@ class FrecklesRunCallback(object):
 
     def log(self, freck_id, details):
 
-        log.debug("Details for freck '{}': {}".format(freck_id, details))
+        #log.debug("Details for freck '{}': {}".format(freck_id, details))
 
         if details == RUN_FINISHED:
             if self.current_freck_id < 0:
@@ -454,6 +468,7 @@ class FrecklesRunCallback(object):
             return
 
         self.task_result.setdefault(freck_id, []).append(details)
+
 
         if self.current_freck_id != freck_id:
             # means new task
@@ -503,6 +518,7 @@ class FrecklesRunCallback(object):
         output_details = self.task_result[freckles_id]
 
         output = self.handle_task_output(task_item, output_details)
+        log.debug("Result of task: {}".format(output))
 
         state_string = output[FRECKLES_STATE_KEY]
 
@@ -606,8 +622,14 @@ class Freckles(object):
                 log.info("'Only prepare'-flag was set, not running anything...")
                 return
             log.info("Starting run #{}...".format(run_nr))
-            self.runners[run_nr].run()
-            log.info("Run #{} finished.".format(run_nr))
+            try:
+                os.system('setterm -cursor off')
+                self.runners[run_nr].run()
+                log.info("Run #{} finished.".format(run_nr))
+            except:
+                log.error("Run #{} error.") # TODO: better error message
+            finally:
+                os.system('setterm -cursor on')
 
             if not self.runners[run_nr].callback.success:
                 raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr), self.runs[run_nr])

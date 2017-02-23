@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import click
 
+import click
 
 # configuration constants
 FRECKLES_DEFAULT_DIR = click.get_app_dir('freckles', force_posix=True)
@@ -44,6 +44,7 @@ FRECK_VARS_KEY = "vars"
 FRECK_TYPE_KEY = "type"
 
 INT_FRECK_KEY = "freck_object"
+INT_FRECK_ORIG_CONFIGS = "freck_configs"
 INT_FRECK_NAME_KEY = "freck_name"
 INT_FRECK_CONFIGS_KEY = "freck_configs"
 INT_FRECK_DESC_KEY = "freck_desc"
@@ -54,9 +55,6 @@ INT_FRECK_PRIORITY_KEY = "freck_priority"
 
 FRECK_TASK_DESC = "freck_task_desc"
 FRECK_DEFAULT_TYPE = "default"
-
-
-
 
 FRECK_SUDO_KEY = "freck_sudo"
 FRECK_BECOME_KEY = "freck_become"
@@ -107,7 +105,8 @@ DEFAULT_PACKAGE_MANAGER_STRING = "default"
 PACKAGE_STATE_KEY = "pkg_state"
 DEFAULT_PACKAGE_STATE = "present"
 DEFAULT_PACKAGE_SUDO = True
-
+TASK_NAME_KEY = "task_name"
+TASK_IGNORE_STRING = "FRECKLES_IGNORE"
 
 
 
@@ -154,5 +153,3 @@ DOTFILES_KEY = "dotfiles"
 FRECK_CONFIG_TEMPLATE_KEY = "freck_config_template"
 
 FRECKLES_CALLBACK_PLUGIN_NAME = "freckles_callback"
-
-

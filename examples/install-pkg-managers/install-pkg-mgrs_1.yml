@@ -1,0 +1,7 @@
+runs:
+  - desc: install conda package manager
+    tasks:
+      - install-pkg-managers:
+          vars:
+            pkg_mgrs:
+              - conda

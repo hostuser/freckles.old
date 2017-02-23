@@ -14,7 +14,7 @@ runs:
       conda_channels:
         - conda-forge
       packages:
-        - htop   # this will be installed using the default package manager (apt or yum probably)
+        - htop  # isntalled using conda (from conda_channel 'conda-forge')
         - babel
         - cowsay:
             pkg_mgr: nix

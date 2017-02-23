@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import logging
+import pprint
 import sys
 
 from freckles import Freck
@@ -23,7 +24,7 @@ ACTION_KEY = "install_action"
 PKGS_KEY = "pkgs"   # this is the key that is used in the role
 
 USE_DOTFILES_KEY = "use_dotfiles"
-USE_DOTFILES_DEFAULT = True
+USE_DOTFILES_DEFAULT = False
 USE_PACKAGES_KEY = "use_packages_var"
 USE_PACKAGES_DEFAULT = True
 
@@ -31,7 +32,7 @@ ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
 ENSURE_PACKAGE_MANAGER_DEFAULT = False
 
 UPDATE_PACKAGE_CACHE_KEY = "update_cache"
-UPDATE_PACKAGE_CACHE_DEFAULT = True
+UPDATE_PACKAGE_CACHE_DEFAULT = False
 UPGRADE_PACKAGES_KEY = "upgrade_packages"
 UPGRADE_PACKAGES_DEFAULT = False
 
@@ -75,6 +76,7 @@ INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
     FRECK_SUDO_KEY: False,
     ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+    ACTION_KEY: "install-pkg-mgrs",
     FRECK_ANSIBLE_ROLES_KEY: {
         FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
     FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
@@ -83,6 +85,7 @@ INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
 INSTALL_MAC_BREW_DEFAULT_CONFIG = {
     INT_FRECK_PRIORITY_KEY: 10,
     FRECK_SUDO_KEY: True,
+    ACTION_KEY: "install-pkg-mgrs",
     ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
     FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
     FRECK_ANSIBLE_ROLES_KEY: {
@@ -272,12 +275,15 @@ class Install(Freck):
 
     def create_run_items(self, freck_name, freck_type, freck_desc, config):
 
-        if config[PKG_MGR_KEY] == 'git':
+        if PKG_MGR_KEY in config.keys() and config[PKG_MGR_KEY] == 'git':
             # this is needed, otherwise ansible tries to use the udpate method of a dict and fails
             for pkg_mgr in ['default', 'git']:
                 for item in config[PKGS_KEY].get('default', []):
-                    if not "update" in config.keys():
-                        item["git_update"] = GIT_CONFIG_UPDATE_DEFAULT
+                    if isinstance(item, dict):
+                        if not "update" in config.keys():
+                            item["git_update"] = GIT_CONFIG_UPDATE_DEFAULT
+                        else:
+                            item["git_update"] = config["update"]
 
         return [config]
 
@@ -287,6 +293,11 @@ class Install(Freck):
         changed = False
         failed = False
         stderr = []
+
+        if task.get(ACTION_KEY) != "install":
+            result = super(Install, self).handle_task_output(task, output_details)
+            return result
+
         for details in output_details:
 
             if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_SKIPPED:

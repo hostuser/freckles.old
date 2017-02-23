@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
 
-import subprocess
-import urllib
-import click
-import click_log
-from freckles import Freckles
-import pprint
-import py
-import yaml
-import os
 import json
-from constants import *
-import sys
 import logging
+import os
+import pprint
+import subprocess
+import sys
+import urllib
 from copy import copy
 from exceptions import FrecklesRunError
+
+import click
+import yaml
+
+import click_log
+import py
+from constants import *
+from freckles import Freckles
+
+from . import __version__ as VERSION
 
 log = logging.getLogger("freckles")
 
 DEFAULT_INDENT = 2
-
 
 class Config(object):
     """Freckles app config object, stores local configuration.
@@ -78,33 +81,39 @@ pass_freckles_config = click.make_pass_decorator(Config, ensure=True)
 @pass_freckles_config
 @click.pass_context
 @click_log.simple_verbosity_option()
+@click.option('--version', help='the version of freckles you are running', is_flag=True)
 @click_log.init("freckles")
-@click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
-def cli(ctx, freckles_config, details):
+def cli(ctx, freckles_config, version):
     """Freckles manages your dotfiles (and other aspects of your local machine).
 
     The base options here are forwarded to all the sub-commands listed below. Not all of the sub-commands will use all of the options you can specify though.
 
     For information about how to use and configure Freckles, please visit: XXX
     """
+
+    if version:
+        click.echo(VERSION)
+        sys.exit(0)
+
     freckles_config.load()
-    augment_config(freckles_config, details)
+    augment_config(freckles_config)
 
     # if ctx.invoked_subcommand is None:
         # run(config)
 
 
-def augment_config(freckles_config, details=False):
+def augment_config(freckles_config):
     """Helper method to make sure the configuration is complete."""
 
-    freckles_config.details = details
+    pass
 
 @cli.command()
 @click.option('--run_nr', '-r', required=False, help='only kick off one run, using it\'s index', default=0)
+@click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
 @click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
-def run(freckles_config, run_nr, only_prepare, config):
+def run(freckles_config, run_nr, details, only_prepare, config):
     """Executes one or multiple runs.
 
     A config can either be a local yaml file, a url to a remote yaml file, or a json string.

@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 import copy
 import logging
-
 import os
 
 from freckles import Freck
 from freckles.constants import *
-from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
+from freckles.runners.ansible_runner import (FRECK_ANSIBLE_ROLE_KEY,
+                                             FRECK_ANSIBLE_ROLES_KEY)
 
 log = logging.getLogger("freckles")
 FILES_TO_DELETE_KEY = "files-to-delete"
 
 FRECKLES_DEFAULT_DELETE_ROLE_NAME = "delete"
 FRECKLES_DEFAULT_DELETE_ROLE_URL = "frkl:ansible-delete"
+
 
 class Delete(Freck):
 

@@ -1,6 +1,6 @@
 ---
 # tasks file for ansible-nix-single
-- name: Check whether nix-installer line is already present in .profile
+- name: Check whether nix-installer line is already present in .profile - FRECKLES_IGNORE
   command: grep -q "# added by Nix installer" "{{ freckles_user_home }}/.profile"
   register: nix_line
   check_mode: False

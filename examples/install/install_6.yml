@@ -1,0 +1,14 @@
+---
+# a very simple exaample of how to install packages using both an (existing) dotfiles directory and a list of packages. By default, values in the 'packages' var overwrite ones that are calculated via dotfile directories. That can be changed using the 'priority_source' variable
+
+runs:
+  - desc: install applications according to dotfiles directory
+    vars:
+      pkg_mgr: git
+      packages:
+        - spacemacs:
+            pkgs:
+              - dest: ~/.emacs.d
+                repo: https://github.com/syl20bnr/spacemacs
+    tasks:
+      - install
