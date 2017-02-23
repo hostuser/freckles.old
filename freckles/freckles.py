@@ -573,7 +573,7 @@ class Freckles(object):
         # make sure we only have one runner type for a run
         runners = Set()
         for key, item in items.iteritems():
-            if not item.get(RUN_RUNNER_KEY, False):
+            if RUN_RUNNER_KEY not in item.keys():
                 item[RUN_RUNNER_KEY] = FRECKLES_DEFAULT_RUNNER
             runners.add(item[RUN_RUNNER_KEY])
 
