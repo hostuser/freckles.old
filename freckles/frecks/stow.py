@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from voluptuous import Schema, ALLOW_EXTRA, Required
-
 from freckles import Freck
 from freckles.constants import *
-from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY
-from freckles.utils import parse_dotfiles_item, create_dotfiles_dict
+from freckles.runners.ansible_runner import (FRECK_META_ROLE_KEY,
+                                             FRECK_META_ROLES_KEY)
+from freckles.utils import create_dotfiles_dict, parse_dotfiles_item
+from voluptuous import ALLOW_EXTRA, Required, Schema
 
 log = logging.getLogger("freckles")
 
@@ -76,6 +76,6 @@ class Stow(Freck):
             FRECK_SUDO_KEY: DEFAULT_STOW_SUDO,
             STOW_TARGET_BASE_DIR_KEY: DEFAULT_STOW_TARGET_BASE_DIR,
             FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-            FRECK_ANSIBLE_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
-            FRECK_ANSIBLE_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME
+            FRECK_META_ROLES_KEY: {FRECKLES_DEFAULT_STOW_ROLE_NAME: FRECKLES_DEFAULT_STOW_ROLE_URL},
+            FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_STOW_ROLE_NAME
         }

@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
+import copy
 import logging
 import sys
-import copy
-from voluptuous import Schema, ALLOW_EXTRA, Any, Required
-from freckles.exceptions import FrecklesConfigError
+
 from freckles import Freck
 from freckles.constants import *
-from freckles.runners.ansible_runner import FRECK_ANSIBLE_ROLE_KEY, FRECK_ANSIBLE_ROLES_KEY, ANSIBLE_TASK_TYPE, ANSIBLE_ROLE_TYPE, ROLE_ROLES_KEY, ROLE_TO_USE_KEY
-from freckles.utils import parse_dotfiles_item, get_pkg_mgr_from_path, create_dotfiles_dict, get_pkg_mgr_from_marker_file, get_pkg_mgr_sudo, dict_merge, create_apps_dict
-import copy
-
+from freckles.exceptions import FrecklesConfigError
+from freckles.runners.ansible_runner import (ANSIBLE_ROLE_TYPE,
+                                             ANSIBLE_TASK_TYPE,
+                                             FRECK_META_ROLE_KEY,
+                                             FRECK_META_ROLES_KEY,
+                                             ROLE_ROLES_KEY, ROLE_TO_USE_KEY)
+from freckles.utils import (create_apps_dict, create_dotfiles_dict, dict_merge,
+                            get_pkg_mgr_from_marker_file,
+                            get_pkg_mgr_from_path, get_pkg_mgr_sudo,
+                            parse_dotfiles_item)
+from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
@@ -35,8 +41,8 @@ class Role(Freck):
                 role_vars = config
 
         roles = config[ROLE_ROLES_KEY]
-        config[FRECK_ANSIBLE_ROLES_KEY] = roles
-        config[FRECK_ANSIBLE_ROLE_KEY] = role_to_use
+        config[FRECK_META_ROLES_KEY] = roles
+        config[FRECK_META_ROLE_KEY] = role_to_use
 
         if isinstance(role_vars, dict):
             # means only one freck

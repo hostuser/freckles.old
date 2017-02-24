@@ -20,22 +20,23 @@ from cookiecutter.main import cookiecutter
 from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
 from freckles.freckles_runner import FrecklesRunner
-from freckles.utils import can_passwordless_sudo, playbook_needs_sudo
+from freckles.utils import (can_passwordless_sudo, check_schema, dict_merge,
+                            playbook_needs_sudo)
 from sets import Set
+from voluptuous import Schema
 
 log = logging.getLogger("freckles")
 
 FRECKLES_ANSIBLE_ROLE_TEMPLATE_URL = "https://github.com/makkus/ansible-role-template.git"
 
-ANSIBLE_RUNNER_PREFIX = "ANSIBLE"
-FRECK_ANSIBLE_ROLES_KEY = "{}_ROLES".format(ANSIBLE_RUNNER_PREFIX)
-FRECK_ANSIBLE_ROLE_KEY = "{}_ROLE".format(ANSIBLE_RUNNER_PREFIX)
+
 
 ROLE_TO_USE_KEY = "role_to_use"
 ROLE_ROLES_KEY = "roles"
 
-ANSIBLE_TASK_TYPE = "ansible_task"
-ANSIBLE_ROLE_TYPE = "ansible_role"
+ANSIBLE_TASK_TYPE = "ansible-task"
+ANSIBLE_ROLE_TYPE = "ansible-role"
+ANSIBLE_FRECK_TYPE = "ansible-freck"
 
 TASK_FREE_FORM_KEY = "free_form"
 
@@ -46,6 +47,13 @@ FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
 FRECKLES_DEVELOP_ROLE_PATH = os.environ.get("FRECKLES_DEVELOP", "")
 FRECKLES_LOG_TOKEN = "FRECKLES: "
+
+FRECK_META_TYPE_KEY = "type"
+FRECK_META_ROLE_NAME_KEY = "role_name"
+FRECK_META_ROLES_KEY = "roles"
+FRECK_META_ROLE_KEY = "role"
+
+FRECK_META_TASKS_KEY = "tasks"
 
 def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP_NAME):
 
@@ -87,6 +95,7 @@ def cleanup_playbook_items(playbook_items):
 
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
     """Assembles the dictionary to create the playbook from."""
+
     temp_root = {}
     temp_root["hosts"] = host_group
     temp_root["gather_facts"] = True
@@ -106,7 +115,7 @@ def extract_ansible_roles(playbook_items):
 
     roles = {}
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
                 if not role_url_or_dict.startswith("frkl:"):
@@ -122,7 +131,7 @@ def copy_internal_roles(playbook_items, role_base_path):
 
     role_urls = Set()
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
+        item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
                 if role_url_or_dict.startswith("frkl:"):
@@ -142,10 +151,16 @@ def create_custom_roles(playbook_items, role_base_path):
     If one of the roles in one of the playbook items is a list instead of a string, it is assumed that it is a list of task descriptions (see: XXX) and a custom role is generated dynamically.
 
     If that is the case, the role_name will not be included in the result, since that role doesn't need to be downloaded, and the internal role path that contains the role is already included in the ansible path.
+
+    Args:
+        playbook_items (list): all the items that are to be executed
+        role_base_path (str): base directory where the role should be created
     """
 
     for item in playbook_items.values():
-        item_roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
+        # print (item)
+        # sys.exit(0)
+        item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if not isinstance(role_url_or_dict, basestring) and isinstance(role_url_or_dict, (list, tuple)):
                 create_custom_role(role_base_path, role_name, role_url_or_dict)
@@ -214,31 +229,45 @@ class AnsibleRunner(FrecklesRunner):
     def set_callback(self, callback):
         self.callback = callback
 
-    def get_freck(self, freck_name, freck_type, freck_configs):
+    def get_freck(self, freck_meta):
 
-        log.debug("Finding freck for: {}, {}, {}".format(freck_name, freck_type, freck_configs))
-        if not freck_type == FRECK_DEFAULT_TYPE:
-            if freck_type == ANSIBLE_TASK_TYPE:
-                log.debug("Using freck: task")
-                return self.frecks.get("task")
-            elif freck_type == ANSIBLE_ROLE_TYPE:
-                log.debug("Using freck: role")
-                return self.frecks.get("role")
-            else:
-                raise FrecklesConfigError("Freck type '{}' not supported for ansible runner.".format(freck_type), FRECK_TYPE_KEY, freck_type)
+        meta_schema = Schema({FRECK_NAME_KEY: str, FRECK_DESC_KEY: str, FRECK_META_TYPE_KEY: str, FRECK_META_ROLE_NAME_KEY: str, FRECK_CONFIGS_KEY: list})
+        check_schema(freck_meta, meta_schema)
+
+        freck_name = freck_meta[FRECK_NAME_KEY]
+        freck_configs = freck_meta[FRECK_CONFIGS_KEY]
+
+        log.debug("Finding freck for: {}, {}, {}".format(freck_name, freck_meta, freck_configs))
+
+        freck_type = freck_meta.get(FRECK_META_TYPE_KEY, False)
+        if not freck_type:
+                if freck_name in self.frecks.keys():
+                        log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_FRECK_TYPE, freck_name))
+                        freck_type = ANSIBLE_FRECK_TYPE
+                else:
+                    # merge all configs to get all the roles that are used in them
+                    merged = copy.deepcopy(FRECK_DEFAULT_CONFIG)
+                    for config in freck_configs:
+                            dict_merge(merged, config)
+                    roles = merged.get(FRECK_META_ROLES_KEY, {}).keys()
+                    if freck_name in roles:
+                            log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_ROLE_TYPE, freck_name))
+                            freck_type = ANSIBLE_ROLE_TYPE
+                    else:
+                            log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_TASK_TYPE, freck_name))
+                            freck_type = ANSIBLE_TASK_TYPE
+
+        freck_meta[FRECK_META_TYPE_KEY] = freck_type
+
+        if freck_type == ANSIBLE_FRECK_TYPE:
+                return self.frecks.get(freck_name)
+        elif freck_type == ANSIBLE_TASK_TYPE:
+                return self.frecks.get(ANSIBLE_TASK_TYPE)
+        elif freck_type == ANSIBLE_ROLE_TYPE:
+                return self.frecks.get(ANSIBLE_ROLE_TYPE)
         else:
-            freck = self.frecks.get(freck_name, False)
-            if not freck:
-                last_config = freck_configs[-1]
-                if last_config.get(ROLE_ROLES_KEY, False):
-                        roles = last_config[ROLE_ROLES_KEY].keys()
-                        if freck_name in roles:
-                                log.debug("Using freck: role")
-                                return self.frecks.get("role")
+                raise FrecklesConfigError("Freck type '{}' not supported for ansible runner.".format(freck_type), FRECK_TYPE_KEY, freck_type)
 
-                        return False
-
-            return freck
 
     def prepare_run(self):
 
@@ -292,16 +321,16 @@ class AnsibleRunner(FrecklesRunner):
 
         # check that every item has a role specified. Also apply tags if necessary
         for item in self.items.values():
-            if not item.get(FRECK_ANSIBLE_ROLE_KEY, False):
-                roles = item.get(FRECK_ANSIBLE_ROLES_KEY, {})
+            if not item.get(FRECK_META_ROLE_KEY, False):
+                roles = item.get(FRECK_META_ROLES_KEY, {})
                 if len(roles) != 1:
-                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[INT_FRECK_ITEM_NAME_KEY]), FRECK_ANSIBLE_ROLE_KEY, roles)
+                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]), FRECK_META_ROLE_KEY, roles)
 
-                item[FRECK_ANSIBLE_ROLE_KEY] = roles.keys()[0]
+                item[FRECK_META_ROLE_KEY] = roles.keys()[0]
 
             # copy role key to ansible-usable 'role' variable
-            item["role"] = item[FRECK_ANSIBLE_ROLE_KEY]
-            item[FRECK_TASK_DESC] = item[FRECK_ANSIBLE_ROLE_KEY]
+            item["role"] = item[FRECK_META_ROLE_KEY]
+            item[FRECK_TASK_DESC] = item[FRECK_META_ROLE_KEY]
 
         needs_sudo = playbook_needs_sudo(self.items)
         passwordless_sudo = can_passwordless_sudo()

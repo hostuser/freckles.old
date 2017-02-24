@@ -16,6 +16,7 @@ import yaml
 from constants import *
 from constants import FRECKLES_METADATA_FILENAME
 from stevedore import extension
+from voluptuous import Schema
 
 log = logging.getLogger("freckles")
 
@@ -52,6 +53,9 @@ def dict_merge(dct, merge_dct):
             dct[k] = merge_dct[k]
 
 
+def check_schema(value, schema):
+
+    schema(value)
 
 def expand_config_url(url):
 

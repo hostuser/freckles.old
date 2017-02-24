@@ -31,30 +31,29 @@ GLOBAL_RUNS_KEY = "runs"
 GLOBAL_VARS_KEY = "vars"
 GLOBAL_LOAD_KEY = "load"
 
-RUN_RUNNER_KEY = "type"
+RUN_META_KEY = "meta"
+RUN_RUNNER_NAME_KEY = "type"
+INT_RUN_RUNNER_KEY = "runner_obj"
 RUN_DESC_KEY = "desc"
 RUN_FRECKS_KEY = "tasks"
 RUN_VARS_KEY = "vars"
+RUN_NUMBER_KEY = "nr"
+RUN_NAME_KEY = "name"
 
 FRECK_RUNNER_KEY = "runner" # TODO: add supported runners check
 
 
 FRECK_DESC_KEY = "desc"
 FRECK_VARS_KEY = "vars"
-FRECK_TYPE_KEY = "type"
+FRECK_META_KEY = "meta"
 
 INT_FRECK_KEY = "freck_object"
-INT_FRECK_ORIG_CONFIGS = "freck_configs"
-INT_FRECK_NAME_KEY = "freck_name"
-INT_FRECK_CONFIGS_KEY = "freck_configs"
-INT_FRECK_DESC_KEY = "freck_desc"
-INT_FRECK_TYPE_KEY = "freck_type"
-INT_FRECK_ID_KEY = "freck_id"
-INT_FRECK_ITEM_NAME_KEY = "freck_item_name"
-INT_FRECK_PRIORITY_KEY = "freck_priority"
+FRECK_NAME_KEY = "name"
+FRECK_CONFIGS_KEY = "freck_configs"
+FRECK_ID_KEY = "freck_id"
+FRECK_ITEM_NAME_KEY = "freck_item_name"
 
 FRECK_TASK_DESC = "freck_task_desc"
-FRECK_DEFAULT_TYPE = "default"
 
 FRECK_SUDO_KEY = "freck_sudo"
 FRECK_BECOME_KEY = "freck_become"

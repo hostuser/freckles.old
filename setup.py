@@ -40,16 +40,16 @@ setup(
             'freckles=freckles.cli:cli'
         ],
         'freckles.frecks': [
-            'install=freckles.frecks:Install',
-            'update=freckles.frecks:Update',
-            'upgrade=freckles.frecks:Upgrade',
-            'checkout-dotfiles=freckles.frecks:CheckoutDotfiles',
-            'stow=freckles.frecks:Stow',
-            'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
-            'delete=freckles.frecks:Delete',
-            'debug=freckles.frecks:DebugVars',
-            'role=freckles.frecks:Role',
-            'task=freckles.frecks:Task'
+            # 'install=freckles.frecks:Install',
+            # 'update=freckles.frecks:Update',
+            # 'upgrade=freckles.frecks:Upgrade',
+            # 'checkout-dotfiles=freckles.frecks:CheckoutDotfiles',
+            # 'stow=freckles.frecks:Stow',
+            # 'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
+            # 'delete=freckles.frecks:Delete',
+            # 'debug-vars=freckles.frecks:DebugVars',
+            # 'ansible-role=freckles.frecks:Role',
+            'ansible-task=freckles.frecks:Task'
         ]
     },
     include_package_data=True,

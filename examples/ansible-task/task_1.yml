@@ -1,7 +1,15 @@
 runs:
-  - name: debug msg
+  - desc: debug msg
     tasks:
       - debug:
-          type: ansible_task
+          meta:
+            # type: ansible_task
+            role_name: debug_stuff
           vars:
             msg: "SSSSS"
+      - debug:
+          meta:
+            # type: ansible_task
+            role_name: debug_stuff
+          vars:
+            msg: "TTT"
