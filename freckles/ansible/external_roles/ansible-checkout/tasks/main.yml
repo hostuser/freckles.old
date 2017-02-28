@@ -1,9 +1,0 @@
----
-# tasks file for ansible-checkout
-
-- name: Ensure remote repository is cloned locally.
-  git:
-    repo: "{{ remote }}"
-    dest: "{{ base_dir }}"
-    accept_hostkey: yes
-  become: no

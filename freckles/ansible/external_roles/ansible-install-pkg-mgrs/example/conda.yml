@@ -1,9 +1,0 @@
-- hosts: localhost
-  vars:
-    pkg_mgrs:
-      - conda
-  roles:
-    - install-nix
-
-
-
