@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-checkout.git
 	branch = master
 	commit = 1ddc99a01f2194c853b134bf40b07dee44f7f326
-	parent = 410f46f408d97b9e71401b8b85e9845b47142d57
+	parent = 6898ee915ee74795cb58a2c478d0268e435c7f70
 	cmdver = 0.3.1
