@@ -1,0 +1,4 @@
+---
+# defaults file for ansible-nix-pkg-mgr
+
+add_path: false
