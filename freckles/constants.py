@@ -85,6 +85,7 @@ PACKAGES_KEY = "packages"
 
 ## freck run defaults
 FRECK_DEFAULT_PRIORITY = 10000
+RUN_STARTED = "Run started"
 RUN_FINISHED = "Run finished"
 
 ## general defaults

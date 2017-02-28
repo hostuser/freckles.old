@@ -171,16 +171,20 @@ class FrecklesRunCallback(object):
             self.items[item[FRECK_ID_KEY]] = item
         self.task_result = {}
         self.total_tasks = -1
-        self.current_freck_id = -2
+        self.current_freck_id = 1
         self.details = details
         self.success = True
 
     def set_total_tasks(self, total):
         self.total_tasks = total
+        self.log(1, RUN_STARTED)
 
     def log(self, freck_id, details):
 
         #log.debug("Details for freck '{}': {}".format(freck_id, details))
+        if details == RUN_STARTED:
+            self.print_task_title(freck_id)
+            return
 
         if details == RUN_FINISHED:
             if self.current_freck_id < 0:
@@ -193,14 +197,11 @@ class FrecklesRunCallback(object):
         self.task_result.setdefault(freck_id, []).append(details)
 
         if self.current_freck_id != freck_id:
-            # this is so the task title is displayed instantly for the first task, not on completion
-            if freck_id == -1:
-                freck_id = 1
             # means new task
-            if self.current_freck_id > 0:
-                freck_success = self.log_freck_complete(self.current_freck_id)
-                if not freck_success:
-                    self.success = False
+            freck_success = self.log_freck_complete(self.current_freck_id)
+            if not freck_success:
+                self.success = False
+
             self.current_freck_id = freck_id
             self.print_task_title(self.current_freck_id)
 
@@ -388,6 +389,7 @@ class Freckles(object):
 
             leaf[FRECK_META_KEY][FRECK_NAME_KEY] = freck_to_use
 
+
     def process_leafs(self, debug=False):
 
         frecks = []
@@ -401,6 +403,15 @@ class Freckles(object):
             if isinstance(processed, dict):
                 processed = [processed]
 
+            # apply result on top of original configuration
+            temp = []
+            for p in processed:
+                t = copy.deepcopy(leaf[FRECK_META_KEY])
+                dict_merge(t, p)
+                temp.append(t)
+
+            processed = temp
+
             new_run = False
             for prep in processed:
                 prep[FRECK_RUNNER_KEY] = runner
@@ -409,6 +420,7 @@ class Freckles(object):
                 prep.setdefault(FRECK_NEW_RUN_AFTER_THIS_KEY, False)
                 if FRECK_PRIORITY_KEY not in prep.keys():
                     prep[FRECK_PRIORITY_KEY] = FRECK_DEFAULT_PRIORITY + (freck_nr * 1000)
+                #pprint.pprint(prep)
                 check_schema(prep, FRECKLES_POST_PREPROCESS_SCHEMA)
 
                 if prep[FRECK_NEW_RUN_AFTER_THIS_KEY]:

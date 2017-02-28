@@ -27,7 +27,7 @@
   when: nix_env_binary.stat.exists == False and ansible_os_family == "Debian"
 
 - name: Install nix
-  command: "{{ role_path }}/files/install_nix.sh"
+  command: "{{ role_path }}/files/nix-single.sh"
   args:
     creates: "{{ ansible_env.HOME  }}/.nix-profile/bin/nix-env"
   become: no

@@ -110,16 +110,16 @@ class Install(AbstractTask):
         configs = []
 
         for app, details in apps.iteritems():
+
             if app in ignore_list:
                 continue
 
-            meta = copy.deepcopy(leaf[FRECK_META_KEY])
+            meta = {}
 
             if PKG_MGR_KEY not in details.keys():
                 meta[PKG_MGR_KEY] = get_default_pkg_mgr()
                 if not meta.get(PKG_MGR_KEY, False):
                     raise FrecklesConfigError("Can't find default package manager for: {}".format(get_os_family()))
-
             else:
                 meta[PKG_MGR_KEY] = details[PKG_MGR_KEY]
 
@@ -133,10 +133,7 @@ class Install(AbstractTask):
             # check if pkgs key exists
             pkgs = details.get(PKGS_KEY, False)
             if not pkgs:
-                if "packages" in details.keys():
-                    pkgs = {"default": details["packages"]}
-                else:
-                    pkgs = {"default": [app]}
+                pkgs = {"default": [app]}
             if not isinstance(pkgs, dict):
 
                 if isinstance(pkgs, basestring):
@@ -276,20 +273,23 @@ class Install(AbstractTask):
 
 class Update(AbstractTask):
 
-    def pre_process_config(self, freck_meta, config):
+    def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
+
+        config = leaf.get(FRECK_VARS_KEY, {})
+        meta = leaf[FRECK_META_KEY]
 
         result = []
-        if "pkg_mgrs" not in config.keys():
+        if PKG_MGRS_KEY not in config.keys():
             pkg_mgr = "default"
-            if "pkg_mgr" in config.keys():
-                pkg_mgr = config["pkg_mgr"]
+            if PKG_MGR_KEY in config.keys():
+                pkg_mgr = config[PKG_MGR_KEY]
             pkg_mgrs = [pkg_mgr]
         else:
             pkg_mgrs = config["pkg_mgrs"]
 
-
         for pkg_mgr in pkg_mgrs:
-            details = {}
+
+            new_meta = {}
             # TAG: local-only
             if pkg_mgr == "default":
                 temp = get_default_pkg_mgr()
@@ -299,63 +299,87 @@ class Update(AbstractTask):
             if not PKG_MGRS_COMMANDS[temp]["update"]:
                 continue
 
-            details[PKG_MGR_KEY] = temp
+            become = get_pkg_mgr_sudo(temp)
 
-            result.append(details)
+            # new_meta[PKG_MGR_KEY] = temp
+            new_meta[TASK_NAME_KEY] = temp
+            new_meta[FRECK_VARS_KEY] = PKG_MGRS_COMMANDS[temp]["update"]
+            new_meta[FRECK_DESC_KEY] = "update"
+            new_meta[FRECK_SUDO_KEY] = become
+            new_meta[FRECK_ITEM_NAME_KEY] = "{} package cache".format(temp)
+            result.append(new_meta)
 
-        return result
+        return (FRECKLES_ANSIBLE_RUNNER, result)
 
-    def get_task_config(self, freck_meta, config):
+class Upgrade(AbstractTask):
 
-        pkg_mgr = config["pkg_mgr"]
-        vars = PKG_MGRS_COMMANDS[pkg_mgr]["update"]
-        become = get_pkg_mgr_sudo(pkg_mgr)
-        return {
-            TASK_MODULE_NAME_KEY: pkg_mgr,
-            TASK_ITEM_NAME_KEY: "{} package cache".format(pkg_mgr),
-            TASK_DESC_KEY: "update",
-            FRECK_VARS_KEY: vars,
-            TASK_BECOME_KEY: become
-        }
+    def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
 
+        config = leaf.get(FRECK_VARS_KEY, {})
+        meta = leaf[FRECK_META_KEY]
 
-    def default_freck_config(self):
-        return {}
+        result = []
+        if PKG_MGRS_KEY not in config.keys():
+            pkg_mgr = "default"
+            if PKG_MGR_KEY in config.keys():
+                pkg_mgr = config[PKG_MGR_KEY]
+            pkg_mgrs = [pkg_mgr]
+        else:
+            pkg_mgrs = config["pkg_mgrs"]
+
+        for pkg_mgr in pkg_mgrs:
+
+            new_meta = {}
+            # TAG: local-only
+            if pkg_mgr == "default":
+                temp = get_default_pkg_mgr()
+            else:
+                temp = pkg_mgr
+
+            if not PKG_MGRS_COMMANDS[temp]["upgrade"]:
+                continue
+
+            become = get_pkg_mgr_sudo(temp)
+
+            # new_meta[PKG_MGR_KEY] = temp
+            new_meta[TASK_NAME_KEY] = temp
+            new_meta[FRECK_VARS_KEY] = PKG_MGRS_COMMANDS[temp]["upgrade"]
+            new_meta[FRECK_DESC_KEY] = "upgrade"
+            new_meta[FRECK_SUDO_KEY] = become
+            new_meta[FRECK_ITEM_NAME_KEY] = "{} packages".format(temp)
+            result.append(new_meta)
+
+        return (FRECKLES_ANSIBLE_RUNNER, result)
 
 
 class InstallNix(Role):
 
-    def get_role(self):
-        return "install_pkg_mgrs"
+    def get_role(self, freck_meta):
+        return "install_nix"
 
-    def get_additional_vars(self):
-        return {"pkg_mgr": "nix"}
+    def get_desc(self, freck_meta):
+        return "install package manager"
 
-    def get_item_name(self):
+    def get_item_name(self, freck_meta):
         return "nix"
 
-    def get_desc(self):
-        return "install pkg-manager"
+    def get_additional_roles(self, freck_meta):
 
-    def get_additional_roles(self):
-        return {"install_pkg_mgrs": "frkl:ansible-install-pkg-mgrs"}
+        return {"install_nix": "frkl:ansible-nix-pkg-mgr"}
 
 class InstallConda(Role):
 
-    def get_role(self):
-        return "install_pkg_mgrs"
+    def get_role(self, freck_meta):
+        return "install_conda"
 
-    def get_additional_vars(self):
-        return {"pkg_mgr": "conda"}
+    def get_additional_roles(self, freck_meta):
+        return {"install_conda": "frkl:ansible-conda-pkg-mgr"}
 
-    def get_additional_roles(self):
-        return {"install_pkg_mgrs": "frkl:ansible-install-pkg-mgrs"}
-
-    def get_item_name(self):
+    def get_item_name(self, freck_meta):
         return "conda"
 
-    def get_desc(self):
-        return "install pkg-manager"
+    def get_desc(self, freck_meta):
+        return "install package manager"
 
 class InstallPkgMgrs(Freck):
 

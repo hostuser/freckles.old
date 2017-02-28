@@ -36,6 +36,7 @@ class CallbackModule(CallbackBase):
 
     def get_freck_id(self):
 
+        # pprint.pprint(self.task.serialize())
         id = self.get_task_detail("role._role_params.freck_id")
         if id:
             return id
