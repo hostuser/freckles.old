@@ -1,10 +1,9 @@
-from install import Install
-from install import Update
-from install import Upgrade
-from stow import Stow
-from checkout import CheckoutDotfiles
-from install import InstallPkgMgrs
-from files import Delete
-from debug_vars import DebugVars
+# from checkout import CheckoutDotfiles
+# from debug_vars import DebugVars
+# from files import Delete
+# from install import (Install, InstallConda, InstallNix, InstallPkgMgrs, Update,
+                     # Upgrade)
+from install import Install, Update
 from role import Role
+# from stow import Stow
 from task import Task

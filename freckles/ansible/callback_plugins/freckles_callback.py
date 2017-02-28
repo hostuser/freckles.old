@@ -12,8 +12,6 @@ from ansible.plugins.callback import CallbackBase
 
 __metaclass__ = type
 
-
-
 class CallbackModule(CallbackBase):
     """
     Forward task, play and result objects to freckles.
@@ -28,7 +26,6 @@ class CallbackModule(CallbackBase):
         self.task = None
         self.play = None
 
-
     def get_task_detail(self, detail_key):
 
         temp = self.task.serialize()
@@ -37,14 +34,26 @@ class CallbackModule(CallbackBase):
 
         return temp
 
+    def get_freck_id(self):
+
+        id = self.get_task_detail("role._role_params.freck_id")
+        if id:
+            return id
+
+        parents = self.get_task_detail("role._parents")
+        for p in parents:
+            if "freck_id" in p["_role_params"].keys():
+                return p["_role_params"]["freck_id"]
+
+        return -1
+
     def print_output(self, category, result):
 
         output = {}
         output["state"] = category
-        output["freck_id"] = self.get_task_detail("role._role_params.freck_id")
-        if  not output["freck_id"]:
-            output["freck_id"] = -1
-        if not output.get("freck_id", False) and not category == "failed":
+        output["freck_id"] = self.get_freck_id()
+
+        if output["freck_id"] == -1 and not category == "failed":
             return
 
         output["action"] = self.task.serialize().get("action", "n/a")

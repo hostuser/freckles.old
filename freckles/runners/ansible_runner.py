@@ -42,6 +42,7 @@ TASK_FREE_FORM_KEY = "free_form"
 
 TASK_BECOME_KEY = "become"
 TASK_DEFAULT_BECOME = False
+TASK_TEMPLATE_KEYS = "task_template_keys"
 
 FRECKLES_DEFAULT_GROUP_NAME = "freckles"
 
@@ -54,6 +55,7 @@ FRECK_META_ROLES_KEY = "roles"
 FRECK_META_ROLE_KEY = "role"
 
 FRECK_META_TASKS_KEY = "tasks"
+FRECK_META_ROLE_DICT_KEY = "role_dict"
 
 def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP_NAME):
 
@@ -76,23 +78,6 @@ def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP
 
 """.format(group_name, "\n".join(hosts.keys())))
 
-def cleanup_playbook_items(playbook_items):
-
-    result = OrderedDict()
-    for item_nr, item in playbook_items.iteritems():
-        i = {}
-        for key, value in item.iteritems():
-            if key.startswith(ANSIBLE_RUNNER_PREFIX):
-                continue
-            elif key != INT_FRECK_ID_KEY and key.startswith("freck_"):
-                continue
-
-            i[key] = value
-
-        result[item_nr] = i
-
-    return result
-
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
     """Assembles the dictionary to create the playbook from."""
 
@@ -100,12 +85,40 @@ def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME)
     temp_root["hosts"] = host_group
     temp_root["gather_facts"] = True
 
-    cleaned = cleanup_playbook_items(playbook_items)
-    # cleaned = playbook_items
+    roles = []
+    for p in playbook_items:
+            role_dict = copy.deepcopy(p[FRECK_META_ROLE_DICT_KEY])
+            id = p[FRECK_ID_KEY]
+            role_dict[FRECK_ID_KEY] = id
+            become = p.get(FRECK_SUDO_KEY, FRECK_DEFAULT_SUDO)
+            role_dict[FRECK_SUDO_KEY] = become
+            vars = p[FRECK_VARS_KEY]
+            dict_merge(role_dict, vars)
+            roles.append(role_dict)
 
-    temp_root["roles"] = cleaned.values()
+    temp_root["roles"] = roles
 
     return temp_root
+
+def get_roles_library_paths(playbook_items):
+        """Extracs all roles that are copied or downloaded, and returns a list of paths to their library folders.
+
+        This is useful to use modules included in roles directly."""
+
+        result = []
+        for item in playbook_items:
+                item_roles = item.get(FRECK_META_ROLES_KEY, {})
+                for role_name, role_url_or_dict in item_roles.iteritems():
+                        if isinstance(role_url_or_dict, basestring):
+                                if role_url_or_dict.startswith("frkl:"):
+                                        # means internal
+                                        result.append("../roles/internal/{}/library".format(role_name))
+                                else:
+                                        result.append("../roles/external/{}/library".format(role_name))
+
+        return result
+
+
 
 def extract_ansible_roles(playbook_items):
     """Extracts all ansible roles that will be used in a run.
@@ -114,7 +127,7 @@ def extract_ansible_roles(playbook_items):
     """
 
     roles = {}
-    for item in playbook_items.values():
+    for item in playbook_items:
         item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
@@ -130,7 +143,7 @@ def copy_internal_roles(playbook_items, role_base_path):
     """
 
     role_urls = Set()
-    for item in playbook_items.values():
+    for item in playbook_items:
         item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if isinstance(role_url_or_dict, basestring):
@@ -143,6 +156,10 @@ def copy_internal_roles(playbook_items, role_base_path):
         dest = os.path.join(role_base_path, role_internal_name[0])
         log.debug("Copying internal roles: {} -> {}".format(role_path, dest))
         shutil.copytree(role_path, dest)
+
+def internal_role_exists():
+
+        role_base_path = os.path.join(os.path.dirname(__file__), "..", "ansible", "external_roles")
 
 
 def create_custom_roles(playbook_items, role_base_path):
@@ -157,9 +174,7 @@ def create_custom_roles(playbook_items, role_base_path):
         role_base_path (str): base directory where the role should be created
     """
 
-    for item in playbook_items.values():
-        # print (item)
-        # sys.exit(0)
+    for item in playbook_items:
         item_roles = item.get(FRECK_META_ROLES_KEY, {})
         for role_name, role_url_or_dict in item_roles.iteritems():
             if not isinstance(role_url_or_dict, basestring) and isinstance(role_url_or_dict, (list, tuple)):
@@ -177,19 +192,22 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     """
 
     # need to convert tasks dictionary so that it works with the template
-    # tasks_dict = OrderedDict()
-    tasks_dict = {}
+    tasks_dict = OrderedDict()
+    # tasks_dict = {}
     for task in tasks:
         task_id_element = task["task"]
-        if len(task_id_element) != 1:
-            raise FrecklesConfigError("Task element in task description has more than one entries, not valid: {}".format(task_id_element))
 
-        task_id = task_id_element.keys()[0]
-        task_vars = task_id_element[task_id]
+        if len(task_id_element["vars"]) != 1:
+            raise FrecklesConfigError("Task element in task description has more than one entries, not valid: {}".format(task_id_element), "task", task)
+
+        task_id = task_id_element["vars"].keys()[0]
+        task_vars = task_id_element["vars"][task_id]
+        become = task_id_element["become"]
+
         name = task["name"]
         task_type = task["type"]
 
-        tasks_dict[task_id] = { task_type: task_vars }
+        tasks_dict[task_id] = {task_type: {"vars": task_vars, "become": become}}
 
     current_dir = os.getcwd()
     os.chdir(role_base_path)
@@ -197,22 +215,39 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     rearranged_tasks = {}
     for task, task_detail in tasks_dict.iteritems():
             ansible_module = task_detail.keys()[0]
-            become = task_detail[ansible_module].pop(TASK_BECOME_KEY, TASK_DEFAULT_BECOME)
-            if task_detail[ansible_module].get(TASK_FREE_FORM_KEY, False):
+            become = task_detail[ansible_module][TASK_BECOME_KEY]
+            if TASK_FREE_FORM_KEY in task_detail[ansible_module]["vars"]:
                 free_form = task_detail[ansible_module].pop(TASK_FREE_FORM_KEY)
-                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module], "become": become}
+                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module]["vars"], "become": become}
                 rearranged_tasks[task] = new_dict
             else:
                 ansible_module = task_detail.keys()[0]
-                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module], "become": become}
+                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module]["vars"], "become": become}
 
-
-    role_dict = { "role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults }
+    role_dict = {"role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults}
     role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
 
     cookiecutter(role_local_path, extra_context=role_dict, no_input=True)
     os.chdir(current_dir)
 
+ANSIBLE_FRECK_SCHEMA = Schema({
+        FRECK_NAME_KEY: basestring,
+        FRECK_DESC_KEY: basestring,
+        TASK_NAME_KEY: basestring,
+        FRECK_SUDO_KEY: bool,
+        FRECK_VARS_KEY: dict,
+        FRECK_ITEM_NAME_KEY: basestring,
+        FRECK_META_ROLE_DICT_KEY: dict,
+        FRECK_META_TASKS_KEY: dict,
+        FRECK_INDEX_KEY: int,
+        FRECK_RUNNER_KEY: basestring,
+        FRECK_NEW_RUN_AFTER_THIS_KEY: bool,
+        FRECK_PRIORITY_KEY: int,
+        FRECK_ID_KEY: int,
+        TASK_TEMPLATE_KEYS: list,
+        FRECK_META_ROLES_KEY: dict,
+        FRECK_META_ROLE_KEY: basestring
+})
 
 class AnsibleRunner(FrecklesRunner):
     """ Runner that executes a series of frecks that use ansible as a backend execution engine.
@@ -220,57 +255,14 @@ class AnsibleRunner(FrecklesRunner):
     This is the default runner, and there might never be a different type. Just abstracted it because it was easy to do at this stage, and it might prove useful later on.
     """
 
-    def __init__(self, frecks):
-        self.frecks = frecks
+    def __init__(self, items, callback):
+        # TODO: validate items
+        for item in items:
+                check_schema(item, ANSIBLE_FRECK_SCHEMA)
 
-    def set_items(self, items):
         self.items = items
 
-    def set_callback(self, callback):
         self.callback = callback
-
-    def get_freck(self, freck_meta):
-
-        meta_schema = Schema({FRECK_NAME_KEY: str, FRECK_DESC_KEY: str, FRECK_META_TYPE_KEY: str, FRECK_META_ROLE_NAME_KEY: str, FRECK_CONFIGS_KEY: list})
-        check_schema(freck_meta, meta_schema)
-
-        freck_name = freck_meta[FRECK_NAME_KEY]
-        freck_configs = freck_meta[FRECK_CONFIGS_KEY]
-
-        log.debug("Finding freck for: {}, {}, {}".format(freck_name, freck_meta, freck_configs))
-
-        freck_type = freck_meta.get(FRECK_META_TYPE_KEY, False)
-        if not freck_type:
-                if freck_name in self.frecks.keys():
-                        log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_FRECK_TYPE, freck_name))
-                        freck_type = ANSIBLE_FRECK_TYPE
-                else:
-                    # merge all configs to get all the roles that are used in them
-                    merged = copy.deepcopy(FRECK_DEFAULT_CONFIG)
-                    for config in freck_configs:
-                            dict_merge(merged, config)
-                    roles = merged.get(FRECK_META_ROLES_KEY, {}).keys()
-                    if freck_name in roles:
-                            log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_ROLE_TYPE, freck_name))
-                            freck_type = ANSIBLE_ROLE_TYPE
-                    else:
-                            log.debug("Assuming type '{}' for freck_name: {}".format(ANSIBLE_TASK_TYPE, freck_name))
-                            freck_type = ANSIBLE_TASK_TYPE
-
-        freck_meta[FRECK_META_TYPE_KEY] = freck_type
-
-        if freck_type == ANSIBLE_FRECK_TYPE:
-                return self.frecks.get(freck_name)
-        elif freck_type == ANSIBLE_TASK_TYPE:
-                return self.frecks.get(ANSIBLE_TASK_TYPE)
-        elif freck_type == ANSIBLE_ROLE_TYPE:
-                return self.frecks.get(ANSIBLE_ROLE_TYPE)
-        else:
-                raise FrecklesConfigError("Freck type '{}' not supported for ansible runner.".format(freck_type), FRECK_TYPE_KEY, freck_type)
-
-
-    def prepare_run(self):
-
         self.create_playbook_environment()
 
 
@@ -319,18 +311,10 @@ class AnsibleRunner(FrecklesRunner):
         runner_folder = os.path.abspath(os.path.join(runner_file, os.pardir))
         self.callback_plugins_folder = os.path.join(runner_folder, "..",  "ansible", "callback_plugins")
 
-        # check that every item has a role specified. Also apply tags if necessary
-        for item in self.items.values():
-            if not item.get(FRECK_META_ROLE_KEY, False):
-                roles = item.get(FRECK_META_ROLES_KEY, {})
-                if len(roles) != 1:
-                    raise FrecklesConfigError("Item '{}' does not have a role associated with it, and more than one role in freck config. This is probably a bug, please report to the freck developer.".format(item[FRECK_ITEM_NAME_KEY]), FRECK_META_ROLE_KEY, roles)
-
-                item[FRECK_META_ROLE_KEY] = roles.keys()[0]
-
-            # copy role key to ansible-usable 'role' variable
-            item["role"] = item[FRECK_META_ROLE_KEY]
-            item[FRECK_TASK_DESC] = item[FRECK_META_ROLE_KEY]
+        # CHECK TASKS AND CREATE ROLES freck_type == ANSIBLE_TASK_TYPE:
+        for item in self.items:
+                if item.get(FRECK_META_TASKS_KEY, False):
+                        item.setdefault(FRECK_META_ROLES_KEY, {}).update(item[FRECK_META_TASKS_KEY])
 
         needs_sudo = playbook_needs_sudo(self.items)
         passwordless_sudo = can_passwordless_sudo()
@@ -341,6 +325,9 @@ class AnsibleRunner(FrecklesRunner):
             self.freckles_ask_sudo = ""
 
         self.roles = extract_ansible_roles(self.items)
+
+        self.freckles_library_paths = get_roles_library_paths(self.items)
+        self.freckles_library_path_string = "./library:" + ":".join(self.freckles_library_paths)
         log.debug("Roles in use: {}".format(self.roles))
 
         cookiecutter_details = {
@@ -349,6 +336,7 @@ class AnsibleRunner(FrecklesRunner):
                 "freckles_playbook_dir": self.playbook_dir,
                 "freckles_playbook": self.playbook_file,
                 "freckles_ask_sudo": self.freckles_ask_sudo,
+                "freckles_library_path": self.freckles_library_path_string,
                 "freckles_develop_roles_path": FRECKLES_DEVELOP_ROLE_PATH,
                 "freckles_ansible_roles": self.roles,
                 "freckles_callback_plugins": self.callback_plugins_folder,
@@ -370,6 +358,7 @@ class AnsibleRunner(FrecklesRunner):
 
         log.debug("Creating and writing playbook...")
         playbook_dict = create_playbook_dict(self.items, self.freckles_group_name)
+
         with open(self.playbook_file, 'w') as f:
             f.write(yaml.safe_dump([playbook_dict], default_flow_style=False))
 
@@ -390,9 +379,10 @@ class AnsibleRunner(FrecklesRunner):
 
         total_tasks = (len(self.items))
         self.callback.set_total_tasks(total_tasks)
+
         for line in iter(proc.stdout.readline, ''):
             details = json.loads(line)
-            freck_id = int(details.get(INT_FRECK_ID_KEY))
+            freck_id = int(details.get(FRECK_ID_KEY))
             self.callback.log(freck_id, details)
 
         self.callback.log(freck_id, RUN_FINISHED)

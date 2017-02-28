@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import copy
 import logging
+import platform
 import pprint
 import sys
 
+from ansible.module_utils.facts import Distribution
 from freckles import Freck
 from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
@@ -13,12 +15,28 @@ from freckles.utils import (create_apps_dict, create_dotfiles_dict, dict_merge,
                             get_pkg_mgr_from_marker_file,
                             get_pkg_mgr_from_path, get_pkg_mgr_sudo,
                             parse_dotfiles_item)
+from role import Role
 from sets import Set
+from task import AbstractTask
 from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
-SUPPORTED_PKG_MGRS = ["deb", "rpm", "nix", "pip", "git", "no_install", "conda", "brew", "default"]
+SUPPORTED_PKG_MGRS = ["apt", "yum", "nix", "pip", "git", "no_install", "conda", "brew", "default"]
+DEFAULT_PKG_MGRS = {
+    "Debian": "apt",
+    "RedHat": "yum",
+    "Darwin": "brew"
+}
+
+PKG_MGRS_COMMANDS = {
+    "apt": {"update": {"update_cache": True}, "upgrade": {"upgrade": "dist"}},
+    "yum": {"update": False, "upgrade": {"name": "'*'", "state": "latest"}},
+    "nix": {"update": {"update_cache": True}, "upgrade": {"upgrade": True}},
+    "conda": {"update": False, "upgrade": {"upgrade": True}},
+    "brew": {"update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False}}
+}
+
 INSTALL_IGNORE_KEY = "no_install"
 ACTION_KEY = "install_action"
 PKGS_KEY = "pkgs"   # this is the key that is used in the role
@@ -53,335 +71,291 @@ GIT_CONFIG_UPDATE_DEFAULT = True
 
 INSTALL_BREW_KEY = "install-brew"
 
-UPDATE_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 100,
-    FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-    ACTION_KEY: "update_cache",
-    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-    FRECK_META_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-    FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-}
+def get_os_family():
 
-UPGRADE_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 200,
-    FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-    ACTION_KEY: "upgrade",
-    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-    FRECK_META_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-    FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
-}
+    d = Distribution(None)
+    d.populate()
+    return d.facts["os_family"]
 
-INSTALL_PKG_MANAGERS_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 10,
-    FRECK_SUDO_KEY: False,
-    ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
-    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-    ACTION_KEY: "install-pkg-mgrs",
-    FRECK_META_ROLES_KEY: {
-        FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_URL},
-    FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_PKG_MGRS_ROLE_NAME
-}
+def get_default_pkg_mgr():
 
-INSTALL_MAC_BREW_DEFAULT_CONFIG = {
-    FRECK_PRIORITY_KEY: 10,
-    FRECK_SUDO_KEY: True,
-    ACTION_KEY: "install-pkg-mgrs",
-    ADD_PKG_MGR_PATH_KEY: ADD_PKG_MGR_PATH_DEFAULT,
-    FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-    FRECK_META_ROLES_KEY: {
-        INSTALL_BREW_KEY: "https://github.com/geerlingguy/ansible-role-homebrew.git",
-        "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"
-    },
-    FRECK_META_ROLE_KEY: INSTALL_BREW_KEY
-}
+    return DEFAULT_PKG_MGRS.get(get_os_family(), False)
 
-
-def create_pkg_mgr_install_config(pkg_mgr):
-
-    if pkg_mgr == DEFAULT_PACKAGE_MANAGER_STRING or pkg_mgr == INSTALL_IGNORE_KEY or pkg_mgr == "git":
-        return []
-
-    if pkg_mgr == "brew":
-        config = copy.deepcopy(INSTALL_MAC_BREW_DEFAULT_CONFIG)
-    else:
-        config = copy.deepcopy(INSTALL_PKG_MANAGERS_DEFAULT_CONFIG)
-
-    config[PKG_MGR_KEY] = pkg_mgr
-
-    # TAG: local-only
-    if "nix" == pkg_mgr:
-        if not os.path.isdir("/nix") or not os.access('/nix', os.W_OK):
-            config[FRECK_SUDO_KEY] = True
-
-    config[INT_FRECK_ITEM_NAME_KEY] = "{}".format(pkg_mgr)
-    config[INT_FRECK_DESC_KEY] = "install package manager"
-    return [config]
-
-def update_package_cache(pkg_mgrs):
-
-    pkg_mgrs = copy.deepcopy(pkg_mgrs)
-    try:
-        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
-    except:
-        pass
-    try:
-        pkg_mgrs.remove("git")
-    except:
-        pass
-
-    result = []
-    for pkg_mgr in pkg_mgrs:
-        details = copy.deepcopy(UPDATE_DEFAULT_CONFIG)
-        if pkg_mgr != "default":
-            details[PKG_MGR_KEY] = pkg_mgr
-
-        details[INT_FRECK_ITEM_NAME_KEY] = "{} package cache".format(pkg_mgr)
-        details[INT_FRECK_DESC_KEY] = "update"
-        result.append(details)
-
-    return result
-
-def upgrade_packages(pkg_mgrs):
-
-    pkg_mgrs = copy.deepcopy(pkg_mgrs)
-    try:
-        pkg_mgrs.remove(INSTALL_IGNORE_KEY)
-    except:
-        pass
-    try:
-        pkg_mgrs.remove("git")
-    except:
-        pass
-
-    result = []
-    for pkg_mgr in pkg_mgrs:
-        details = copy.deepcopy(UPGRADE_DEFAULT_CONFIG)
-        details[PKG_MGR_KEY] = pkg_mgr
-
-        details[INT_FRECK_ITEM_NAME_KEY] = "{} packages".format(pkg_mgr)
-        details[INT_FRECK_DESC_KEY] = "upgrade"
-        result.append(details)
-
-    return result
-
-class Install(Freck):
+class Install(AbstractTask):
 
     def get_config_schema(self):
 
         s = Schema({
-            PACKAGES_KEY: list,
-            DOTFILES_KEY: list,
+            Required(PACKAGES_KEY): list,
             PKG_MGR_KEY: Any(*SUPPORTED_PKG_MGRS),
-            PKGS_KEY: dict
+            PKGS_KEY: dict,
+            INSTALL_IGNORE_KEY: list
         }, extra=ALLOW_EXTRA)
 
         return s
 
-    def pre_process_config(self, config):
+
+    def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
+
+        config = leaf[FRECK_VARS_KEY]
+        freck_meta = leaf[FRECK_META_KEY]
 
         ignore_list = config.get(INSTALL_IGNORE_KEY, [])
         # check whether there are non-dotfile apps to isntall
-        apps = {}
-        if config.get(USE_DOTFILES_KEY, USE_DOTFILES_DEFAULT) and config.get(DOTFILES_KEY, False):
-            dotfiles = parse_dotfiles_item(config[DOTFILES_KEY])
-            apps_dotfiles = create_dotfiles_dict(dotfiles, default_details=config)
-            for app, details in apps_dotfiles.iteritems():
-                # if the path of the dotfile dir contains either 'deb', 'rpm', or 'nix', use this as the default package manager. Can still be overwritten by metadata file
-                if not details.get(PKG_MGR_KEY, False):
-                    dotfiles_dir = details.get(DOTFILES_DIR_KEY, False)
-                    if dotfiles_dir:
-                        pkg_mgr = get_pkg_mgr_from_path(dotfiles_dir)
-                        if pkg_mgr:
-                            details[PKG_MGR_KEY] = pkg_mgr
-                        # if the folder contains a file called .nix.frkl or .no_install.frkl or .conda.frkl than that can determine the pkg mgr too, and it'd override the path
-                        pkg_mgr = get_pkg_mgr_from_marker_file(details.get(DOTFILES_DIR_KEY, False))
-                        if pkg_mgr:
-                            details[PKG_MGR_KEY] = pkg_mgr
-        else:
-            apps_dotfiles = {}
 
-        if config.get(USE_PACKAGES_KEY, USE_PACKAGES_DEFAULT) and config.get(PACKAGES_KEY, False):
-            apps_packages = create_apps_dict(config[PACKAGES_KEY], default_details=config)
-        else:
-            apps_packages = {}
-
-
-        priority_source = config.get(PRIORITY_SOURCE_KEY, PRIORITY_SOURCE_DEFAULT)
-        if priority_source != PACKAGES_KEY and priority_source != DOTFILES_KEY:
-            raise FrecklesConfigError("priority source key needs to either be '{}' or '{}', but is: {}".format(PACKAGES_KEY, DOTFILES_KEY, priority_source), PRIORITY_SOURCE_KEY, priority_source)
-
-        if priority_source == PACKAGES_KEY:
-            dict_merge(apps, apps_dotfiles)
-            dict_merge(apps, apps_packages)
-        else:
-            dict_merge(apps, apps_packages)
-            dict_merge(apps, apps_dotfiles)
-
-        configs = []
+        apps = create_apps_dict(config[PACKAGES_KEY], default_details=config)
 
         package_mgrs = Set()
+
+        configs = []
 
         for app, details in apps.iteritems():
             if app in ignore_list:
                 continue
 
-            # check if pkgs key exists
-            if not details.get(PKGS_KEY, False):
-                details[PKGS_KEY] = {"default": [details[INT_FRECK_ITEM_NAME_KEY]]}
+            meta = copy.deepcopy(leaf[FRECK_META_KEY])
 
-            if details.get(PKG_MGR_KEY, False):
-                sudo = get_pkg_mgr_sudo(details[PKG_MGR_KEY])
-                details[FRECK_SUDO_KEY] = sudo
+            if PKG_MGR_KEY not in details.keys():
+                meta[PKG_MGR_KEY] = get_default_pkg_mgr()
+                if not meta.get(PKG_MGR_KEY, False):
+                    raise FrecklesConfigError("Can't find default package manager for: {}".format(get_os_family()))
+
             else:
-                details[PKG_MGR_KEY] = DEFAULT_PACKAGE_MANAGER_STRING
+                meta[PKG_MGR_KEY] = details[PKG_MGR_KEY]
 
-            package_mgrs.add(details[PKG_MGR_KEY])
+            sudo = get_pkg_mgr_sudo(meta[PKG_MGR_KEY])
+            meta[FRECK_SUDO_KEY] = sudo
+
+            package_mgrs.add(meta[PKG_MGR_KEY])
 
             # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
-            if not type(details["pkgs"]) == dict:
-                temp = details["pkgs"]
-                details["pkgs"] = {}
-                details["pkgs"]["default"] = temp
 
-            # check if an 'default' pkgs key exists, if not, use the package name
-            if not details.get("pkgs").get("default", False):
-                details["pkgs"]["default"] = [details[INT_FRECK_ITEM_NAME_KEY]]
-
-            details[INT_FRECK_DESC_KEY] = "install package"
-
-            configs.append(details)
-
-        if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
-            for pkg_mgr in package_mgrs:
-                extra_configs = create_pkg_mgr_install_config(pkg_mgr)
-                if ADD_PKG_MGR_PATH_KEY in config.keys():
-                    add_path = config[ADD_PKG_MGR_PATH_KEY]
+            # check if pkgs key exists
+            pkgs = details.get(PKGS_KEY, False)
+            if not pkgs:
+                if "packages" in details.keys():
+                    pkgs = {"default": details["packages"]}
                 else:
-                    add_path = ADD_PKG_MGR_PATH_DEFAULT_WHEN_AUTO_INSTALL_PKG_MGR
-                for c in extra_configs:
-                    c[ADD_PKG_MGR_PATH_KEY] = add_path
+                    pkgs = {"default": [app]}
+            if not isinstance(pkgs, dict):
 
-                configs.extend(extra_configs)
+                if isinstance(pkgs, basestring):
+                    temp = pkgs
+                    pkgs = {}
+                    pkgs["default"] = [temp]
+                elif isinstance(pkgs, list):
+                    temp = pkgs
+                    pkgs = {}
+                    pkgs["default"] = temp
 
-        if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
-            extra_configs = update_package_cache(package_mgrs)
-            configs.extend(extra_configs)
-
-        if config.get(UPGRADE_PACKAGES_KEY, UPGRADE_PACKAGES_DEFAULT):
-            extra_configs = upgrade_packages(package_mgrs)
-            configs.extend(extra_configs)
-
-        return configs
-
-    def create_run_items(self, freck_name, freck_type, freck_desc, config):
-
-        if PKG_MGR_KEY in config.keys() and config[PKG_MGR_KEY] == 'git':
-            # this is needed, otherwise ansible tries to use the udpate method of a dict and fails
-            for pkg_mgr in ['default', 'git']:
-                for item in config[PKGS_KEY].get('default', []):
-                    if isinstance(item, dict):
-                        if not "update" in config.keys():
-                            item["git_update"] = GIT_CONFIG_UPDATE_DEFAULT
-                        else:
-                            item["git_update"] = config["update"]
-
-        return [config]
-
-    def handle_task_output(self, task, output_details):
-
-        state = FRECKLES_STATE_SKIPPED
-        changed = False
-        failed = False
-        stderr = []
-
-        if task.get(ACTION_KEY) != "install":
-            result = super(Install, self).handle_task_output(task, output_details)
-            return result
-
-        for details in output_details:
-
-            if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_SKIPPED:
-                continue
-            elif details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
-                state = FRECKLES_STATE_FAILED
-                if details["result"].get("msg", False):
-                    stderr.append(details["result"]["msg"])
-                for r in  details["result"].get("results", []):
-                    if r.get("msg", False):
-                        stderr.append(r["msg"])
-
+            # TODO: sanity check of config
+            if meta[PKG_MGR_KEY] in pkgs.keys():
+                packages = pkgs[PKG_MGR_KEY]
             else:
-            # this is the one we are interested in, there should only be one, right?
-                temp_changed = details["result"][FRECKLES_CHANGED_KEY]
-                if temp_changed:
-                    pkg_mgr = details["action"]
-                    state = "ok (using '{}')".format(pkg_mgr)
-                    changed = True
-                else:
-                    state = "already present"
+                packages = pkgs["default"]
 
-                break
+            if isinstance(packages, basestring):
+                packages = [packages]
 
-        return {FRECKLES_STATE_KEY: state, FRECKLES_CHANGED_KEY: changed, FRECKLES_STDERR_KEY: stderr}
+            meta[TASK_NAME_KEY] = meta[PKG_MGR_KEY]
+            meta[FRECK_DESC_KEY] = "{} -> install".format(meta[PKG_MGR_KEY])
+
+            for p in packages:
+                meta_copy = copy.deepcopy(meta)
+                meta_copy[FRECK_ITEM_NAME_KEY] = p
+                meta_copy[FRECK_VARS_KEY] = {"name": p, "state": "present"}
+                configs.append(meta_copy)
+
+
+        # if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
+        #     for pkg_mgr in package_mgrs:
+        #         extra_configs = create_pkg_mgr_install_config(pkg_mgr)
+        #         if ADD_PKG_MGR_PATH_KEY in config.keys():
+        #             add_path = config[ADD_PKG_MGR_PATH_KEY]
+        #         else:
+        #             add_path = ADD_PKG_MGR_PATH_DEFAULT_WHEN_AUTO_INSTALL_PKG_MGR
+        #         for c in extra_configs:
+        #             c[ADD_PKG_MGR_PATH_KEY] = add_path
+
+        #         configs.extend(extra_configs)
+
+        # if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
+        #     extra_configs = update_package_cache(package_mgrs)
+        #     configs.extend(extra_configs)
+
+        # if config.get(UPGRADE_PACKAGES_KEY, UPGRADE_PACKAGES_DEFAULT):
+        #     extra_configs = upgrade_packages(package_mgrs)
+        #     configs.extend(extra_configs)
+
+        return (FRECKLES_ANSIBLE_RUNNER,  configs)
+
+    # def create_run_items(self, freck_meta, config):
+
+    #     if PKG_MGR_KEY in config.keys() and config[PKG_MGR_KEY] == 'git':
+    #         # this is needed, otherwise ansible tries to use the udpate method of a dict and fails
+    #         for pkg_mgr in ['default', 'git']:
+    #             for item in config[PKGS_KEY].get('default', []):
+    #                 if isinstance(item, dict):
+    #                     if not "update" in config.keys():
+    #                         item["git_update"] = GIT_CONFIG_UPDATE_DEFAULT
+    #                     else:
+    #                         item["git_update"] = config["update"]
+
+    #     return [config]
+
+
+    def get_task_config(self, freck_meta, config):
+
+        task_name = config[PKG_MGR_KEY]
+        become = get_pkg_mgr_sudo(task_name)
+        item_name = config["name"]
+
+        template_keys = ["name", "state"]
+
+        if "state" not in config.keys():
+            config["state"] = "present"
+
+        add_roles = { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL }
+        return {
+            TASK_MODULE_NAME_KEY: task_name,
+            TASK_ITEM_NAME_KEY: item_name,
+            TASK_DESC_KEY: "{} -> install".format(task_name),
+            TASK_TEMPLATE_KEYS: template_keys,
+            TASK_BECOME_KEY: become,
+            TASK_ADDITIONAL_ROLES_KEY: add_roles,
+            FRECK_VARS_KEY: config
+        }
+
+    # def handle_task_output(self, task, output_details):
+
+    #     state = FRECKLES_STATE_SKIPPED
+    #     changed = False
+    #     failed = False
+    #     stderr = []
+
+    #     if task.get(ACTION_KEY) != "install":
+    #         result = super(Install, self).handle_task_output(task, output_details)
+    #         return result
+
+    #     for details in output_details:
+
+    #         if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_SKIPPED:
+    #             continue
+    #         elif details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
+    #             state = FRECKLES_STATE_FAILED
+    #             if details["result"].get("msg", False):
+    #                 stderr.append(details["result"]["msg"])
+    #             for r in  details["result"].get("results", []):
+    #                 if r.get("msg", False):
+    #                     stderr.append(r["msg"])
+
+    #         else:
+    #         # this is the one we are interested in, there should only be one, right?
+    #             temp_changed = details["result"][FRECKLES_CHANGED_KEY]
+    #             if temp_changed:
+    #                 pkg_mgr = details["action"]
+    #                 state = "ok (using '{}')".format(pkg_mgr)
+    #                 changed = True
+    #             else:
+    #                 state = "already present"
+
+    #             break
+
+    #     return {FRECKLES_STATE_KEY: state, FRECKLES_CHANGED_KEY: changed, FRECKLES_STDERR_KEY: stderr}
 
     def default_freck_config(self):
         return {
-            PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
-            FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
-            ACTION_KEY: "install",
-            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
-            FRECK_META_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
-            FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
+            # PACKAGE_STATE_KEY: DEFAULT_PACKAGE_STATE,
+            # FRECK_SUDO_KEY: DEFAULT_PACKAGE_SUDO,
+            # ACTION_KEY: "install",
+            # FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
+            # FRECK_META_ROLES_KEY: { FRECKLES_DEFAULT_INSTALL_ROLE_NAME: FRECKLES_DEFAULT_INSTALL_ROLE_URL },
+            # FRECK_META_ROLE_KEY: FRECKLES_DEFAULT_INSTALL_ROLE_NAME
         }
 
 
-class Update(Freck):
+class Update(AbstractTask):
 
-    def pre_process_config(self, config):
-
-        result = []
-        for pkg_mgr in config.get("pkg_mgrs", ["default"]):
-            details = copy.deepcopy(config)
-            if pkg_mgr != "default":
-                details[PKG_MGR_KEY] = pkg_mgr
-
-            details[INT_FRECK_ITEM_NAME_KEY] = "update {} package cache".format(pkg_mgr)
-            result.append(details)
-
-        result = update_package_cache(config.get("pkg_mgrs", DEFAULT_PACKAGE_MANAGER_STRING))
-        return result
-
-    def create_run_items(self, freck_name, freck_type, freck_desc, config):
-
-        config[INT_FRECK_DESC_KEY] = "update"
-        return [config]
-
-    def default_freck_config(self):
-        return UPDATE_DEFAULT_CONFIG
-
-
-class Upgrade(Freck):
-
-    def pre_process_config(self, config):
+    def pre_process_config(self, freck_meta, config):
 
         result = []
-        for pkg_mgr in config.get("pkg_mgrs", ["default"]):
-            details = copy.deepcopy(config)
-            details[PKG_MGR_KEY] = pkg_mgr
+        if "pkg_mgrs" not in config.keys():
+            pkg_mgr = "default"
+            if "pkg_mgr" in config.keys():
+                pkg_mgr = config["pkg_mgr"]
+            pkg_mgrs = [pkg_mgr]
+        else:
+            pkg_mgrs = config["pkg_mgrs"]
 
-            details[INT_FRECK_ITEM_NAME_KEY] = "upgrade {} packages".format(pkg_mgr)
+
+        for pkg_mgr in pkg_mgrs:
+            details = {}
+            # TAG: local-only
+            if pkg_mgr == "default":
+                temp = get_default_pkg_mgr()
+            else:
+                temp = pkg_mgr
+
+            if not PKG_MGRS_COMMANDS[temp]["update"]:
+                continue
+
+            details[PKG_MGR_KEY] = temp
+
             result.append(details)
 
         return result
 
-    def create_run_items(self, freck_name, freck_type, freck_desc, config):
+    def get_task_config(self, freck_meta, config):
 
-        config[INT_FRECK_DESC_KEY] = "upgrade"
-        return [config]
+        pkg_mgr = config["pkg_mgr"]
+        vars = PKG_MGRS_COMMANDS[pkg_mgr]["update"]
+        become = get_pkg_mgr_sudo(pkg_mgr)
+        return {
+            TASK_MODULE_NAME_KEY: pkg_mgr,
+            TASK_ITEM_NAME_KEY: "{} package cache".format(pkg_mgr),
+            TASK_DESC_KEY: "update",
+            FRECK_VARS_KEY: vars,
+            TASK_BECOME_KEY: become
+        }
+
 
     def default_freck_config(self):
-        return UPGRADE_DEFAULT_CONFIG
+        return {}
 
+
+class InstallNix(Role):
+
+    def get_role(self):
+        return "install_pkg_mgrs"
+
+    def get_additional_vars(self):
+        return {"pkg_mgr": "nix"}
+
+    def get_item_name(self):
+        return "nix"
+
+    def get_desc(self):
+        return "install pkg-manager"
+
+    def get_additional_roles(self):
+        return {"install_pkg_mgrs": "frkl:ansible-install-pkg-mgrs"}
+
+class InstallConda(Role):
+
+    def get_role(self):
+        return "install_pkg_mgrs"
+
+    def get_additional_vars(self):
+        return {"pkg_mgr": "conda"}
+
+    def get_additional_roles(self):
+        return {"install_pkg_mgrs": "frkl:ansible-install-pkg-mgrs"}
+
+    def get_item_name(self):
+        return "conda"
+
+    def get_desc(self):
+        return "install pkg-manager"
 
 class InstallPkgMgrs(Freck):
 

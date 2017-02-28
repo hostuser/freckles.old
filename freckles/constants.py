@@ -15,10 +15,13 @@ FRECKLES_METADATA_FILENAME = ".frkl"
 
 
 # freckles defaults/conventions
+DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
 FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH = "freckles/.freckles/default.yml"
 FRECKLES_DEFAULT_EXECUTION_BASE_DIR = os.path.join(FRECKLES_DEFAULT_DIR, "runs")
 FRECKLES_DEFAULT_EXECUTION_DIR_NAME = "current"
 FRECKLES_DEFAULT_ARCHIVE_PLAYS = False
+FRECK_DEFAULT_SUDO = False
+
 
 # ERROR CODES
 FRECKLES_CONFIG_ERROR_EXIT_CODE = 2
@@ -35,7 +38,7 @@ RUN_META_KEY = "meta"
 RUN_RUNNER_NAME_KEY = "type"
 INT_RUN_RUNNER_KEY = "runner_obj"
 RUN_DESC_KEY = "desc"
-RUN_FRECKS_KEY = "tasks"
+FRECK_TASKS_KEY = "tasks"
 RUN_VARS_KEY = "vars"
 RUN_NUMBER_KEY = "nr"
 RUN_NAME_KEY = "name"
@@ -44,18 +47,20 @@ FRECK_RUNNER_KEY = "runner" # TODO: add supported runners check
 
 
 FRECK_DESC_KEY = "desc"
+FRECK_INDEX_KEY = "freck_index"
 FRECK_VARS_KEY = "vars"
 FRECK_META_KEY = "meta"
+FRECK_OBJECT_KEY = "freck_name"
 
 INT_FRECK_KEY = "freck_object"
-FRECK_NAME_KEY = "name"
+FRECK_NAME_KEY = "freck_name"
 FRECK_CONFIGS_KEY = "freck_configs"
 FRECK_ID_KEY = "freck_id"
 FRECK_ITEM_NAME_KEY = "freck_item_name"
-
+FRECK_PREPROCESS_KEY = "freck_preprocess"
 FRECK_TASK_DESC = "freck_task_desc"
-
-FRECK_SUDO_KEY = "freck_sudo"
+FRECK_NEW_RUN_AFTER_THIS_KEY = "new_run_after"
+FRECK_SUDO_KEY = "become"
 FRECK_BECOME_KEY = "freck_become"
 
 FRECK_PRIORITY_KEY = "priority"
@@ -63,6 +68,7 @@ FRECK_PRIORITY_KEY = "priority"
 # configuration keys & defaults
 FRECKLES_ANSIBLE_RUNNER = "ansible"
 FRECKLES_DEFAULT_RUNNER = FRECKLES_ANSIBLE_RUNNER
+FRECK_SUPPORTED_RUNNERS_KEY = "supported_runners"
 
 ## dotfiles keys & defaults
 DOTFILES_BASE_KEY = "base_dir"
@@ -70,7 +76,7 @@ DOTFILES_PATHS_KEY = "paths"
 DOTFILES_REMOTE_KEY = "remote"
 
 DEFAULT_DOTFILE_DIR = os.path.expanduser("~/dotfiles")
-DEFAULT_DOTFILE_REPO_NAME = "dotfiles"
+
 DEFAULT_DOTFILE_PATHS = []
 DEFAULT_DOTFILE_REMOTE = ""
 
@@ -105,6 +111,7 @@ PACKAGE_STATE_KEY = "pkg_state"
 DEFAULT_PACKAGE_STATE = "present"
 DEFAULT_PACKAGE_SUDO = True
 TASK_NAME_KEY = "task_name"
+FRECK_META_KEY = "meta"
 TASK_IGNORE_STRING = "FRECKLES_IGNORE"
 
 
@@ -141,7 +148,6 @@ DEFAULT_PACKAGE_SUDO_KEY = "default_pkg_sudo"
 
 # FRECK_DEFAULT_PRIORITY_KEY = "default_freck_priority"
 
-FRECK_DEFAULT_SUDO = False
 
 DOTFILES_DIR_KEY = "dotfiles_dir"
 

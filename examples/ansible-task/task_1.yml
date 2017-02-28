@@ -1,15 +1,10 @@
-runs:
-  - desc: debug msg
-    tasks:
-      - debug:
-          meta:
-            # type: ansible_task
-            role_name: debug_stuff
-          vars:
-            msg: "SSSSS"
-      - debug:
-          meta:
-            # type: ansible_task
-            role_name: debug_stuff
-          vars:
-            msg: "TTT"
+tasks:
+  - debug:
+      meta:
+        new_run_after: yes
+      vars:
+        msg: "SSSSS"
+  - debug:
+      vars:
+        msg: "TTT"
+  - debug

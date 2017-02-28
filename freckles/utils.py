@@ -57,30 +57,7 @@ def check_schema(value, schema):
 
     schema(value)
 
-def expand_config_url(url):
 
-    if not url.startswith("gh:") and not url.startswith("bb:"):
-        return url
-
-    if  url.startswith("gh:"):
-        tokens = url.split(":")
-        if len(tokens) == 1 or len(tokens) > 4:
-            raise FrecklesConfigError("Can't parse github config url '{}'. Exiting...", 'config', url)
-        if len(tokens) >= 2:
-            host = "https://raw.githubusercontent.com"
-            username = tokens[1]
-            repo = DEFAULT_DOTFILE_REPO_NAME
-            path = FRECKLES_DEFAULT_FRECKLES_CONFIG_PATH
-        if len(tokens) >= 3:
-            repo = tokens[2]
-        if len(tokens) == 4:
-            path = tokens[3]
-        url = "{}/{}/{}/master/{}".format(host, username, repo, path)
-        log.debug("Expanding '{}' as url: {}".format(url, url))
-        return url
-    elif url.startswith("bb:"):
-        # TODO bitbucket
-        raise Exception("Not implemented")
 
 
 
@@ -246,6 +223,10 @@ def get_pkg_mgr_sudo(mgr):
         return False
     elif mgr == 'conda':
         return False
+    elif mgr == 'git':
+        return False
+    elif mgr == 'brew':
+        return False
     else:
         return True
 
@@ -304,8 +285,7 @@ def load_extensions():
 def playbook_needs_sudo(playbook_items):
     """Checks whether a playbook needs to use 'become' or not."""
 
-    return bool([x for x in playbook_items.values() if x.get(FRECK_SUDO_KEY, False)])
-
+    return bool([x for x in playbook_items if x.get(FRECK_SUDO_KEY, False)])
 
 def create_apps_dict(apps, default_details):
     """Creates a dictionary that can be used by the install/stow Frecks, and potentially others.
@@ -331,15 +311,15 @@ def create_apps_dict(apps, default_details):
             if not app_details:
                 app_details = {}
             dict_merge(details, app_details)
-            details[INT_FRECK_ITEM_NAME_KEY] = app_name
+            details["name"] = app_name
 
         elif isinstance(app, str):
-            details[INT_FRECK_ITEM_NAME_KEY] = app
+            details["name"] = app
 
         else:
             raise FrecklesConfigError("Can't parse apps configuration: {}".format(app), "apps", app)
 
-        result[details[INT_FRECK_ITEM_NAME_KEY]] = details
+        result[details["name"]] = details
 
     return result
 

@@ -17,6 +17,7 @@ import click_log
 import py
 from constants import *
 from freckles import Freckles
+from frkl import Frkl
 
 from . import __version__ as VERSION
 
@@ -127,6 +128,30 @@ def run(freckles_config, run_nr, details, only_prepare, config):
     else:
         freckles.run(only_prepare=only_prepare)
 
+
+@cli.command("debug-freck")
+@click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
+@click.argument('freck-name', required=True, nargs=1)
+@click.argument('config', required=False, nargs=-1)
+@pass_freckles_config
+def debug_freck(freckles_config, freck_name, config, only_prepare):
+
+    freck_conf = {"runs":  [{"tasks": [freck_name]}]}
+
+    configs = list(config)
+    configs.append(freck_conf)
+
+    freckles = Freckles(*configs)
+
+    freckles.debug_freck(run_nr=1, only_prepare=only_prepare)
+
+
+@cli.command("test-config")
+@click.argument('config', required=False, nargs=-1)
+@pass_freckles_config
+def test_config(freckles_config, config):
+
+    frkl = Frkl(config)
 
 @cli.command("print-config")
 @click.argument('config', required=False, nargs=-1)

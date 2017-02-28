@@ -4,7 +4,9 @@
 - name: {{ task_name }}
   {{ details.module_name }}: {{ details.free_form | default("") }}
   args:
-{{ details.args | to_nice_yaml() | indent(4, true) }}
+    {% for arg in details.args -%}
+    {{ arg }}: {{ "\"{{" }} {{ arg }} {{ "}}\"" }}
+    {% endfor %}
   become: {{ details.become | default("no") }}
   ignore_errors: "{{ ignore_errors | default('yes') }}"
 {% endfor %}

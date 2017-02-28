@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import logging
+import pprint
 import sys
 
 from freckles import Freck
@@ -8,6 +9,7 @@ from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
 from freckles.runners.ansible_runner import (ANSIBLE_ROLE_TYPE,
                                              ANSIBLE_TASK_TYPE,
+                                             FRECK_META_ROLE_DICT_KEY,
                                              FRECK_META_ROLE_KEY,
                                              FRECK_META_ROLES_KEY,
                                              ROLE_ROLES_KEY, ROLE_TO_USE_KEY)
@@ -23,44 +25,24 @@ ROLE_VARS_KEY = "role_vars"
 
 class Role(Freck):
 
-    def create_run_items(self, freck_name, freck_type, freck_desc, config):
+    def can_be_used_for(self, freck_meta):
 
-        # we're going the opposite direction this time, filling up the 'default' runner values instead of reading them...
+        can = TASK_NAME_KEY in freck_meta.keys() and FRECK_META_ROLES_KEY in freck_meta.keys() and freck_meta[TASK_NAME_KEY] in freck_meta[FRECK_META_ROLES_KEY].keys()
+        return can
 
-        if freck_type == ANSIBLE_ROLE_TYPE:
-            role_to_use = freck_name
-            role_vars = {}
-        elif freck_type != FRECK_DEFAULT_TYPE:
-            raise FrecklesConfigError("Freck type is neither {} nor {}, can't continue".format(FRECK_DEFAULT_TYPE, ANSIBLE_ROLE_TYPE), FRECK_TYPE_KEY, freck_type)
-        else:
-            role_to_use = config.get(ROLE_TO_USE_KEY, False)
-            if not role_to_use:
-                role_to_use = freck_name
-            role_vars = config.get(ROLE_VARS_KEY, False)
-            if not role_vars:
-                role_vars = config
+    def create_run_item(self, freck_meta, develop=False):
 
-        roles = config[ROLE_ROLES_KEY]
-        config[FRECK_META_ROLES_KEY] = roles
-        config[FRECK_META_ROLE_KEY] = role_to_use
+        role = freck_meta[TASK_NAME_KEY]
 
-        if isinstance(role_vars, dict):
-            # means only one freck
-            dict_merge(config, role_vars)
-            return [config]
-        elif isinstance(role_vars, (list, tuple)):
-            # means we'll create a bunch of frecks
-            result = []
-            for v in role_vars:
-                role_config = copy.deepcopy(config)
-                dict_merge(role_config, v)
-                result.append(role_config)
-            return result
-        else:
-            raise FrecklesConfigError("Can't figure out type of 'role_vars' value for role {}: {}". format(role_name, role_vars))
+        freck_meta[FRECK_META_ROLE_KEY] = role
+        freck_meta[FRECK_ITEM_NAME_KEY] = role
+        freck_meta[FRECK_DESC_KEY] = "applying role"
+        freck_meta[FRECK_META_ROLE_DICT_KEY] = {"role": role}
+
+
+        # pprint.pprint(freck_meta)
+        return freck_meta
 
     def default_freck_config(self):
         return {
-            FRECK_SUDO_KEY: True,
-            FRECK_RUNNER_KEY: FRECKLES_ANSIBLE_RUNNER,
         }
