@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-nix-pkgs.git
+	branch = master
+	commit = 96dffc1184e9f4da08d86b5e1e668e5b76641901
+	parent = 495ec4b39c11e09f9f7b42d39402b7133482b26c
+	cmdver = 0.3.1
