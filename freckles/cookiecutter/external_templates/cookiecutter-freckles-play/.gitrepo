@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/cookiecutter-freckles-play.git
 	branch = master
 	commit = 4fbe17b39c5f58ad60c9dde773a0872675402a5e
-	parent = b34a172a684eb7320321cca052b5f6a0794e020a
+	parent = 9516d5dbecd0cac3d2040ff86a0630242e702bfb
 	cmdver = 0.3.1
