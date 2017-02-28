@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:makkus/ansible-conda-pkgs.git
+	branch = master
+	commit = 17686bdd4cf901f68b5739dbef114de5c2954ab2
+	parent = 5e6b2bd366f317bbd229c25365df423bbfeba4a3
+	cmdver = 0.3.1
