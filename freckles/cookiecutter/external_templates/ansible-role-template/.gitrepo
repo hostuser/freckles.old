@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-role-template.git
 	branch = master
 	commit = 959b733492b804d6cbee1adf51e69bd240957901
-	parent = 5479927af4f390e4dd14def05769eca12a9ae63b
+	parent = 20e83ecc4f5fa2c9d27e53360df810d914e48df5
 	cmdver = 0.3.1
