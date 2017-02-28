@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/dotfiles-bootstrap-simple.git
 	branch = master
 	commit = b55643f614c348fe9bc83eeef789234d030b3069
-	parent = 635490187bf07e94859032504b494c64ec19d57e
+	parent = 1193cbc32360c94826e632e5f7a168d61cf28c19
 	cmdver = 0.3.1
