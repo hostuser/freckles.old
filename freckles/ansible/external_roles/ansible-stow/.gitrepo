@@ -7,5 +7,5 @@
 	remote = git@github.com:makkus/ansible-stow.git
 	branch = master
 	commit = 89a1b8af623cf12c18fe811f044f540d6070b30d
-	parent = 085540c6e366f3f87cf8085f8edfff72c2653bfb
+	parent = c5e21e49c81221d9b9110859f2c55b04eea15686
 	cmdver = 0.3.1
