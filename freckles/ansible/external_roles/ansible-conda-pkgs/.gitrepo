@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-conda-pkgs.git
 	branch = master
-	commit = 17686bdd4cf901f68b5739dbef114de5c2954ab2
-	parent = 5e6b2bd366f317bbd229c25365df423bbfeba4a3
+	commit = 3a79d0d75ca3af09a5b18ad05524c697ae8683a9
+	parent = 361d9a89b53c2c1223fa7c3b1dc100ed38cf7210
 	cmdver = 0.3.1
