@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-nix-pkgs.git
 	branch = master
-	commit = 96dffc1184e9f4da08d86b5e1e668e5b76641901
-	parent = 495ec4b39c11e09f9f7b42d39402b7133482b26c
+	commit = 4af3822776dbd78c04464c9852985bb5eeff67f2
+	parent = bf7331d4e33edfd4ee3b78a2554f50c7e771f469
 	cmdver = 0.3.1
