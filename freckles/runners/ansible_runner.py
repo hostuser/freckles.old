@@ -23,7 +23,7 @@ from freckles.freckles_runner import FrecklesRunner
 from freckles.utils import (can_passwordless_sudo, check_schema, dict_merge,
                             playbook_needs_sudo)
 from sets import Set
-from voluptuous import Schema
+from voluptuous import Any, Schema
 
 log = logging.getLogger("freckles")
 
@@ -37,7 +37,7 @@ ROLE_ROLES_KEY = "roles"
 ANSIBLE_TASK_TYPE = "ansible-task"
 ANSIBLE_ROLE_TYPE = "ansible-role"
 ANSIBLE_FRECK_TYPE = "ansible-freck"
-
+ANSIBLE_ROLE_PROCESSED = "role_processed"
 TASK_FREE_FORM_KEY = "free_form"
 
 TASK_BECOME_KEY = "become"
@@ -217,12 +217,12 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
             ansible_module = task_detail.keys()[0]
             become = task_detail[ansible_module][TASK_BECOME_KEY]
             if TASK_FREE_FORM_KEY in task_detail[ansible_module]["vars"]:
-                free_form = task_detail[ansible_module].pop(TASK_FREE_FORM_KEY)
-                new_dict = {"module_name": ansible_module, "free_form": free_form, "args": task_detail[ansible_module]["vars"], "become": become}
+                task_detail[ansible_module]["vars"].remove(TASK_FREE_FORM_KEY)
+                new_dict = {"module_name": ansible_module, "args": task_detail[ansible_module]["vars"], "become": become, "free_form": True}
                 rearranged_tasks[task] = new_dict
             else:
                 ansible_module = task_detail.keys()[0]
-                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module]["vars"], "become": become}
+                rearranged_tasks[task] = {"module_name": ansible_module, "args": task_detail[ansible_module]["vars"], "become": become, "free_form": False}
 
     role_dict = {"role_name": role_name, "tasks": rearranged_tasks, "defaults": defaults}
     role_local_path = os.path.join(os.path.dirname(__file__), "..", "cookiecutter", "external_templates", "ansible-role-template")
@@ -244,9 +244,10 @@ ANSIBLE_FRECK_SCHEMA = Schema({
         FRECK_NEW_RUN_AFTER_THIS_KEY: bool,
         FRECK_PRIORITY_KEY: int,
         FRECK_ID_KEY: int,
-        TASK_TEMPLATE_KEYS: list,
+        TASK_TEMPLATE_KEYS: Any(Set, list),
         FRECK_META_ROLES_KEY: dict,
-        FRECK_META_ROLE_KEY: basestring
+        FRECK_META_ROLE_KEY: basestring,
+        ANSIBLE_ROLE_PROCESSED: bool
 })
 
 class AnsibleRunner(FrecklesRunner):

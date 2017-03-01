@@ -31,6 +31,7 @@ FRKL_KEY_PREFIX = "_frkl"
 FRKL_META_LEVEL_KEY = "{}_level".format(FRKL_KEY_PREFIX)
 NO_STEM_INDICATOR = "-99999"
 DEFAULT_LOAD_KEY = "load"
+LEAF_DICT = "_leaf_dict"
 
 def get_config(config_file_url, repo, path):
     """Retrieves the config (if necessary), and converts it to a dict.
@@ -115,24 +116,26 @@ def get_and_load_configs(config_url, default_repo, default_path, load_external=T
 
     return result
 
-def flatten_root(root):
+def flatten_root(root, add_leaf_dicts=False):
 
     result = []
     for item in root:
-
+        leaf_dict = item.pop(LEAF_DICT)
         result_dict = {}
         for var, value_dicts in item.iteritems():
             result_dict[var] = {}
             for value_dict in value_dicts:
                 dict_merge(result_dict[var], value_dict)
 
+        if add_leaf_dicts:
+            result_dict[LEAF_DICT] = leaf_dict
         result.append(result_dict)
 
     return result
 
 class Frkl(object):
 
-    def __init__(self, configs, stem_key, other_valid_keys, default_leaf_key, default_leaf_default_key, default_leaf_default_value_key, default_repo, default_repo_path):
+    def __init__(self, configs, stem_key, other_valid_keys, default_leaf_key, default_leaf_default_key, default_leaf_default_value_key, default_repo, default_repo_path, add_leaf_dicts=False):
 
         self.stem_key = stem_key
         self.other_keys = other_valid_keys
@@ -146,6 +149,8 @@ class Frkl(object):
         #TODO: check default_value_dict in all_keys
         self.default_leaf_value_dict_key = default_leaf_default_value_key
 
+        self.add_leaf_dicts = add_leaf_dicts
+
         self.all_keys = Set([self.default_leaf_key, self.default_leaf_value_dict_key, self.stem_key])
         self.all_keys.update(self.other_keys)
 
@@ -158,7 +163,7 @@ class Frkl(object):
         self.frklize_config(self.root, self.configs, self.meta_dict, 0)
 
         # pprint.pprint(self.root)
-        self.leafs = flatten_root(self.root)
+        self.leafs = flatten_root(self.root, self.add_leaf_dicts)
 
 
     def frklize_config(self, root, configs, meta_dict_parent, level, add_level=False):
@@ -202,7 +207,9 @@ class Frkl(object):
             if not stem:
                 continue
             elif stem == NO_STEM_INDICATOR:
-                root.append(copy.deepcopy(meta_dict))
+                leaf = copy.deepcopy(meta_dict)
+                leaf[LEAF_DICT] = base_dict
+                root.append(leaf)
             elif isinstance(stem, (list, tuple)) and not isinstance(stem, basestring):
                 self.frklize_config(root, stem, meta_dict, level+1)
             else:

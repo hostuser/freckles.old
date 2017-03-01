@@ -1,17 +1,8 @@
 vars:
-    # dotfiles are used by both the install & stow freck, so we define them 'globally'. Could also define them as a 'run'-local variable though.
+  # dotfiles are used by both the install & stow freck, so we define them 'globally'. Could also define them as a 'run'-local variable though.
   dotfiles:
      - base_dir: ~/dotfiles-example
        remote: https://github.com/makkus/dotfiles-example.git
 
-runs:
-  - tasks:
-      - checkout-dotfiles      # this should only be used for initial checkout, since it'd overwrite changes made locally, even if commited. This is the default behaviour of the ansible git module.
-  - desc: install packages, stow config
-    # we create an extra run, because otherwise the dotfiles directory would not exist when the
-    # install/stow tasks are created
-    tasks:
-      # - update    # this is not necessary, since the install tasks do that by default if not disabled
-      - upgrade
-      - install
-      - stow
+tasks:
+  - checkout-dotfiles      # this should only be used for initial checkout, since it'd overwrite changes made locally, even if commited. This is the default behaviour of the ansible git module.

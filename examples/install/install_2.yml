@@ -2,11 +2,15 @@
 # a very simple exaample of how to install packages using both an (existing) dotfiles directory and a list of packages. By default, values in the 'packages' var overwrite ones that are calculated via dotfile directories. That can be changed using the 'priority_source' variable
 
 vars:
-  pkg_mgr: conda
+  pkg_mgr: nix
   packages:
-    - htop
+    - htop:
+        pkg_mgr: conda
+        channels:
+           - conda-forge
     - zile:
         pkg_mgr: nix
-    - emacs
+    - babel:
+        pkg_mgr: conda
 tasks:
   - install

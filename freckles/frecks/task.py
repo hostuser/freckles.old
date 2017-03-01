@@ -7,15 +7,18 @@ import sys
 
 import click
 
+import sets
 from freckles import Freck
 from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
+from freckles.frkl import LEAF_DICT
 from freckles.runners.ansible_runner import (ANSIBLE_TASK_TYPE,
                                              FRECK_META_ROLE_DICT_KEY,
                                              FRECK_META_ROLE_KEY,
                                              FRECK_META_ROLES_KEY,
                                              FRECK_META_TASKS_KEY,
                                              FRECK_META_TYPE_KEY,
+                                             FRECKLES_ANSIBLE_RUNNER,
                                              TASK_BECOME_KEY,
                                              TASK_DEFAULT_BECOME,
                                              TASK_TEMPLATE_KEYS)
@@ -29,7 +32,7 @@ log = logging.getLogger("freckles")
 
 
 GENERATED_ROLE_ID_COUNTER = 1
-GENERATED_ROLE_NAME_PREFIX = "custom_role"
+GENERATED_ROLE_NAME_PREFIX = "dyn"
 
 
 class AbstractTask(Freck):
@@ -47,7 +50,7 @@ class AbstractTask(Freck):
         return False
 
     def get_task_vars(self, freck_meta):
-        return False
+        return {}
 
     def get_task_template_keys(self, freck_meta):
         return False
@@ -66,14 +69,27 @@ class AbstractTask(Freck):
         freck_desc = self.get_task_desc(freck_meta) or freck_meta[FRECK_DESC_KEY]
         task_name = self.get_task_name(freck_meta) or freck_meta[TASK_NAME_KEY]
         become = self.get_task_become(freck_meta) or freck_meta[FRECK_SUDO_KEY]
-        vars = self.get_task_vars(freck_meta) or freck_meta[FRECK_VARS_KEY]
-        item_name = self.get_item_name(freck_meta) or freck_meta[FRECK_ITEM_NAME_KEY] or freck_name
-        template_keys = self.get_task_template_keys(freck_meta) or vars.keys()
-        task = {"name": freck_desc, "type": task_name, "task": {"vars": {"role_{0:04d}_task_{1:06d}".format(GENERATED_ROLE_ID_COUNTER, 1): copy.deepcopy(template_keys)}, "become": become}}
-        role_name = "{}_{}".format(GENERATED_ROLE_NAME_PREFIX, GENERATED_ROLE_ID_COUNTER)
+        vars = self.get_task_vars(freck_meta)
+
+        if vars:
+            dict_merge(vars, freck_meta.get(FRECK_VARS_KEY, {}))
+        else:
+            vars = freck_meta.get(FRECK_VARS_KEY, {})
+
+        item_name = self.get_item_name(freck_meta) or freck_meta[FRECK_ITEM_NAME_KEY] or task_name
+        template_keys = self.get_task_template_keys(freck_meta) or freck_meta.get(TASK_TEMPLATE_KEYS, False) or vars.keys()
+
+        template_keys.extend(vars.keys())
+        final_keys = set(template_keys)
+        task = {"name": freck_desc, "type": task_name, "task": {"vars": { "role_{0:04d}_task_{1:06d}".format(GENERATED_ROLE_ID_COUNTER, 1): list(final_keys)}, "become": become}}
+        role_name = "{}_{}_{}".format(GENERATED_ROLE_NAME_PREFIX, task_name, GENERATED_ROLE_ID_COUNTER)
         add_roles = self.get_additional_roles(freck_meta)
         if add_roles:
-            add_roles.update(freck_meta.get(RESULT_ROLES_KEY, {}))
+            add_roles.update(freck_meta.get(FRECK_META_ROLES_KEY, {}))
+        else:
+            add_roles = freck_meta.get(FRECK_META_ROLES_KEY, {})
+
+        template_keys = sets.Set(template_keys)
 
         result = {}
         result[FRECK_NAME_KEY] = freck_name
@@ -95,11 +111,21 @@ class AbstractTask(Freck):
 
         return result
 
-
 class Task(AbstractTask):
     """Generic task neck that can be used directly, or overwritten for more custom stuff.
 
     """
 
+    def get_item_name(self, freck_meta):
+
+        return freck_meta[TASK_NAME_KEY]
+
     def can_be_used_for(self, freck_meta):
         return True
+
+
+    def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
+
+        # adding last vars, needed for 'pure' ansible tasks, otherwise all inherited vars would be put into the generated role
+        leaf[FRECK_META_KEY][FRECK_VARS_KEY] = leaf[LEAF_DICT][FRECK_VARS_KEY]
+        return (FRECKLES_ANSIBLE_RUNNER, [leaf[FRECK_META_KEY]])

@@ -19,7 +19,7 @@ import yaml
 
 from constants import *
 from freckles_runner import FrecklesRunner
-from frkl import FRKL_META_LEVEL_KEY, Frkl, expand_config_url
+from frkl import FRKL_META_LEVEL_KEY, LEAF_DICT, Frkl, expand_config_url
 from runners.ansible_runner import AnsibleRunner
 from sets import Set
 from utils import (check_schema, dict_merge, get_pkg_mgr_from_path,
@@ -41,7 +41,8 @@ FRECKLES_META_VAR_SCHEMA =  Schema({
 }, extra=True)
 FRECKLES_INPUT_CONFIG_SCHEMA = Schema({
     FRECK_META_KEY: FRECKLES_META_VAR_SCHEMA,
-    FRECK_VARS_KEY: dict
+    FRECK_VARS_KEY: dict,
+    LEAF_DICT: dict
 })
 
 FRECKLES_POST_PREPROCESS_SCHEMA = Schema({
@@ -351,23 +352,14 @@ class Freckles(object):
         self.freck_plugins = load_extensions()
         self.supported_runners = [FRECKLES_DEFAULT_RUNNER]
         self.configs = config_items
-        frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH)
+        frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH, add_leaf_dicts=True)
         self.leafs = frkl.leafs
-
-        self.preprocess_configs()
-
+        self.debug_freck = None
         # pprint.pprint(self.frecks)
 
-        self.run()
-        sys.exit(0)
-        runner_name = run_meta[RUN_RUNNER_NAME_KEY]
-        if not runner_name in FRECKLES_RUNNERS.keys():
-            raise FrecklesConfigError("Runner '{}' not supported.".format(runner_name), RUN_RUNNER_NAME_KEY, runner_name)
-        runner_class = FRECKLES_RUNNERS.get(runner_name, False)
-        if not runner_class:
-            raise FrecklesConfigError("Can't find runner with name: {}".format(runner_name))
-        runner_obj = runner_class(available_frecks)
 
+    def set_debug(self, debug_freck):
+        self.debug_freck = debug_freck
 
 
     def preprocess_configs(self):
@@ -390,15 +382,29 @@ class Freckles(object):
             leaf[FRECK_META_KEY][FRECK_NAME_KEY] = freck_to_use
 
 
-    def process_leafs(self, debug=False):
+    def process_leafs(self):
 
         frecks = []
         for freck_nr, leaf in enumerate(self.leafs):
             freck_name = leaf[FRECK_META_KEY][FRECK_NAME_KEY]
+            debug = self.debug_freck and  self.debug_freck == freck_name
+
             runner, processed = self.freck_plugins[freck_name].process_leaf(copy.deepcopy(leaf), self.supported_runners, debug)
 
+
             if not processed:
-                    raise Exception("Could not find freck to handle '{}'".format(freck_name))
+                log.debub("No frecks created for freck_name '{}'.".format(freck_name))
+                continue
+
+            if debug:
+                click.echo("Processed leaf '{}'.".format(freck_name))
+                click.echo("---")
+                click.echo("Input:")
+                click.echo(pprint.pformat(leaf))
+                click.echo("---")
+                click.echo("Result:")
+                click.echo(pprint.pformat(processed))
+                click.echo("===============================================")
 
             if isinstance(processed, dict):
                 processed = [processed]
@@ -420,7 +426,6 @@ class Freckles(object):
                 prep.setdefault(FRECK_NEW_RUN_AFTER_THIS_KEY, False)
                 if FRECK_PRIORITY_KEY not in prep.keys():
                     prep[FRECK_PRIORITY_KEY] = FRECK_DEFAULT_PRIORITY + (freck_nr * 1000)
-                #pprint.pprint(prep)
                 check_schema(prep, FRECKLES_POST_PREPROCESS_SCHEMA)
 
                 if prep[FRECK_NEW_RUN_AFTER_THIS_KEY]:
@@ -470,11 +475,14 @@ class Freckles(object):
             for freck in frecks:
 
                 freck_plugin = self.freck_plugins[freck[FRECK_NAME_KEY]]
-                run_item = freck_plugin.create_run_item(copy.deepcopy(freck))
 
+                debug = self.debug_freck and self.debug_freck == freck[FRECK_NAME_KEY]
+                run_item = freck_plugin.create_run_item(copy.deepcopy(freck), debug)
                 if not isinstance(run_item, dict):
                     raise Exception("Freck plugin returned non-dict value as run_item")
 
+                # make sure the id didn't change, everything else can be different
+                run_item[FRECK_ID_KEY] = freck[FRECK_ID_KEY]
                 items.append(run_item)
 
             callback = FrecklesRunCallback(self.freck_plugins, items)

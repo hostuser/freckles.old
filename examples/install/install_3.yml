@@ -3,22 +3,20 @@
 
 # This example also shows a way to automatically install all package managers are required (as defined by the pkg_mgr variable, either on global, run or task level.
 
-runs:
-  - desc: install applications according to dotfiles directory
-    vars:
-      ensure_pkg_manager: yes   # default is 'no'
-      update_cache: yes   # this is default anyway
-      upgrade_packages: yes   # default is 'no'
-      add_path: yes   # defaults to 'no' if using 'ensure_pkg_manager' instead of 'manually' installing it using the install-pkg-manager freck
-      pkg_mgr: conda
-      conda_channels:
-        - conda-forge
-      packages:
-        - htop  # isntalled using conda (from conda_channel 'conda-forge')
-        - babel
-        - cowsay:
-            pkg_mgr: nix
-        - zile:
-            pkg_mgr: nix
-    tasks:
-      - install
+vars:
+  ensure_pkg_manager: yes   # default is 'no'
+  update_cache: yes   # this is default anyway
+  upgrade_packages: yes   # default is 'no'
+  add_path: yes   # defaults to 'no' if using 'ensure_pkg_manager' instead of 'manually' installing it using the install-pkg-manager freck
+  pkg_mgr: conda
+  channels:
+    - conda-forge
+  packages:
+    - htop  # isntalled using conda (from conda_channel 'conda-forge')
+    - babel
+    - cowsay:
+        pkg_mgr: nix
+    - zile:
+        pkg_mgr: nix
+tasks:
+  - install

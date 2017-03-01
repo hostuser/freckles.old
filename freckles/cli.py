@@ -123,10 +123,8 @@ def run(freckles_config, run_nr, details, only_prepare, config):
     """
 
     freckles = Freckles(*config)
-    if run_nr > 0:
-        freckles.run(run_nr, only_prepare=only_prepare)
-    else:
-        freckles.run(only_prepare=only_prepare)
+    freckles.preprocess_configs()
+    freckles.run()
 
 
 @cli.command("debug-freck")
@@ -136,14 +134,12 @@ def run(freckles_config, run_nr, details, only_prepare, config):
 @pass_freckles_config
 def debug_freck(freckles_config, freck_name, config, only_prepare):
 
-    freck_conf = {"runs":  [{"tasks": [freck_name]}]}
 
-    configs = list(config)
-    configs.append(freck_conf)
+    freckles = Freckles(*config)
+    freckles.set_debug(freck_name)
+    freckles.preprocess_configs()
+    freckles.run()
 
-    freckles = Freckles(*configs)
-
-    freckles.debug_freck(run_nr=1, only_prepare=only_prepare)
 
 
 @cli.command("test-config")

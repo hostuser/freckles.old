@@ -1,8 +1,7 @@
 ---
-runs:
-  - tasks:
-      - delete:
-          vars:
-            files-to-delete:
-              - ~/.bashrc
-              - ~/.profile
+tasks:
+ - delete:
+     files-to-delete:
+        - /tmp/test1
+        - /tmp/test2
+

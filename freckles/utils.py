@@ -360,7 +360,7 @@ def create_dotfiles_dict(base_dirs, default_details):
                     # defaults
                     dotfile_dir = path.join(temp_full_path, item)
                     apps[item] = copy.deepcopy(default_details)
-                    apps[item][INT_FRECK_ITEM_NAME_KEY] = item
+                    apps[item][FRECK_ITEM_NAME_KEY] = item
                     apps[item][DOTFILES_DIR_KEY] = dotfile_dir
                     apps[item][DOTFILES_BASE_KEY] = temp_full_path
                     if remote:
