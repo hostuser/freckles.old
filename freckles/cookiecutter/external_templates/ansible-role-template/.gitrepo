@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-role-template.git
 	branch = master
-	commit = 959b733492b804d6cbee1adf51e69bd240957901
-	parent = 20e83ecc4f5fa2c9d27e53360df810d914e48df5
+	commit = 3daed1c324dff333b4dc4e26f9f016f366ae6ddd
+	parent = ffcf0c53bc9b95c0c136def28744855340859d69
 	cmdver = 0.3.1
