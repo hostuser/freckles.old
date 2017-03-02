@@ -62,6 +62,7 @@ FRECK_TASK_DESC = "freck_task_desc"
 FRECK_NEW_RUN_AFTER_THIS_KEY = "new_run_after"
 FRECK_SUDO_KEY = "become"
 FRECK_BECOME_KEY = "freck_become"
+UNIQUE_TASK_ID_KEY = "unique_task_id"
 
 FRECK_PRIORITY_KEY = "priority"
 

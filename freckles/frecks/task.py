@@ -105,7 +105,6 @@ class AbstractTask(Freck):
         result[FRECK_META_ROLE_DICT_KEY] = {"role": role_name}
         result[FRECK_META_ROLES_KEY] = add_roles
         result[FRECK_ITEM_NAME_KEY] = item_name
-        result[FRECK_ID_KEY] = freck_meta[FRECK_ID_KEY]
 
         GENERATED_ROLE_ID_COUNTER = GENERATED_ROLE_ID_COUNTER + 1
 

@@ -41,8 +41,8 @@ setup(
         ],
         'freckles.frecks': [
             'install=freckles.frecks:Install',
-            'update=freckles.frecks:Update',
-            'upgrade=freckles.frecks:Upgrade',
+            'update-package-cache=freckles.frecks:Update',
+            'upgrade-all-packages=freckles.frecks:Upgrade',
             'checkout-dotfiles=freckles.frecks:CheckoutDotfiles',
             'stow=freckles.frecks:Stow',
             # 'install-pkg-managers=freckles.frecks:InstallPkgMgrs',

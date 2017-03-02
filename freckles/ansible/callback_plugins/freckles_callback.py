@@ -28,6 +28,8 @@ class CallbackModule(CallbackBase):
 
     def get_task_detail(self, detail_key):
 
+        if not self.task:
+            return False
         temp = self.task.serialize()
         for level in detail_key.split("."):
             temp = temp.get(level, {})
@@ -37,31 +39,44 @@ class CallbackModule(CallbackBase):
     def get_freck_id(self):
 
         # pprint.pprint(self.task.serialize())
+
         id = self.get_task_detail("role._role_params.freck_id")
         if id:
             return id
 
         parents = self.get_task_detail("role._parents")
-        for p in parents:
-            if "freck_id" in p["_role_params"].keys():
-                return p["_role_params"]["freck_id"]
+        if  parents:
+            for p in parents:
+                if "freck_id" in p["_role_params"].keys():
+
+                    return p["_role_params"]["freck_id"]
 
         return -1
 
     def print_output(self, category, result):
 
+
         output = {}
         output["state"] = category
         output["freck_id"] = self.get_freck_id()
 
-        if output["freck_id"] == -1 and not category == "failed":
-            return
+        # if output["freck_id"] == -1 and not category == "failed":
+            # return
 
-        output["action"] = self.task.serialize().get("action", "n/a")
-        output["task_name"] = self.get_task_detail("name")
+        action = self.get_task_detail("action")
+        if not action:
+            action = "n/a"
+        output["action"] = action
+        task_name = self.get_task_detail("name")
+        if not task_name:
+            task_name = "n/a"
+        output["task_name"] = task_name
         # output["task"] = self.task.serialize()
         # output["play"] = self.play.serialize()
-        output["result"] = result._result
+        if category == "play_start" or category == "task_start":
+            output["result"] = {}
+        else:
+            output["result"] = result._result
 
         print(json.dumps(output))
 
@@ -83,6 +98,8 @@ class CallbackModule(CallbackBase):
 
     def v2_playbook_on_play_start(self, play):
         self.play = play
+        self.print_output("play_start", None)
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         self.task = task
+        self.print_output("task_start", None)

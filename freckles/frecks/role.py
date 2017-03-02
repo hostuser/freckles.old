@@ -50,8 +50,11 @@ class AbstractRole(Freck):
     def get_additional_vars(self, freck_meta):
         return False
 
+    def get_unique_task_id(self, freck_meta):
+        return False
+
     @staticmethod
-    def create_role_dict(role, item_name=None, desc=None, sudo=True, additional_roles={}, additional_vars={}):
+    def create_role_dict(role, item_name=None, desc=None, sudo=True, additional_roles={}, additional_vars={}, unique_task_id=False):
 
         freck_meta = {}
         freck_meta[FRECK_META_ROLE_KEY] = role
@@ -78,6 +81,9 @@ class AbstractRole(Freck):
         freck_meta[FRECK_NAME_KEY] = ANSIBLE_ROLE_TYPE
         freck_meta[ANSIBLE_ROLE_PROCESSED] = True
 
+        if unique_task_id:
+            freck_meta[UNIQUE_TASK_ID_KEY] = unique_task_id
+
         return freck_meta
 
     def create_run_item(self, freck_meta, develop=False):
@@ -93,12 +99,22 @@ class AbstractRole(Freck):
         sudo = self.get_sudo(freck_meta)
 
         additional_roles = self.get_additional_roles(freck_meta)
-        dict_merge(additional_roles, freck_meta.get(FRECK_META_ROLES_KEY, {}))
+        if additional_roles:
+            dict_merge(additional_roles, freck_meta.get(FRECK_META_ROLES_KEY, {}))
+        else:
+            additional_roles = freck_meta.get(FRECK_META_ROLES_KEY, {})
 
         additional_vars = self.get_additional_vars(freck_meta)
-        dict_merge(additional_vars, freck_meta.get(FRECK_VARS_KEY, {}))
+        if additional_vars:
+            dict_merge(additional_vars, freck_meta.get(FRECK_VARS_KEY, {}))
+        else:
+            additional_vars = freck_meta.get(FRECK_VARS_KEY, {})
 
-        freck_meta = AbstractRole.create_role_dict(role, item_name=item_name, desc=desc, sudo=sudo, additional_roles=additional_roles, additional_vars=additional_vars)
+        unique_task_id = self.get_unique_task_id(freck_meta)
+        if not unique_task_id:
+            unique_task_id = freck_meta.get(UNIQUE_TASK_ID_KEY, False)
+
+        freck_meta = AbstractRole.create_role_dict(role, item_name=item_name, desc=desc, sudo=sudo, additional_roles=additional_roles, additional_vars=additional_vars, unique_task_id=unique_task_id)
 
         return freck_meta
 

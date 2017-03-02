@@ -196,7 +196,6 @@ def create_custom_role(role_base_path, role_name, tasks, defaults={}):
     # tasks_dict = {}
     for task in tasks:
         task_id_element = task["task"]
-
         if len(task_id_element["vars"]) != 1:
             raise FrecklesConfigError("Task element in task description has more than one entries, not valid: {}".format(task_id_element), "task", task)
 
@@ -247,7 +246,8 @@ ANSIBLE_FRECK_SCHEMA = Schema({
         TASK_TEMPLATE_KEYS: Any(Set, list),
         FRECK_META_ROLES_KEY: dict,
         FRECK_META_ROLE_KEY: basestring,
-        ANSIBLE_ROLE_PROCESSED: bool
+        ANSIBLE_ROLE_PROCESSED: bool,
+        UNIQUE_TASK_ID_KEY: basestring
 })
 
 class AnsibleRunner(FrecklesRunner):

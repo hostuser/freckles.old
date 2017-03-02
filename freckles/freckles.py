@@ -195,6 +195,10 @@ class FrecklesRunCallback(object):
                 self.success = False
             return
 
+        if freck_id not in self.items.keys():
+            log.debug("No task associated to reported freck_id '{}': {}".format(freck_id, details))
+            return
+
         self.task_result.setdefault(freck_id, []).append(details)
 
         if self.current_freck_id != freck_id:
@@ -229,19 +233,25 @@ class FrecklesRunCallback(object):
 
         result = {}
 
+        freck = self.frecks[task[FRECK_NAME_KEY]]
+        ignored_strings = [TASK_IGNORE_STRING]
+
         for details in output_details:
 
             task_name = details[TASK_NAME_KEY]
-            if TASK_IGNORE_STRING in task_name:
-                log.debug("Ignoring detail for task: {}".format(task_name))
-                continue
+            ignore_changed = False
+            for ignored_string in ignored_strings:
+                if ignored_string in task_name:
+                    log.debug("Ignoring detail for task: {}".format(task_name))
+                    ignore_changed = True
+                    break
 
             if details[FRECKLES_STATE_KEY] != FRECKLES_STATE_SKIPPED:
                 skipped = False
 
                 if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
                     failed = True
-                if details["result"].get(FRECKLES_CHANGED_KEY, False):
+                if not ignore_changed and details["result"].get(FRECKLES_CHANGED_KEY, False):
                     changed = True
                 if details["result"].get("stderr", False):
                     stderr.append(details["result"]["stderr"])
@@ -307,6 +317,9 @@ class FrecklesRunCallback(object):
         failed = False
 
         task_item = self.items[freckles_id]
+        if freckles_id not in self.task_result.keys():
+            log.debug("Unreckognized task_id for: {}".format(freckles_id))
+            return
         output_details = self.task_result[freckles_id]
 
         output = self.handle_task_output(task_item, output_details)
@@ -393,7 +406,7 @@ class Freckles(object):
 
 
             if not processed:
-                log.debub("No frecks created for freck_name '{}'.".format(freck_name))
+                log.debug("No frecks created for freck_name '{}'.".format(freck_name))
                 continue
 
             if debug:
@@ -444,13 +457,14 @@ class Freckles(object):
 
         sorted_frecks = sorted(frecks, key=itemgetter(FRECK_PRIORITY_KEY, FRECK_ITEM_NAME_KEY))
         # fill default values if necessary
-        for idx, freck in enumerate(sorted_frecks, start=1):
+        sorted_result = []
+        for freck in sorted_frecks:
             freck.setdefault(FRECK_DESC_KEY, "--config-item {}-- {}".format(freck[FRECK_INDEX_KEY], freck[FRECK_NAME_KEY]))
             freck.setdefault(FRECK_SUDO_KEY, FRECK_DEFAULT_SUDO)
             freck.setdefault(FRECK_VARS_KEY, {})
-            freck[FRECK_ID_KEY] = idx
+            sorted_result.append(freck)
 
-        return sorted_frecks
+        return sorted_result
 
 
 
@@ -458,9 +472,10 @@ class Freckles(object):
 
         for run_nr, frecks in enumerate(self.process_leafs(), start=1):
 
+            click.echo("Preparing run #{}".format(run_nr))
             # check all frecks have the same runner
             runners = Set([ item[FRECK_RUNNER_KEY] for item in frecks ])
-            if len(runners) != 1:
+            if len(runners) > 1:
                 raise Exception("Can't use multiple runners in the same run: {}".format(runners))
 
             runner_name = runners.pop()
@@ -471,7 +486,10 @@ class Freckles(object):
             if not runner_class:
                 raise FrecklesConfigError("Can't find runner with name: {}".format(runner_name))
 
+            log.debug("Using runner: {}".format(runner_name))
             items = []
+            i = 1
+            unique_ids = []
             for freck in frecks:
 
                 freck_plugin = self.freck_plugins[freck[FRECK_NAME_KEY]]
@@ -481,11 +499,24 @@ class Freckles(object):
                 if not isinstance(run_item, dict):
                     raise Exception("Freck plugin returned non-dict value as run_item")
 
+                if UNIQUE_TASK_ID_KEY in run_item.keys() and run_item[UNIQUE_TASK_ID_KEY] in unique_ids:
+                    log.debug("Already got a task with id '{}', ignoring this one.".format(run_item[UNIQUE_TASK_ID_KEY]))
+                    continue
+                elif UNIQUE_TASK_ID_KEY in run_item.keys():
+                    unique_ids.append(run_item[UNIQUE_TASK_ID_KEY])
+
                 # make sure the id didn't change, everything else can be different
-                run_item[FRECK_ID_KEY] = freck[FRECK_ID_KEY]
+                run_item[FRECK_ID_KEY] = i
+                run_item.setdefault(FRECK_SUDO_KEY, FRECK_DEFAULT_SUDO)
+                run_item.setdefault(FRECK_VARS_KEY, {})
                 items.append(run_item)
+                i = i + 1
 
             callback = FrecklesRunCallback(self.freck_plugins, items)
             runner_obj = runner_class(items, callback)
 
+            click.echo("Starting run #{}".format(run_nr))
             runner_obj.run()
+            click.echo("Run #{} finished.".format(run_nr))
+
+            #TODO: stats, check whether failed
