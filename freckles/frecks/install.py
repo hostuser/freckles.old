@@ -6,10 +6,10 @@ import pprint
 import sys
 
 from ansible.module_utils.facts import Distribution
-from checkout import GIT_VALID_KEYS
 from freckles import Freck
 from freckles.constants import *
 from freckles.exceptions import FrecklesConfigError
+from freckles.frecks.checkout import GIT_VALID_KEYS
 from freckles.runners.ansible_runner import (FRECK_META_ROLE_DICT_KEY,
                                              FRECK_META_ROLE_KEY,
                                              FRECK_META_ROLES_KEY)
