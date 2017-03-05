@@ -21,6 +21,7 @@
   apt: pkg={{item}} state=installed
   with_items:
     - wget
+    - curl
     - bzip2
     - ca-certificates
   become: yes
