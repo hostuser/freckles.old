@@ -7,16 +7,12 @@
 tasks:
   - install: 
       packages:
-        - zile:
-            pkgs:
-              - cowsay
-        - htop:
-            pkgs:
-              default:
-                - fortune
+        - htop
   - install:
       packages:
-        - emacs
-
-
-
+        - fortunes:
+            pkgs:
+              default:
+                - fortunes
+                - fortunes-off
+                - fortunes-mario
