@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 export DEBIAN_FRONTEND=noninteractive
+
+echo 'Acquire::http { Proxy "http://192.168.1.222:3142"; };' |sudo tee --append /etc/apt/apt.conf.d/01proxy
+
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
 FRECKLES_VIRTUALENV="$FRECKLES_DIR/data/venv"

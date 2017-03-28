@@ -31,7 +31,7 @@ At the moment (and it'd be super-cool if that changed sometime in the future), t
 
 .. code-block:: console
 
-   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus:dotfiles-example
+   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/dotfiles-example
 
 
 

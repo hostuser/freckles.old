@@ -27,13 +27,17 @@ from voluptuous import ALLOW_EXTRA, Any, Schema
 
 log = logging.getLogger("freckles")
 
+DEFAULT_ABBREVIATIONS = {
+    'gh': ["https://raw.githubusercontent.com", -1, -1, "master"]
+}
+
 FRKL_KEY_PREFIX = "_frkl"
 FRKL_META_LEVEL_KEY = "{}_level".format(FRKL_KEY_PREFIX)
 NO_STEM_INDICATOR = "-99999"
 DEFAULT_LOAD_KEY = "load"
 LEAF_DICT = "_leaf_dict"
 
-def get_config(config_file_url, repo, path):
+def get_config(config_file_url):
     """Retrieves the config (if necessary), and converts it to a dict.
 
     Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
@@ -46,7 +50,7 @@ def get_config(config_file_url, repo, path):
     if isinstance(config_file_url, dict):
         return config_file_url
 
-    config_file_url = expand_config_url(config_file_url, repo, path)
+    config_file_url = expand_config_url(config_file_url)
 
     # check if file first
     if os.path.exists(config_file_url):
@@ -69,12 +73,39 @@ def get_config(config_file_url, repo, path):
         except:
             raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
 
-def expand_config_url(url, default_repo, default_repo_path):
+def expand_config_url(url):
+
+    prefix, sep, rest = url.partition(':')
+
+    if prefix in DEFAULT_ABBREVIATIONS:
+        tokens = rest.split("/")
+        result_string = ""
+        for t in DEFAULT_ABBREVIATIONS[prefix]:
+            if t == -1:
+                if not tokens:
+                    raise FrecklesConfigError("Can't expand url '{}': not enough parts.", 'config', url)
+                to_append = tokens.pop(0)
+            else:
+                to_append = t
+
+            result_string += to_append
+            result_string += "/"
+
+        if tokens:
+            postfix = "/".join(tokens)
+            result_string += postfix
+
+        return result_string
+
+    else:
+        return url
+
+def expand_config_url_old(url, default_repo, default_repo_path):
 
     if not url.startswith("gh:") and not url.startswith("bb:"):
         return url
 
-    if  url.startswith("gh:"):
+    if url.startswith("gh:"):
         tokens = url.split(":")
         if len(tokens) == 1 or len(tokens) > 4:
             raise FrecklesConfigError("Can't parse github config url '{}'. Exiting...", 'config', url)
@@ -94,22 +125,22 @@ def expand_config_url(url, default_repo, default_repo_path):
         # TODO bitbucket
         raise Exception("Not implemented")
 
-def get_and_load_configs(config_url, default_repo, default_path, load_external=True, load_key=DEFAULT_LOAD_KEY):
+def get_and_load_configs(config_url, load_external=True, load_key=DEFAULT_LOAD_KEY):
     """ Retrieves and loads config from url, parses it and downloads 'load' configs if applicable.
     """
 
     log.debug("Loading config: {}".format(config_url))
-    config_dict = get_config(config_url, default_repo, default_path)
+    config_dict = get_config(config_url)
     result = [config_dict]
 
     load = config_dict.get(load_key, [])
     if load and load_external:
         if isinstance(load, basestring):
-            new_configs = get_and_load_configs(load, default_repo, default_path)
+            new_configs = get_and_load_configs(load)
             result.extend(new_configs)
         elif isinstance(load, (tuple, list)):
             for config in load:
-                new_configs = get_and_load_configs(config, default_repo, default_path)
+                new_configs = get_and_load_configs(config)
                 result.extend(new_configs)
         else:
             raise FrecklesConfigError("Can't load external config, type not recognized: {}".format(load), GLOBAL_LOAD_KEY, load)
@@ -140,8 +171,8 @@ class Frkl(object):
         self.stem_key = stem_key
         self.other_keys = other_valid_keys
 
-        self.default_repo = default_repo
-        self.default_path = default_repo_path
+        # self.default_repo = default_repo
+        # self.default_path = default_repo_path
 
         #TODO: check default_leaf key in all_keys
         self.default_leaf_key = default_leaf_key
@@ -156,7 +187,7 @@ class Frkl(object):
 
         self.configs = []
         for c in configs:
-            self.configs.append(get_config(c, self.default_repo, self.default_path))
+            self.configs.append(get_config(c))
         self.root = []
         self.meta_dict = {}
 

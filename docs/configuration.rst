@@ -110,6 +110,6 @@ For when one dotfile repository contains several sub-folders to split up the dot
             - terminal
             - graphical/default
             - graphical/deb
-          remote: gh:makkus:somethingorother
+          remote: gh:makkus/somethingorother
 
 In this example, the 'dotfiles' folder is checked out from the specified remote on github (check out XXX for more information on url-expansion), and the freckles plugins that support this, will look in the '~/dotfiles/terminal', '~/dotfiles/graphical/default' and '~/dotfiles/graphical/deb' folders for subfolders (like: 'emacs', which would contain a '.emacs.d' directory) to process (instead of subfolders of the base_dir). In this example, there is a 'debian'-specific subfolder that would only be used on Debian-based systems, and it would automatically set the package manager to use to 'apt' (more information on how the package manager is selected in the *install* module can be found here: XXX)
