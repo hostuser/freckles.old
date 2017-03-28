@@ -52,7 +52,7 @@ def ensure_dotfiles_dir():
 ])
 def test_get_config(url, expected):
 
-    config = get_config(url, None, None)
+    config = get_config(url)
     assert config == expected
 
 @pytest.mark.parametrize("item, expected", [
