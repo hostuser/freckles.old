@@ -2,7 +2,7 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-echo 'Acquire::http { Proxy "http://192.168.1.222:3142"; };' |sudo tee --append /etc/apt/apt.conf.d/01proxy
+#echo 'Acquire::http { Proxy "http://192.168.1.222:3142"; };' |sudo tee --append /etc/apt/apt.conf.d/01proxy
 
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
@@ -28,7 +28,7 @@ pip install --upgrade setuptools wheel
 
 
 echo 'source "$HOME/.freckles/data/venv/freckles/bin/activate"' >> "$HOME/.bashrc"
-ln -s /vagrant/examples/example_only_zsh/dotfiles /home/vagrant/dotfiles
+#ln -s /vagrant/examples/example_only_zsh/dotfiles /home/vagrant/dotfiles
 
 # install freckles
 source "$HOME/.freckles/data/venv/freckles/bin/activate"
