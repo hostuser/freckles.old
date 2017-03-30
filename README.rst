@@ -19,15 +19,20 @@ freckles
 
 *a cute dotfile manager, all over the place*
 
-*freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on your local machine, not as much for configuring remote machines. It can be easily used to setup an environment in VMs (for example using Vagrant), or containers.
+*freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on your local machine, not as much for configuring remote machines. It can also be used to easily setup an environment in VMs (for example using Vagrant), or containers, potentially sharing the configuration you use on your workstation.
+
+*freckles* is written in Python, and built on top of ansible_.
 
 Documentation: https://freckles.readthedocs.io.
 
 Features
 --------
 
-* one-line setup of new environment, including freckles bootstrap
-* support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_ or `conda <https://conda.io/docs>`_ (or if you just think it's a good idea to use one/any of them)
+* one-line setup of a new environment, including freckles bootstrap
+* supports Linux & MacOS X
+* share the same configuration for your Linux and MacOS workstation as well as Vagrant machines, containers, etc.
+* support for systems where you don't have root/sudo access via the nix_ package manager or conda_ (or if you just think it's a good idea to use one/any of them)
+* direct support for ansible_ modules and roles
 
 Quickstart
 ----------
@@ -80,6 +85,8 @@ What this does:
  - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the .zile file in the repo we checked out)
 
 To read how all that works in more detail, please read the full documentation at XXX
+
+You don't like executing random scripts on the internet? Yeah, me neither. Read here: XXX.
 
 
 License
