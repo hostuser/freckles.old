@@ -40,6 +40,9 @@ tasks:
                 - fortunes
                 - fortunes-off
                 - fortunes-mario
+              yum:
+                - fortune-mod
+
   - stow
   - file:
       path: ~/.backups/zile
