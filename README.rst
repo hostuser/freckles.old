@@ -37,7 +37,7 @@ Features
 Quickstart
 ----------
 
-For its most basic use-case, *freckles* needs 3 things:
+For its most basic use-case -- which is installing and configuring packages --, *freckles* needs 3 things:
 
  - a *configuration file*
  - a *dotfile repository* -> to have something to work on
@@ -54,9 +54,9 @@ This executes a simple config that looks like:
 .. code-block:: yaml
 
   vars:
-  dotfiles:
-     - base_dir: ~/dotfiles-quickstart
-       remote: https://github.com/makkus/freckles-quickstart.git
+    dotfiles:
+      - base_dir: ~/dotfiles-quickstart
+        remote: https://github.com/makkus/freckles-quickstart.git
 
   tasks:
     - checkout-dotfiles

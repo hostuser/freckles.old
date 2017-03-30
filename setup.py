@@ -13,7 +13,7 @@ requirements = [
     'Click>=6.0',
     'jinja2<2.9',
     'ansible>=2.2.0',
-    'cookiecutter>=1.5.0',
+    'cookiecutter==1.5.1',
     'stevedore>=1.18.0',
     'py>=1.4.32',
     'click-log>=0.1.8',
