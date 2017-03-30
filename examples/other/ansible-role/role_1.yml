@@ -1,0 +1,14 @@
+tasks:
+  - nodejs:
+      meta:
+        become: yes
+        roles:
+          nodejs: https://github.com/telusdigital/ansible-nodejs.git
+          telusdigital.apt-repository: https://github.com/telusdigital/ansible-apt-repository.git
+      vars:
+        node_packages:
+          - bower
+          - brunch
+
+
+

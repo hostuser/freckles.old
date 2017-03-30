@@ -1,0 +1,26 @@
+"vars":
+  "key1": "value1"
+  "key2": "value2"
+
+"meta":
+  "meta1": "value1"
+  "meta2": "value2"
+
+"tasks":
+  - "meta":
+      "smeta1": "value1"
+      "meta2": "value3"
+    "tasks":
+      - "vars":
+          "sskey1": "value1"
+          "key2": "value3"
+        "tasks":
+          - test1
+          - test2
+
+  - "meta":
+      "smeta11": "value11"
+      "smeta12": "value22"
+    "vars":
+      "vvars1": "value11"
+      "vvars2": "value22"

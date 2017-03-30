@@ -1,7 +1,6 @@
-===============================
-Freckles
-===============================
-
+===================================================
+freckles
+===================================================
 
 .. image:: https://img.shields.io/pypi/v/freckles.svg
         :target: https://pypi.python.org/pypi/freckles
@@ -17,25 +16,28 @@ Freckles
      :target: https://pyup.io/repos/github/makkus/freckles/
      :alt: Updates
 
-A dotfile manager
+
+*a cute dotfile manager, all over the place*
+
+*freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on your local machine, not as much for configuring remote machines. It can be easily used to setup an environment in VMs (for example using Vagrant), or containers.
+
+Documentation: https://freckles.readthedocs.io.
 
 Quickstart
 ----------
 
-Freckles needs 2 things:
+For its most basic usecase, *freckles* needs 2 things:
 
  - *a dotfile repository* -> to have something to work on
- - *curl* -> for bootstrapping (well, technically it also needs *bash*)
+ - *curl* (or *wget*) -> for bootstrapping (well, technically it also needs *bash*)
 
-At the moment (and it'd be super-cool if that changed sometime in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash:
+At the moment (and that might change in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash:
 
 .. code-block:: console
 
-   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/dotfiles-example
+   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/freckles-quickstart/freckles/frkl.yml
 
 
-
-Documentation: https://freckles.readthedocs.io.
 
 Features
 --------
@@ -56,8 +58,9 @@ Credits
 
 This package was created using, amongst others:
 
-- _Cookiecutter
-- _ansible-nix
+- Cookiecutter_
+- ansible-nix_
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _ansible-nix: from: https://github.com/AdamFrey/nix-ansible
+.. _ansible: https://ansible.com

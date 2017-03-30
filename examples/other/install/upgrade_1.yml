@@ -1,0 +1,5 @@
+---
+# a very simple exaample of how to upgrade all packages for the default package manager
+tasks:
+  - upgrade
+

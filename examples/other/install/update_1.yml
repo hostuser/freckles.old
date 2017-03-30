@@ -1,0 +1,5 @@
+---
+# a very simple exaample of how to update the default package manager cache
+tasks:
+  - update
+

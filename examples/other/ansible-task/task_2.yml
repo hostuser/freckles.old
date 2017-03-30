@@ -1,0 +1,5 @@
+tasks:
+  - copy:
+      src: /tmp/test1
+      dest: /tmp/test2
+

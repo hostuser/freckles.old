@@ -1,0 +1,16 @@
+---
+# a very simple exaample of how to install packages using both an (existing) dotfiles directory and a list of packages. By default, values in the 'packages' var overwrite ones that are calculated via dotfile directories. That can be changed using the 'priority_source' variable
+
+# This example also shows a way to automatically install all package managers are required (as defined by the pkg_mgr variable, either on global, run or task level.
+
+vars:
+  dotfiles:
+     - base_dir: ~/dotfiles-example
+       remote: https://github.com/makkus/dotfiles-example.git
+  packages:
+    - htop  # isntalled using conda (from conda_channel 'conda-forge')
+  use_dotfiles: yes
+  ensure_pkg_manager: yes
+tasks:
+  - checkout-dotfiles
+  - install

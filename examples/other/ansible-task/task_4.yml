@@ -1,0 +1,11 @@
+vars:
+  dotfiles:
+    - base_dir: ~/dotfiles
+      paths: ["minimal", "dev", "no-x", "x"]
+      remote: https://github.com/makkus/dotfiles-new.git
+    - base_dir: ~/dotfiles-examples
+      remote: https://github.com/makkus/dotfiles-example.git
+runs:
+  - desc: git checkout dotfiles
+    tasks:
+      - checkout-dotfiles

@@ -1,0 +1,29 @@
+vars:
+  dotfiles:
+    - base_dir: ~/dotfiles
+      paths: ["minimal", "dev", "no-x", "x"]
+      remote: https://github.com/makkus/dotfiles-new.git
+
+runs:
+  - name: copy stuff
+    tasks:
+      - checkout-dotfiles
+      - file:
+          vars:
+            path: /usr/share/xsessions
+            state: directory
+            become: yes
+      - copy:
+          vars:
+            src: ~/dotfiles/freckles/files/i3_xsession.desktop
+            dest: /usr/share/xsessions/i3_xsession.desktop
+            become: yes
+      - lineinfile:
+          vars:
+            become: yes
+            dest: /etc/shells
+            line: /nix/var/nix/profiles/default/bin/zsh
+      - shell:
+          vars:
+            become: yes
+            free_form: usermod -s /nix/var/nix/profiles/default/bin/zsh vagrant

@@ -1,0 +1,14 @@
+"tasks":
+  - meta:
+      smeta1: value1
+      meta2: value3
+    tasks:
+      - meta:
+          smeta1: XXXXXXXXXXXXXX
+        vars:
+          sskey1: value1
+          key2: value3
+        tasks:
+          - test1:
+              key2: XXXX
+          - test2

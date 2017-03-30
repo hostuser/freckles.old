@@ -1,0 +1,5 @@
+vars:
+  add_path: yes
+tasks:
+  - install-nix
+  - install-conda
