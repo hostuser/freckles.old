@@ -23,34 +23,69 @@ freckles
 
 Documentation: https://freckles.readthedocs.io.
 
-Quickstart
-----------
-
-For its most basic usecase, *freckles* needs 2 things:
-
- - *a dotfile repository* -> to have something to work on
- - *curl* (or *wget*) -> for bootstrapping (well, technically it also needs *bash*)
-
-At the moment (and that might change in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash:
-
-.. code-block:: console
-
-   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/freckles-quickstart/freckles/frkl.yml
-
-
-
 Features
 --------
 
-* bootstrap & first run wrapped in one command
-* simple, opinionated default configuration, but extensible if necessary
-* optional support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_ or `conda <https://conda.io/docs>`_.
+* one-line setup of new environment, including freckles bootstrap
+* support for (Linux) systems where you don't have root/sudo access via the `nix package manager <https://nixos.org/nix/>`_ or `conda <https://conda.io/docs>`_ (or if you just think it's a good idea to use one/any of them)
+
+Quickstart
+----------
+
+For its most basic use-case, *freckles* needs 3 things:
+
+ - a *configuration file*
+ - a *dotfile repository* -> to have something to work on
+ - *curl* (or *wget*) -> for bootstrapping (well, technically it also needs *bash*)
+
+At the moment (and that might change in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash. The bootstrap process can also already execute the first *freckles* run, which makes it possible to setup a machine with one line in your shell:
+
+.. code-block:: console
+
+   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/freckles/examples/quickstart.yml
+
+This executes a simple config that looks like:
+
+.. code-block:: yaml
+
+  vars:
+  dotfiles:
+     - base_dir: ~/dotfiles-quickstart
+       remote: https://github.com/makkus/freckles-quickstart.git
+
+  tasks:
+    - checkout-dotfiles
+    - install:
+        use_dotfiles: true
+        packages:
+          - htop
+          - fortunes:
+              pkgs:
+                default:
+                  - fortunes
+                  - fortunes-off
+                  - fortunes-mario
+    - stow
+    - file:
+        path: ~/.backups/zile
+        state: directory
 
 
-Freckles is free software under the GNU General Public License v3
+What this does:
+
+ - checks out the repository of dotfile(s) at `https://github.com/makkus/freckles-quickstart.git <https://github.com/makkus/freckles-quickstart>`_
+ - installs all the applications/packages that are configured in that repo (only the emacs-like editor *zile* in this case)
+ - also installs a few other packages that don't require configuration (*htop*, *fortunes*, *fortunes-off*, *fortunes-mario*)
+ - `stows <https://www.gnu.org/software/stow/>`_ all the dotfiles in the above repository into the users home directory (again, only for *zile* in this case)
+ - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the .zile file in the repo we checked out)
+
+To read how all that works in more detail, please read the full documentation at XXX
 
 
+License
+-------
 
+Freckles is free software under the GNU General Public License v3.
 
 
 Credits
@@ -58,9 +93,14 @@ Credits
 
 This package was created using, amongst others:
 
+- ansible_
 - Cookiecutter_
+- nix_
+- conda_
 - ansible-nix_
 
+.. _ansible: https://ansible.com
+.. _nix: https://nixos.org/nix/
+.. _conda: https://conda.io
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _ansible-nix: from: https://github.com/AdamFrey/nix-ansible
-.. _ansible: https://ansible.com
