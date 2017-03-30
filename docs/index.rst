@@ -1,5 +1,5 @@
-Welcome to freckles's documentation!
-======================================
+`freckles` documentation
+========================
 
 Contents:
 
@@ -7,11 +7,11 @@ Contents:
    :maxdepth: 2
 
    readme
-   installation
    bootstrap
    usage
    contributing
-   authorshistory
+   authors
+   history
 
 Indices and tables
 ==================

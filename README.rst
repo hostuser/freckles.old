@@ -1,5 +1,5 @@
 ===================================================
-freckles
+Overview
 ===================================================
 
 .. image:: https://img.shields.io/pypi/v/freckles.svg
@@ -79,14 +79,34 @@ This executes a simple config that looks like:
 What this does:
 
  - checks out the repository of dotfile(s) at `https://github.com/makkus/freckles-quickstart.git <https://github.com/makkus/freckles-quickstart>`_
- - installs all the applications/packages that are configured in that repo (only the emacs-like editor *zile* in this case)
- - also installs a few other packages that don't require configuration (*htop*, *fortunes*, *fortunes-off*, *fortunes-mario*)
+ - installs all the applications/packages that are configured in that repo (only the emacs-like editor ``zile`` in this case)
+ - also installs a few other packages that don't require configuration (``htop``, ``fortunes``, ``fortunes-off``, ``fortunes-mario``)
  - `stows <https://www.gnu.org/software/stow/>`_ all the dotfiles in the above repository into the users home directory (again, only for *zile* in this case)
  - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the .zile file in the repo we checked out)
 
 To read how all that works in more detail, please read the full documentation at XXX
 
 You don't like executing random scripts on the internet? Yeah, me neither. Read here: XXX.
+
+Supported platforms
+-------------------
+
+Currently tested and supported
+++++++++++++++++++++++++++++++
+
+- Debian
+  - Jessie
+  - TBD
+- Ubuntu
+  - 16.04
+  - 16.10
+
+
+Planned / Partially supported
++++++++++++++++++++++++++++++
+
+- MacOS X
+- Windows 10 (Ubuntu on Windows)
 
 
 License
