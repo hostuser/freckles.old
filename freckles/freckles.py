@@ -449,8 +449,6 @@ class Freckles(object):
 
             if new_run:
                 frecks = self.sort_frecks(frecks)
-                for f in frecks:
-                    pprint.pprint(f)
                 run_frecks = []
 
                 for f in frecks:

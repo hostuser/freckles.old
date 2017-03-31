@@ -108,7 +108,7 @@ def augment_config(freckles_config):
 
     pass
 
-@cli.command()
+@cli.command("apply")
 @click.option('--run_nr', '-r', required=False, help='only kick off one run, using it\'s index', default=0)
 @click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
 @click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)

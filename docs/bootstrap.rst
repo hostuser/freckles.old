@@ -8,7 +8,6 @@ Bootstrap
 There are a few different ways to bootstrap `freckles`. Depending on the state of your box, your proficiency and your general trust in random people on the internet, you can choose one of the methods below.
 
 
-
 Run the bootstrap script directly (without elevated permissions)
 ----------------------------------------------------------------
 
@@ -25,6 +24,10 @@ Using `wget`:
 .. code-block:: console
 
    $ wget -O - https://get.frkl.io | bash
+
+
+What does this do?
+++++++++++++++++++
 
 
 Run the bootstrap script directly (with elevated permissions)
@@ -45,7 +48,8 @@ Using `wget`:
    $ wget -O - https://get.frkl.io | sudo bash
 
 
-.. _conda: https://conda.io
+What does this do?
+++++++++++++++++++
 
 Install manually via ``pip``
 ----------------------------
@@ -74,3 +78,6 @@ The bootstrap process will install `freckles` as well as its requirements. `frec
 .. code-block:: console
 
    $ freckles --help
+
+
+.. _conda: https://conda.io

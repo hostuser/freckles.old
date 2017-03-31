@@ -6,6 +6,13 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.http     = "http://192.168.1.222:3128/"
+    config.proxy.https    = "http://192.168.1.222:3128/"
+    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+  end
+
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
@@ -29,6 +36,7 @@ Vagrant.configure("2") do |config|
   # using a specific IP.
   # config.vm.network "private_network", ip: "192.168.33.10"
 
+
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
   # your network.
@@ -38,6 +46,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
+  config.vm.synced_folder ".", "/vagrant", id: "vagrant"
   config.vm.synced_folder "/home/markus/projects/ansible/roles", "/ansible_roles", id: "ansible-roles"
 
   # Provider-specific configuration so you can fine-tune various

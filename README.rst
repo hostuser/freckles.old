@@ -47,7 +47,7 @@ At the moment (and that might change in the future), the easiest way to install 
 
 .. code-block:: console
 
-   $ curl -L https://get.frkl.io | bash -s -- run gh:makkus/freckles/examples/quickstart.yml
+   $ curl -L https://get.frkl.io | bash -s -- apply gh:makkus/freckles/examples/quickstart.yml
 
 This executes a simple config that looks like:
 

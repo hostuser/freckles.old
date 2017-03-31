@@ -78,13 +78,21 @@ INSTALL_BREW_KEY = "install-brew"
 
 def get_os_family():
 
-    pf = basic.get_platform()
-    return pf
+    # pf = basic.get_platform()
+    # if pf == 'Darwin':
+        # return pf
+    # distribution = basic.get_distribution()
+    # print(distribution)
+    # osfamily = Distribution.OS_FAMILY.get(distribution)
+    # print(osfamily)
+    # return osfamily
 
-    # d = Distribution(None)
-    # print(d)
-    # d.populate()
-    # return d.facts["os_family"]
+    basic._ANSIBLE_ARGS = '{"ANSIBLE_MODULE_ARGS": {}}'
+    module = basic.AnsibleModule({})
+    d = Distribution(module)
+    d.populate()
+    os_family = d.facts["os_family"]
+    return os_family
 
 def get_default_pkg_mgr():
 
