@@ -66,10 +66,14 @@ This executes a simple config that looks like:
           - htop
           - fortunes:
               pkgs:
-                default:
+                apt:
                   - fortunes
                   - fortunes-off
                   - fortunes-mario
+                yum:
+                  - fortune-mod
+                homebrew:
+                  - fortune
     - stow
     - file:
         path: ~/.backups/zile
@@ -95,9 +99,12 @@ Currently tested and supported
 ++++++++++++++++++++++++++++++
 
 - Debian
+
   - Jessie
   - TBD
+
 - Ubuntu
+
   - 16.04
   - 16.10
 

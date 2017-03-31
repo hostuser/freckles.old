@@ -48,6 +48,7 @@ setup(
             # 'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
             'install-nix=freckles.frecks:InstallNix',
             'install-conda=freckles.frecks:InstallConda',
+            'install-brew=freckles.frecks:InstallBrew',
             'delete=freckles.frecks:Delete',
             # 'debug-vars=freckles.frecks:DebugVars',
             'ansible-role=freckles.frecks:Role',

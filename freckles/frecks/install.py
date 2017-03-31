@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import copy
+import json
 import logging
 import platform
 import pprint
 import sys
 
+from ansible.module_utils import basic
 from ansible.module_utils.facts import Distribution
 from freckles import Freck
 from freckles.constants import *
@@ -24,12 +26,14 @@ from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
-SUPPORTED_PKG_MGRS = ["apt", "yum", "nix", "pip", "git", "no_install", "conda", "brew", "default"]
+SUPPORTED_PKG_MGRS = ["apt", "yum", "nix", "pip", "git", "no_install", "conda", "homebrew", "default"]
 DEFAULT_PKG_MGRS = {
     "Debian": "apt",
     "RedHat": "yum",
-    "Darwin": "brew"
+    "Darwin": "homebrew"
 }
+
+ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
 
 PKG_MGRS_COMMANDS = {
     "no_install": {"update": False, "upgrade": False, "valid_install_keys": []},
@@ -37,7 +41,7 @@ PKG_MGRS_COMMANDS = {
     "yum": {"update": False, "upgrade": {"name": "'*'", "state": "latest"}, "valid_install_keys": ["conf_file", "disable_gpg_check", "disablerepo", "enablerepo", "exclude", "insstallroot", "list", "skip_broken", "state", "update_cache", "validate_certs"]},
     "nix": {"update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"]},
     "conda": {"update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"]},
-    "brew": {"update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}},
+    "homebrew": {"update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}, ENSURE_PACKAGE_MANAGER_KEY: True},
     "git": {"update": False, "upgrade": False, "valid_install_keys": GIT_VALID_KEYS}
 }
 
@@ -49,9 +53,6 @@ USE_DOTFILES_KEY = "use_dotfiles"
 USE_DOTFILES_DEFAULT = False
 USE_PACKAGES_KEY = "use_packages_var"
 USE_PACKAGES_DEFAULT = True
-
-ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
-ENSURE_PACKAGE_MANAGER_DEFAULT = False
 
 UPDATE_PACKAGE_CACHE_KEY = "update_cache"
 UPDATE_PACKAGE_CACHE_DEFAULT = False
@@ -77,9 +78,13 @@ INSTALL_BREW_KEY = "install-brew"
 
 def get_os_family():
 
-    d = Distribution(None)
-    d.populate()
-    return d.facts["os_family"]
+    pf = basic.get_platform()
+    return pf
+
+    # d = Distribution(None)
+    # print(d)
+    # d.populate()
+    # return d.facts["os_family"]
 
 def get_default_pkg_mgr():
 
@@ -206,9 +211,10 @@ class Install(AbstractTask):
 
                 # TODO: sanity check of config
                 if meta[PKG_MGR_KEY] in pkgs.keys():
-                    packages = pkgs[PKG_MGR_KEY]
+                    packages = pkgs[meta[PKG_MGR_KEY]]
                 else:
-                    packages = pkgs["default"]
+                    packages = pkgs.get("default", [])
+
 
                 if isinstance(packages, basestring):
                     packages = [packages]
@@ -225,21 +231,24 @@ class Install(AbstractTask):
                             meta_copy[FRECK_VARS_KEY][key] = details[key]
                     configs.append(meta_copy)
 
-
-        if config.get(ENSURE_PACKAGE_MANAGER_KEY, ENSURE_PACKAGE_MANAGER_DEFAULT):
+        pkg_mgr = meta[PKG_MGR_KEY]
+        if config.get(ENSURE_PACKAGE_MANAGER_KEY, PKG_MGRS_COMMANDS[pkg_mgr].get(ENSURE_PACKAGE_MANAGER_KEY, False)):
             for pkg_mgr in package_mgrs:
                 if pkg_mgr == "conda":
                     extra_config = InstallConda.get_install_conda_meta()
                 elif pkg_mgr == "nix":
                     extra_config = InstallNix.get_install_nix_meta()
+                elif pkg_mgr == "homebrew":
+                    extra_config = InstallBrew.get_install_brew_meta()
                 else:
-                    #TODO: brew
                     continue
+
                 if config.get("add_path", False):
                     extra_config.setdefault(FRECK_VARS_KEY, {})["add_path"] = True
 
                 # pprint.pprint(extra_config)
                 extra_config[FRECK_PRIORITY_KEY] = 10
+                # extra_config[FRECK_NEW_RUN_AFTER_THIS_KEY] = True
                 configs.append(extra_config)
 
         if config.get(UPDATE_PACKAGE_CACHE_KEY, UPDATE_PACKAGE_CACHE_DEFAULT):
@@ -404,6 +413,30 @@ class InstallNix(AbstractRole):
     def get_additional_roles(self, freck_meta):
 
         return {"install_nix": "frkl:ansible-nix-pkg-mgr"}
+
+
+class InstallBrew(AbstractRole):
+
+    UNIQUE_TASK_ID = "install_brew"
+
+    @staticmethod
+    def get_install_brew_meta():
+        return AbstractRole.create_role_dict("install_brew", item_name="homebrew", desc="install package manager", sudo=False, additional_roles={"install_brew": "https://github.com/geerlingguy/ansible-role-homebrew.git", "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"}, unique_task_id=InstallBrew.UNIQUE_TASK_ID)
+
+    def get_unique_task_id(self, freck_meta):
+        return InstallBrew.UNIQUE_TASK_ID
+
+    def get_role(self, freck_meta):
+        return "install_brew"
+
+    def get_additional_roles(self, freck_meta):
+        return {"install_conda": "https://github.com/geerlingguy/ansible-role-homebrew.git", "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"}
+
+    def get_item_name(self, freck_meta):
+        return "homebrew"
+
+    def get_desc(self, freck_meta):
+        return "install package manager"
 
 class InstallConda(AbstractRole):
 

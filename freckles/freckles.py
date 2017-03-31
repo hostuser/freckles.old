@@ -433,6 +433,7 @@ class Freckles(object):
 
             new_run = False
             for prep in processed:
+
                 prep[FRECK_RUNNER_KEY] = runner
                 prep[FRECK_INDEX_KEY] = freck_nr
                 prep.setdefault(FRECK_ITEM_NAME_KEY, "{}".format(prep[FRECK_NAME_KEY]))
@@ -447,9 +448,18 @@ class Freckles(object):
             frecks.extend(processed)
 
             if new_run:
-                run_frecks = frecks
-                frecks = []
-                yield self.sort_frecks(run_frecks)
+                frecks = self.sort_frecks(frecks)
+                for f in frecks:
+                    pprint.pprint(f)
+                run_frecks = []
+
+                for f in frecks:
+                    run_frecks.append(f)
+                    if f[FRECK_NEW_RUN_AFTER_THIS_KEY]:
+                        yield self.sort_frecks(run_frecks)
+                        run_frecks = []
+
+                frecks = run_frecks
 
         yield self.sort_frecks(frecks)
 

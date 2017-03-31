@@ -226,7 +226,7 @@ def get_pkg_mgr_sudo(mgr):
         return False
     elif mgr == 'git':
         return False
-    elif mgr == 'brew':
+    elif mgr == 'homebrew':
         return False
     else:
         return True
