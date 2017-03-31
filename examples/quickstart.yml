@@ -42,7 +42,7 @@ tasks:
                 - fortunes-mario
               yum:
                 - fortune-mod
-              homebrew:
+              brew:
                 - fortune
 
   - stow
