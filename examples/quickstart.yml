@@ -42,6 +42,8 @@ tasks:
                 - fortunes-mario
               yum:
                 - fortune-mod
+              homebrew:
+                - fortune
 
   - stow
   - file:
