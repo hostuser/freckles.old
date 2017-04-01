@@ -37,7 +37,7 @@ Features
 Quickstart
 ----------
 
-For its most basic use-case -- which is installing and configuring packages --, *freckles* needs 3 things:
+For its most basic use-case -- which is installing and configuring packages -- *freckles* needs 3 things:
 
  - a *configuration file*
  - a *dotfile repository* -> to have something to work on
