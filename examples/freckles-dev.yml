@@ -19,6 +19,14 @@ tasks:
                 - libffi-dev
                 - stow
                 - libsqlite3-dev
+              yum:
+                - epel-release
+                - wget
+                - git
+                - python-virtualdev
+                - stow
+                - openssl-devel
+                - sqlite-devel
 
   - create-folder: ~/.freckles/data/venv
 

@@ -158,6 +158,8 @@ function install_freckles_deb {
 function install_freckles_rpm {
     echo "  * RedHat-based system detected.\n"
     echo -e "  - Installing dependencies:\n\t$RPM_DEPENDENCIES"
+
+    yum install wget git python-virtualenv stow openssl-devel
 }
 
 function install_freckles_linux_root {
