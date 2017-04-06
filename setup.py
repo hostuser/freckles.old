@@ -51,6 +51,7 @@ setup(
             'install-conda=freckles.frecks:InstallConda',
             'install-brew=freckles.frecks:InstallBrew',
             'delete=freckles.frecks:Delete',
+            'create-folder=freckles.frecks:EnsureDirectory',
             # 'debug-vars=freckles.frecks:DebugVars',
             'ansible-role=freckles.frecks:Role',
             'ansible-task=freckles.frecks:Task'

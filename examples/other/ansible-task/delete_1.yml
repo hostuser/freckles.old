@@ -1,11 +1,5 @@
-runs:
-  - desc: git checkout dotfiles
-    tasks:
-      - delete:
-          vars:
-            files-to-delete:
-              - /tmp/test1
-              - /tmp/test2
-
-
-
+tasks:
+  - delete:
+        files-to-delete:
+          - /tmp/test1
+          - /tmp/test2

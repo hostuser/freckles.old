@@ -52,7 +52,7 @@ class CheckoutGitRepo(AbstractRole):
         return "sync git repo"
 
     def get_item_name(self, freck_meta):
-        return freck_meta[FRECK_VARS_KEY][REPO_KEY]
+        return "{} => {}".format(freck_meta[FRECK_VARS_KEY][REPO_KEY], freck_meta[FRECK_VARS_KEY][TARGET_KEY])
 
     def get_sudo(self, freck_meta):
         return False

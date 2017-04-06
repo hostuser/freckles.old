@@ -1,6 +1,6 @@
 from checkout import CheckoutDotfiles, CheckoutGitRepo
 # from debug_vars import DebugVars
-from files import Delete
+from files import Delete, EnsureDirectory
 from install import (Install, InstallBrew, InstallConda, InstallNix, Update,
                      Upgrade)
 from role import Role

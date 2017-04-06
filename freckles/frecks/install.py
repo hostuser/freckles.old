@@ -44,7 +44,8 @@ PKG_MGRS_COMMANDS = {
     "nix": {"ansible_module": "nix", "update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"]},
     "conda": {"ansible_module": "conda", "update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"]},
     "homebrew": {"ansible_module": "homebrew", "update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}, ENSURE_PACKAGE_MANAGER_KEY: True},
-    "git": {"update": False, "upgrade": False, "valid_install_keys": GIT_VALID_KEYS}
+    "git": {"update": False, "upgrade": False, "valid_install_keys": GIT_VALID_KEYS},
+    "pip": {"update": False, "upgrade": False, ENSURE_PACKAGE_MANAGER_KEY: False}
 }
 
 INSTALL_IGNORE_KEY = "no_install"
@@ -91,12 +92,15 @@ class AbstractPackageManager(object):
     def get_extra_roles(self):
         return {}
 
+    def get_task_become(self):
+        return False
+
     def create_meta_descs(self, meta_base):
 
         result = []
         for desc in self.create_task_descs():
             meta_copy = copy.deepcopy(meta_base)
-
+            meta_copy[FRECK_SUDO_KEY] = self.get_task_become()
             if self.get_extra_roles():
                 meta_copy[FRECK_META_ROLES_KEY] = self.get_extra_roles()
 
@@ -129,7 +133,7 @@ class SimplePackageManager(AbstractPackageManager):
 
         # TODO: sanity check of config
         if self.get_alias() in self.pkgs.keys():
-            self.packages = self.pkgs[self.config[PKG_MGR_KEY]]
+            self.packages = self.pkgs[self.get_alias()]
         else:
             self.packages = self.pkgs.get("default", [])
 
@@ -160,6 +164,9 @@ class AptPackageManager(SimplePackageManager):
 
     def get_task_name(self):
         return 'apt'
+
+    def get_task_become(self):
+        return True
 
     def create_task_descs(self):
 
@@ -207,6 +214,9 @@ class YumPackageManager(SimplePackageManager):
     def get_alias():
         return 'yum'
 
+    def get_task_become(self):
+        return True
+
     def get_task_name(self):
         return 'yum'
 
@@ -234,6 +244,34 @@ class CondaPackageManager(SimplePackageManager):
     def install_pkg_mgr():
         return InstallConda.get_install_conda_meta()
 
+class PipPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'pip'
+
+    def get_task_name(self):
+        return 'pip'
+
+    def get_valid_keys(self):
+        return ['chdir', 'editable', 'executable', 'extra_args', 'state', 'umask', 'version', 'virtualenv', 'virtualenv_command', 'virtualenv_python', 'virtualenv_site_packages']
+
+    def create_task_descs(self):
+
+        descs = []
+
+        for pkg in self.packages:
+            meta = {}
+            meta[FRECK_ITEM_NAME_KEY] = pkg
+            meta[TASK_NAME_KEY] = self.get_task_name()
+
+            if pkg.endswith(".txt"):
+                meta[FRECK_VARS_KEY] = {"requirements": pkg}
+            else:
+                meta[FRECK_VARS_KEY] = {"name": pkg}
+            descs.append(meta)
+
+        return descs
 class HomeBrewPackageManager(SimplePackageManager):
 
     @staticmethod
@@ -291,7 +329,7 @@ class GitPackageManager(AbstractPackageManager):
         return descs
 
 
-PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageManager, CondaPackageManager, GitPackageManager]
+PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageManager, CondaPackageManager, GitPackageManager, PipPackageManager]
 
 
 def get_os_family():

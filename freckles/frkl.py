@@ -36,6 +36,7 @@ FRKL_META_LEVEL_KEY = "{}_level".format(FRKL_KEY_PREFIX)
 NO_STEM_INDICATOR = "-99999"
 DEFAULT_LOAD_KEY = "load"
 LEAF_DICT = "_leaf_dict"
+DEFAULT_FRKL_KEY_MARKER = "frkl_default"
 
 def get_config(config_file_url):
     """Retrieves the config (if necessary), and converts it to a dict.
@@ -215,6 +216,9 @@ class Frkl(object):
                     raise Exception("If not using the full config format, leaf nodes are only allowed to have one key: {}".format(base_dict))
 
                 key = base_dict.keys()[0]
+                if not isinstance(base_dict[key], dict):
+                    base_dict[key] = {DEFAULT_FRKL_KEY_MARKER: base_dict[key]}
+
                 if any(x in base_dict[key].keys() for x in self.all_keys):
                     temp_base_dict = base_dict[key]
                     dict_merge(temp_base_dict, {self.default_leaf_key: {self.default_leaf_default_key: key}})
