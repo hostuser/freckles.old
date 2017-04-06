@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-nix-pkg-mgr.git
 	branch = master
-	commit = 41c8e9db5701ec28840fc5d80592e64bd640588f
-	parent = bc523a8623c245055a0de139a15bd5e7af923ba8
+	commit = 7f621cb4eb3b576a3d39b9235ea55c55d8ed1e59
+	parent = 71c9742782e6cfa50a6426831c484384f977e9d4
 	cmdver = 0.3.1
