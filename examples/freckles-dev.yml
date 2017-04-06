@@ -6,6 +6,7 @@ tasks:
       repo: https://github.com/makkus/freckles.git
       target: ~/projects/freckles
 
+  - update-package-cache
   - install: 
       packages:
         - dev-requirements:
