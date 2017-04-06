@@ -44,6 +44,7 @@ setup(
             'update-package-cache=freckles.frecks:Update',
             'upgrade-all-packages=freckles.frecks:Upgrade',
             'checkout-dotfiles=freckles.frecks:CheckoutDotfiles',
+            'git-repo=freckles.frecks:CheckoutGitRepo',
             'stow=freckles.frecks:Stow',
             # 'install-pkg-managers=freckles.frecks:InstallPkgMgrs',
             'install-nix=freckles.frecks:InstallNix',

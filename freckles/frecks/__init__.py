@@ -1,4 +1,4 @@
-from checkout import CheckoutDotfiles
+from checkout import CheckoutDotfiles, CheckoutGitRepo
 # from debug_vars import DebugVars
 from files import Delete
 from install import (Install, InstallBrew, InstallConda, InstallNix, Update,

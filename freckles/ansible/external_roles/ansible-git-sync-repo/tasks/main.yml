@@ -1,2 +1,16 @@
 ---
 # tasks file for ansible-sync-git-repo
+
+- name: Ensure parent directory exists
+  file: path="{{ target | dirname }}" state=directory
+
+- name: Clone repo if it doesn't exist already
+  git:
+    repo: "{{ repo }}"
+    dest: "{{ target }}"
+    update: no
+
+- name: Try a git pull
+  shell: git pull origin master
+  args:
+    chdir: "{{ target }}"

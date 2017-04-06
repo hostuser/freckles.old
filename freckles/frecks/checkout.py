@@ -14,6 +14,7 @@ from freckles.runners.ansible_runner import (FRECK_META_ROLE_KEY,
                                              TASK_TEMPLATE_KEYS)
 from freckles.utils import (create_dotfiles_dict, get_pkg_mgr_from_path,
                             parse_dotfiles_item)
+from role import AbstractRole
 from task import AbstractTask
 from voluptuous import ALLOW_EXTRA, Any, Schema
 
@@ -27,7 +28,9 @@ GIT_VALID_KEYS = ["accept_hostkey", "bare", "clone", "depth", "executable", "for
 REPO_KEY = "repo"
 TARGET_KEY = "target"
 
-class CheckoutGitRepo(AbstractTask):
+class CheckoutGitRepo(AbstractRole):
+
+    UNIQUE_TASK_ID_PREFIX = "sync_git_repo"
 
     def get_config_schema(self):
 
@@ -38,22 +41,24 @@ class CheckoutGitRepo(AbstractTask):
 
         return s
 
-    def get_task_name(self, freck_meta):
-        return "shell"
+    def get_unique_task_id(self, freck_meta):
+
+        return "{}_{}_{}".format(CheckoutGitRepo.UNIQUE_TASK_ID_PREFIX, freck_meta[FRECK_VARS_KEY][REPO_KEY], freck_meta[FRECK_VARS_KEY][TARGET_KEY])
+
+    def get_role(self, freck_meta):
+        return "git_sync_repo"
+
+    def get_desc(self, freck_meta):
+        return "sync git repo"
 
     def get_item_name(self, freck_meta):
         return freck_meta[FRECK_VARS_KEY][REPO_KEY]
 
-    def get_task_become(self, freck_meta):
+    def get_sudo(self, freck_meta):
         return False
 
-    def get_task_vars(self, freck_meta):
-        repo = freck_meta[VARS_KEY][REPO_KEY],
-        target = freck_meta[VARS_KEY][TARGET_KEY]
-
-
-        return { FREE_FORM_KEY: command }
-
+    def get_additional_roles(self, freck_meta):
+        return {"git_sync_repo": "frkl:ansible-git-sync-repo"}
 
 class CheckoutDotfiles(AbstractTask):
 
