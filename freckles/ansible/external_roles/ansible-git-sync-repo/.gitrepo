@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/ansible-git-sync-repo.git
 	branch = master
-	commit = aa9f37bde4b2a78c4e2fbf2f1aca409343e46ede
-	parent = 6bab10c4c26c4301f217b23eacb26301d249251d
+	commit = 864589d81386731f1b8cc8975c1f8c1534657003
+	parent = 595f9c64653bdcda857938c8e2d76e55426c6bef
 	cmdver = 0.3.1
