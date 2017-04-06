@@ -3,6 +3,7 @@
 
 vars:
   pkg_mgr: nix
+  ensure_pkg_manager: yes
   packages:
     - htop:
         pkg_mgr: conda

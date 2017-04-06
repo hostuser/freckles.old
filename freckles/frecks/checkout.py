@@ -7,8 +7,10 @@ import sys
 
 from freckles import Freck
 from freckles.constants import *
+from freckles.exceptions import FrecklesConfigError
 from freckles.runners.ansible_runner import (FRECK_META_ROLE_KEY,
                                              FRECK_META_ROLES_KEY,
+                                             TASK_FREE_FORM_KEY,
                                              TASK_TEMPLATE_KEYS)
 from freckles.utils import (create_dotfiles_dict, get_pkg_mgr_from_path,
                             parse_dotfiles_item)
@@ -21,6 +23,37 @@ FRECKLES_DEFAULT_CHECKOUT_ROLE_NAME = "checkout"
 FRECKLES_DEFAULT_CHECKOUT_ROLE_URL = "frkl:ansible-checkout"
 
 GIT_VALID_KEYS = ["accept_hostkey", "bare", "clone", "depth", "executable", "force", "key_file", "recursive", "reference", "refspec", "repo", "ssh_opts", "track_submodules", "umask", "update", "verify_commit", "version"]
+
+REPO_KEY = "repo"
+TARGET_KEY = "target"
+
+class CheckoutGitRepo(AbstractTask):
+
+    def get_config_schema(self):
+
+        s = Schema({
+            Required(REPO_KEY): basestring,
+            Required(TARGET_KEY): basestring
+        })
+
+        return s
+
+    def get_task_name(self, freck_meta):
+        return "shell"
+
+    def get_item_name(self, freck_meta):
+        return freck_meta[FRECK_VARS_KEY][REPO_KEY]
+
+    def get_task_become(self, freck_meta):
+        return False
+
+    def get_task_vars(self, freck_meta):
+        repo = freck_meta[VARS_KEY][REPO_KEY],
+        target = freck_meta[VARS_KEY][TARGET_KEY]
+
+
+        return { FREE_FORM_KEY: command }
+
 
 class CheckoutDotfiles(AbstractTask):
 

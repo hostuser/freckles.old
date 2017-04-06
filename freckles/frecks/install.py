@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import copy
 import json
 import logging
@@ -26,7 +27,7 @@ from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
-SUPPORTED_PKG_MGRS = ["apt", "yum", "nix", "pip", "git", "no_install", "conda", "homebrew", "default"]
+SUPPORTED_PKG_MGRS = ["apt", "yum", "deb", "nix", "pip", "git", "no_install", "conda", "homebrew", "default"]
 DEFAULT_PKG_MGRS = {
     "Debian": "apt",
     "RedHat": "yum",
@@ -36,12 +37,13 @@ DEFAULT_PKG_MGRS = {
 ENSURE_PACKAGE_MANAGER_KEY = "ensure_pkg_manager"
 
 PKG_MGRS_COMMANDS = {
-    "no_install": {"update": False, "upgrade": False, "valid_install_keys": []},
-    "apt": {"update": {"update_cache": True}, "upgrade": {"upgrade": "dist"}, "valid_install_keys": ["allow_unauthenticated", "autoremove", "cache_valid_time", "deb", "default_release", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache", "upgrade"]},
-    "yum": {"update": False, "upgrade": {"name": "'*'", "state": "latest"}, "valid_install_keys": ["conf_file", "disable_gpg_check", "disablerepo", "enablerepo", "exclude", "insstallroot", "list", "skip_broken", "state", "update_cache", "validate_certs"]},
-    "nix": {"update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"]},
-    "conda": {"update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"]},
-    "homebrew": {"update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}, ENSURE_PACKAGE_MANAGER_KEY: True},
+    "no_install": {"update": False, "upgrade": False, "valid_install_keys": [], "ansible_module": "no_install"},
+    "deb": {"ansible_module": "apt", "update": False, "upgrade": False, "valid_install_keys": ["deb", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache"]},
+    "apt": {"ansible_module": "apt", "update": {"update_cache": True}, "upgrade": {"upgrade": "dist"}, "valid_install_keys": ["allow_unauthenticated", "autoremove", "cache_valid_time", "default_release", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache", "upgrade"]},
+    "yum": {"ansible_module": "yum", "update": False, "upgrade": {"name": "'*'", "state": "latest"}, "valid_install_keys": ["conf_file", "disable_gpg_check", "disablerepo", "enablerepo", "exclude", "insstallroot", "list", "skip_broken", "state", "update_cache", "validate_certs"]},
+    "nix": {"ansible_module": "nix", "update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"]},
+    "conda": {"ansible_module": "conda", "update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"]},
+    "homebrew": {"ansible_module": "homebrew", "update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}, ENSURE_PACKAGE_MANAGER_KEY: True},
     "git": {"update": False, "upgrade": False, "valid_install_keys": GIT_VALID_KEYS}
 }
 
@@ -75,6 +77,222 @@ ADD_PKG_MGR_PATH_DEFAULT_WHEN_AUTO_INSTALL_PKG_MGR = False
 GIT_CONFIG_UPDATE_DEFAULT = True
 
 INSTALL_BREW_KEY = "install-brew"
+
+class AbstractPackageManager(object):
+
+    def __init__(self, app_name, config):
+        self.app_name = app_name
+        self.config = config
+        self.pkgs = self.config.get(PKGS_KEY, False)
+
+    def validate_config(self):
+        pass
+
+    def get_extra_roles(self):
+        return {}
+
+    def create_meta_descs(self, meta_base):
+
+        result = []
+        for desc in self.create_task_descs():
+            meta_copy = copy.deepcopy(meta_base)
+
+            if self.get_extra_roles():
+                meta_copy[FRECK_META_ROLES_KEY] = self.get_extra_roles()
+
+            dict_merge(meta_copy, desc)
+            for key in self.config.keys():
+                if key in self.get_valid_keys():
+                    meta_copy[FRECK_VARS_KEY][key] = self.config[key]
+
+            result.append(meta_copy)
+
+        return result
+
+class SimplePackageManager(AbstractPackageManager):
+
+    def validate_config(self):
+        # check if pkgs key exists
+        if not self.pkgs:
+            self.pkgs = {"default": [self.app_name]}
+
+        if not isinstance(self.pkgs, dict):
+
+            if isinstance(self.pkgs, basestring):
+                temp = self.pkgs
+                self.pkgs = {}
+                self.pkgs["default"] = [temp]
+            elif isinstance(self.pkgs, list):
+                temp = self.pkgs
+                self.pkgs = {}
+                self.pkgs["default"] = temp
+
+        # TODO: sanity check of config
+        if self.get_alias() in self.pkgs.keys():
+            self.packages = self.pkgs[self.config[PKG_MGR_KEY]]
+        else:
+            self.packages = self.pkgs.get("default", [])
+
+        if isinstance(self.packages, basestring):
+            self.packages = [self.packages]
+
+    def get_extra_roles(self):
+        return {}
+
+    def create_task_descs(self):
+
+        descs = []
+
+        for pkg in self.packages:
+            meta = {}
+            meta[FRECK_ITEM_NAME_KEY] = pkg
+            meta[TASK_NAME_KEY] = self.get_task_name()
+            meta[FRECK_VARS_KEY] = {"name": pkg}
+            descs.append(meta)
+
+        return descs
+
+class AptPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'apt'
+
+    def get_task_name(self):
+        return 'apt'
+
+    def create_task_descs(self):
+
+        descs = []
+
+        for pkg in self.packages:
+            meta = {}
+            meta[FRECK_ITEM_NAME_KEY] = pkg
+            meta[TASK_NAME_KEY] = self.get_task_name()
+
+            if pkg.endswith(".deb"):
+                meta[FRECK_VARS_KEY] = {"deb": pkg}
+            else:
+                meta[FRECK_VARS_KEY] = {"name": pkg}
+            descs.append(meta)
+
+        return descs
+
+    def get_valid_keys(self):
+        return ["allow_unauthenticated", "autoremove", "cache_valid_time", "default_release", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache", "upgrade"]
+
+
+class NixPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'nix'
+
+    def get_task_name(self):
+        return 'nix'
+
+    def get_valid_keys(self):
+        return ['state']
+
+    @staticmethod
+    def install_pkg_mgr():
+        return InstallNix.get_install_nix_meta()
+
+    def get_extra_roles(self):
+        return {"install_nix_pkg": "frkl:ansible-nix-pkgs"}
+
+class YumPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'yum'
+
+    def get_task_name(self):
+        return 'yum'
+
+    def get_valid_keys(self):
+
+        return ["conf_file", "disable_gpg_check", "disablerepo", "enablerepo", "exclude", "insstallroot", "list", "skip_broken", "state", "update_cache", "validate_certs"]
+
+
+class CondaPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'conda'
+
+    def get_task_name(self):
+        return 'conda'
+
+    def get_valid_keys(self):
+        return ["upgrade", "channels", "environment", "state"]
+
+    def get_extra_roles(self):
+        return {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}
+
+    @staticmethod
+    def install_pkg_mgr():
+        return InstallConda.get_install_conda_meta()
+
+class HomeBrewPackageManager(SimplePackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'homebrew'
+
+    def get_task_name(self):
+        return 'homebrew'
+
+    def get_valid_keys(self):
+        return ["install_options", "path", "state"]
+
+    @staticmethod
+    def install_pkg_mgr():
+        return InstallBrew.get_install_brew_meta()
+
+class GitPackageManager(AbstractPackageManager):
+
+    @staticmethod
+    def get_alias():
+        return 'git'
+
+    def get_task_name(self):
+        return 'git'
+
+    def get_valid_keys(self):
+        return GIT_VALID_KEYS
+
+    def validate_config(self):
+        if not self.config.get(PKGS_KEY, False):
+            raise FrecklesConfigError("No packages specified for git install: {}".format(self.details), PKGS_KEY, self.details)
+
+        for pkg in self.pkgs:
+            if not isinstance(pkg, dict):
+                raise FrecklesConfigError("For installing packages via git, you need to provide a dict as value.", PKGS_KEY, pkg)
+
+            self.dest = pkg.get('dest', False)
+            if not self.dest:
+                raise FrecklesConfigError("For installing packages via git, you need to provide a 'dest' key: '{}'".format(pkg), "dest", pkg)
+            self.repo = pkg.get('repo', False)
+            if not self.repo:
+                raise FrecklesConfigError("For installing packages via git, you need to provide a 'repo' key: '{}'".format(pkg), "repo", pkg)
+
+
+    def create_task_descs(self):
+
+        descs = []
+
+        for pkg in self.pkgs:
+            meta = {}
+            meta[FRECK_VARS_KEY] = {'repo': self.repo, 'dest': self.dest}
+            meta[FRECK_ITEM_NAME_KEY] = self.repo
+            descs.append(meta)
+
+        return descs
+
+
+PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageManager, CondaPackageManager, GitPackageManager]
+
 
 def get_os_family():
 
@@ -110,7 +328,6 @@ class Install(AbstractTask):
         }, extra=ALLOW_EXTRA)
 
         return s
-
 
     def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
 
@@ -159,7 +376,6 @@ class Install(AbstractTask):
                 continue
 
             meta = {}
-
             if PKG_MGR_KEY not in details.keys() or details[PKG_MGR_KEY] == 'default':
                 meta[PKG_MGR_KEY] = get_default_pkg_mgr()
                 if not meta.get(PKG_MGR_KEY, False):
@@ -172,82 +388,36 @@ class Install(AbstractTask):
 
             sudo = get_pkg_mgr_sudo(meta[PKG_MGR_KEY])
             meta[FRECK_SUDO_KEY] = sudo
-            meta[TASK_NAME_KEY] = meta[PKG_MGR_KEY]
             meta[FRECK_DESC_KEY] = "{} -> install".format(meta[PKG_MGR_KEY])
 
             package_mgrs.add(meta[PKG_MGR_KEY])
 
-            # check if 'pkgs' key is a dict, if not, use its value and put it into the 'default' key
-            if meta[PKG_MGR_KEY] == 'git':
-                pkgs = details.get(PKGS_KEY, False)
-                if not pkgs:
-                    raise FrecklesConfigError("No packages specified for git install: {}".format(details), PKGS_KEY, details)
+            pkg_mgr_obj = False
+            for mgr in PKG_MGRS:
+                if meta[PKG_MGR_KEY] == mgr.get_alias():
+                    pkg_mgr_obj = mgr(app, details)
 
-                for pkg in pkgs:
-                    if not isinstance(pkg, dict):
-                        raise FrecklesConfigError("For installing packages via git, you need to provide a dict as value.", PKGS_KEY, pkg)
+            if not pkg_mgr_obj:
+                raise FrecklesConfigError("No handler defined for package manager '{}'".format(meta[PKG_MGR_KEY]), PKG_MGR_KEY, meta[PKG_MGR_KEY])
 
-                    dest = pkg.get('dest', False)
-                    if not dest:
-                        raise FrecklesConfigError("For installing packages via git, you need to provide a 'dest' key: '{}'".format(pkg), "dest", pkg)
-                    repo = pkg.get('repo', False)
-                    if not repo:
-                        raise FrecklesConfigError("For installing packages via git, you need to provide a 'repo' key: '{}'".format(pkg), "repo", pkg)
+            pkg_mgr_obj.validate_config()
+            descs = pkg_mgr_obj.create_meta_descs(meta)
+            configs.extend(descs)
 
-                    meta_copy = copy.deepcopy(meta)
-                    meta_copy[FRECK_VARS_KEY] = {'repo': repo, 'dest': dest}
-                    meta_copy[FRECK_ITEM_NAME_KEY] = repo
-                    for key in details.keys():
-                        if key in PKG_MGRS_COMMANDS[meta[PKG_MGR_KEY]].get("valid_install_keys", []):
-                            meta_copy[FRECK_VARS_KEY][key] = details[key]
-                    configs.append(meta_copy)
-            else:
-                # check if pkgs key exists
-                pkgs = details.get(PKGS_KEY, False)
-                if not pkgs:
-                    pkgs = {"default": [app]}
-                if not isinstance(pkgs, dict):
-
-                    if isinstance(pkgs, basestring):
-                        temp = pkgs
-                        pkgs = {}
-                        pkgs["default"] = [temp]
-                    elif isinstance(pkgs, list):
-                        temp = pkgs
-                        pkgs = {}
-                        pkgs["default"] = temp
-
-                # TODO: sanity check of config
-                if meta[PKG_MGR_KEY] in pkgs.keys():
-                    packages = pkgs[meta[PKG_MGR_KEY]]
-                else:
-                    packages = pkgs.get("default", [])
-
-
-                if isinstance(packages, basestring):
-                    packages = [packages]
-
-                if "roles" in PKG_MGRS_COMMANDS[meta[PKG_MGR_KEY]].keys():
-                    meta[FRECK_META_ROLES_KEY] = PKG_MGRS_COMMANDS[meta[PKG_MGR_KEY]]["roles"]
-
-                for p in packages:
-                    meta_copy = copy.deepcopy(meta)
-                    meta_copy[FRECK_ITEM_NAME_KEY] = p
-                    meta_copy[FRECK_VARS_KEY] = {"name": p}
-                    for key in details.keys():
-                        if key in PKG_MGRS_COMMANDS[meta[PKG_MGR_KEY]].get("valid_install_keys", []):
-                            meta_copy[FRECK_VARS_KEY][key] = details[key]
-                    configs.append(meta_copy)
 
         pkg_mgr = meta[PKG_MGR_KEY]
         if config.get(ENSURE_PACKAGE_MANAGER_KEY, PKG_MGRS_COMMANDS[pkg_mgr].get(ENSURE_PACKAGE_MANAGER_KEY, False)):
             for pkg_mgr in package_mgrs:
-                if pkg_mgr == "conda":
-                    extra_config = InstallConda.get_install_conda_meta()
-                elif pkg_mgr == "nix":
-                    extra_config = InstallNix.get_install_nix_meta()
-                elif pkg_mgr == "homebrew":
-                    extra_config = InstallBrew.get_install_brew_meta()
+                pkg_mgr_cls = None
+                for mgr in PKG_MGRS:
+                    if pkg_mgr == mgr.get_alias():
+                        pkg_mgr_cls = mgr
+
+                if not pkg_mgr_cls:
+                    raise FrecklesConfigError("No handler defined for package manager '{}'".format(pkg_mgr), PKG_MGR_KEY, pkg_mgr)
+
+                if hasattr(pkg_mgr_cls, "install_pkg_mgr") and callable(getattr(pkg_mgr_cls, "install_pkg_mgr")):
+                    extra_config = pkg_mgr_cls.install_pkg_mgr()
                 else:
                     continue
 
@@ -289,6 +459,7 @@ class Install(AbstractTask):
     #     return [config]
 
 
+
 class Update(AbstractTask):
 
     UNIQUE_TASK_ID_PREFIX = "UPDATE_PKGS"
@@ -297,7 +468,7 @@ class Update(AbstractTask):
     def create_update_meta(pkg_mgr):
 
         new_meta = {}
-        new_meta[TASK_NAME_KEY] = pkg_mgr
+        new_meta[TASK_NAME_KEY] = PKG_MGRS_COMMANDS[pkg_mgr].get("ansible_module", pkg_mgr)
         update = PKG_MGRS_COMMANDS[pkg_mgr]["update"]
         if update:
             new_meta[FRECK_VARS_KEY] = update
@@ -349,7 +520,7 @@ class Upgrade(AbstractTask):
     def create_upgrade_meta(pkg_mgr):
 
         new_meta = {}
-        new_meta[TASK_NAME_KEY] = pkg_mgr
+        new_meta[TASK_NAME_KEY] = PKG_MGRS_COMMANDS[pkg_mgr].get("ansible_module", pkg_mgr)
         upgrade = PKG_MGRS_COMMANDS[pkg_mgr]["upgrade"]
         if upgrade:
             new_meta[FRECK_VARS_KEY] = upgrade

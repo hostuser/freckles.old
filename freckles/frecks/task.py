@@ -30,7 +30,6 @@ from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 
 log = logging.getLogger("freckles")
 
-
 GENERATED_ROLE_ID_COUNTER = 1
 GENERATED_ROLE_NAME_PREFIX = "dyn"
 
@@ -116,12 +115,10 @@ class Task(AbstractTask):
     """
 
     def get_item_name(self, freck_meta):
-
         return freck_meta[TASK_NAME_KEY]
 
     def can_be_used_for(self, freck_meta):
         return True
-
 
     def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
 
