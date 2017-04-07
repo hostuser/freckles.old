@@ -5,6 +5,7 @@
 # 3: execution error somewhere in the bootstrap pipeline
 # 6: platform or package manager not supported
 
+#set -o pipefail
 
 if [ ! -z "$FRECKLES_DEBUG" ]; then
     DEBUG=true
@@ -14,28 +15,6 @@ if [ "$DEBUG" = true ]; then
     set -x
 fi
 
-# event/error handling
-# declare -A LISTENERS
-# function throw {
-#     EVENT=$1; shift; for listener in "${LISTENERS[$EVENT]}"; do eval "$listener $@"; done
-# }
-# function addListener {
-#     if ! test "${LISTENERS['$1']+isset}"; then LISTENERS["$1"]=""; fi
-#     LISTENERS["$1"]+="$2 " # we can get away with this since functionnames never contain spaces
-# }
-# function error_message {
-#     echo
-#     exit_code=$1
-#     shift
-#     echo " ** $@"
-#     echo "   Refer to $SCRIPT_LOG_FILE for more details. Exiting..."
-#     echo
-#     exit $exit_code
-# }
-# function log_message {
-#     echo "$@" >> "$SCRIPT_LOG_FILE"
-# }
-
 # # convert exitcodes to events
 # # trap "throw EXIT"    EXIT
 # # trap "throw SIGINT"  SIGINT
@@ -44,11 +23,23 @@ fi
 # addListener VIRTUALENV_ERROR error_message
 # addListener CONDA_ERROR error_message
 
+trap 'error_exit "Bootstrapping interrupted, exiting...; exit"' SIGHUP SIGINT SIGTERM
 
-function throw {
-    echo "$@"
-    exit 1
+PROGNAME="freckles bootstrap"
+function error_exit
+{
+
+    #	----------------------------------------------------------------
+    #	Function for exit due to fatal program error
+    #		Accepts 1 argument:
+    #			string containing descriptive error message
+    #	----------------------------------------------------------------
+
+
+	  echo "${PROGNAME}: ${1:-"Unknown Error"}" 1>&2
+	  exit 1
 }
+
 # determine whether we run with sudo, or not
 if [ "$EUID" != 0 ]; then
     using_sudo=false
@@ -88,6 +79,9 @@ CONDA_DOWNLOAD_URL_LINUX="https://repo.continuum.io/miniconda/Miniconda2-latest-
 CONDA_DOWNLOAD_URL_MAC="https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh"
 CONDA_BASE_DIR="$BASE_DIR/opt/conda"
 CONDA_PATH="$CONDA_BASE_DIR/bin"
+CONDA_ROOT_EXE="$CONDA_BASE_DIR/bin/conda"
+CONDA_FRECKLES_ENV_PATH="$CONDA_BASE_DIR/envs/freckles"
+CONDA_FRECKLES_ENV_EXE="$CONDA_FRECKLES_ENV_PATH/bin/conda"
 STOW_SRC_DOWNLOAD_URL="http://ftp.gnu.org/gnu/stow/stow-2.2.2.tar.gz"
 
 # deb related variables
@@ -96,12 +90,25 @@ DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev li
 # rpm related variables
 RPM_DEPENDENCIES="xxx"
 
+
+function log () {
+    echo "    .. $@" >> "$SCRIPT_LOG_FILE"
+    if [[ ! -z $FRECKLES_VERBOSE ]]; then
+        echo "    .. $@"
+    fi
+}
+
+
 function nix_execute {
     PATH=$NIX_PATH:$PATH $PROOT_EXE -b $NIX_ROOT:/nix $@
 }
 
 function command_exists {
     PATH="$PATH:$FRECKLES_PATH" type "$1" > /dev/null 2>&1 ;
+}
+
+function execute_log {
+    eval "$1" >> "$SCRIPT_LOG_FILE" 2>&1 || error_exit "$2"
 }
 
 function download {
@@ -114,7 +121,7 @@ function download {
         echo "Could not find 'wget' nor 'curl' to download files. Exiting..."
         exit 1
     fi
-    } > "$SCRIPT_LOG_FILE"
+    } >> "$SCRIPT_LOG_FILE"
 }
 
 function install_freckles {
@@ -129,6 +136,7 @@ function create_virtualenv {
     echo "  - creating virtualenv for freckles and installing freckles from pypi"
     {
     su "$FRECKLES_USER" <<EOF
+set +e
 mkdir -p "$FRECKLES_DATA_DIR"
 if [ ! -e "$VIRTUALENV_DIR" ]; then
   virtualenv "$VIRTUALENV_DIR"
@@ -138,19 +146,20 @@ pip install --upgrade pip
 pip install --upgrade setuptools wheel
 pip install --upgrade requests
 pip install --upgrade freckles
+set -e
 EOF
-    } > "$SCRIPT_LOG_FILE" 2>&1
+    } >> "$SCRIPT_LOG_FILE" 2>&1 | error_exit "Could not create freckles virtual environment"
 }
 
 
 function install_freckles_deb {
     echo -e "  * Debian-based system detected"
+    log "Updating apt cache"
+    execute_log apt-get update "Could not update apt repository cache"
     echo -e "  - Installing dependencies:\n\t$DEB_DEPENDENCIES"
-    {
-    apt-get update
-    apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow
-    } > "$SCRIPT_LOG_FILE" 2>&1
-    create_virtualenv || throw VIRTUALENV_ERROR 1 'Error creating virtualenv.'
+    execute_log "apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow" "Error installing dependencies via apt."
+    log "Creating freckles virtual environment"
+    create_virtualenv
     link_required_executables "$VIRTUALENV_PATH"
     export PATH="$PATH:$VIRTUALENV_PATH"
 }
@@ -159,7 +168,7 @@ function install_freckles_rpm {
     echo "  * RedHat-based system detected.\n"
     echo -e "  - Installing dependencies:\n\t$RPM_DEPENDENCIES"
 
-    yum install wget git python-virtualenv stow openssl-devel
+    execute_log "yum install wget git python-virtualenv stow openssl-devel" "Error installing dependencies via apt."
 }
 
 function install_freckles_linux_root {
@@ -180,7 +189,7 @@ function install_freckles_root {
     # figure out which os we are running
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         install_freckles_linux_root
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
+    elif [[ "$OSTYPE" == "darwin" ]]; then
         echo "Sorry, bootstrapping on  MacOS X with elevated privileges not supported (at the moment). Try to run without 'sudo' and everything should work fine..."
         exit 6
     elif [[ "$OSTYPE" == "cygwin" ]]; then
@@ -218,25 +227,57 @@ function link_required_executables {
 
 
 function install_freckles_non_root_conda {
-    if [ ! -d "$CONDA_PATH" ]; then
-        echo "  * no elevated permissions detected, using conda package manager"
+
+    echo "  * no elevated permissions detected, using conda package manager"
+
+    if [ ! -f "$CONDA_ROOT_EXE" ]; then
+        echo "  * installing conda"
         install_conda_non_root
+    else
+        echo "  * conda already installed, not installing again"
+        export PATH="$CONDA_PATH:$PATH"
     fi
+
     echo "  - installing freckles and its requirements (this will take a bit)"
-    {
-    conda create -y --name freckles python=2
-    conda install --name freckles -y python=2.7
-    conda update --name freckles -y pip
-    conda install --name freckles -y git
-    conda install --name freckles -y cryptography
-    conda install --name freckles -y pycrypto
-    conda install --name freckles -y cryptography # I know this is stupid, but without this the Ubuntu on Window bootstrapping didn't work
-    conda install --name freckles -y -c conda-forge -c freckles stow || throw CONDA_ERROR 3 "Could not install stow or one of its dependencies via conda."
-    source activate freckles
-    pip install freckles
-    source deactivate freckles
+
+    if [ ! -f "$CONDA_FRECKLES_ENV_EXE" ]; then
+        log "Creating freckles conda environment"
+        execute_log "conda create -y --name freckles python=2" "Could not create conda environment."
+    else
+        log "freckles conda environment already exists, not creating again"
+    fi
+
+    if [ ! -f "$CONDA_FRECKLES_ENV_PATH/bin/git" ]; then
+        log "Installing python into conda environment"
+        execute_log "conda install --name freckles -y python=2.7" "Could not install python in conda environment."
+        log "Installing pip into conda environment"
+        execute_log "conda update --name freckles -y pip" "Could not install pip in conda environment."
+        log "Installing git into conda environment"
+        execute_log "conda install --name freckles -y git" "Could not install git in conda environment."
+        log "Installing cryptography into conda environment"
+        execute_log "conda install --name freckles -y cryptography" "Could not install cryptography in conda environment."
+        log "Installing pycrypto into conda environment"
+        execute_log "conda install --name freckles -y pycrypto" "Could not install pycrypto in conda environment."
+        # I know this is stupid, but without this the Ubuntu on Window bootstrapping didn't work
+        execute_log "conda install --name freckles -y cryptography" "Could not install cryptography in conda environment."
+        log "Installing git into conda environment"
+        execute_log "conda install --name freckles -y git" "Could not install git in conda environment."
+    else
+        log "Base freckles requirements already installed, not installing again."
+    fi
+
+    if [ ! -f "$CONDA_FRECKLES_ENV_PATH/bin/stow" ]; then
+        log "Installing stow into conda environment"
+        execute_log "conda install --name freckles -y -c conda-forge -c freckles stow" "Could not install stow or one of its dependencies via conda."
+    else
+        log "stow requirement already installed, not installing again."
+    fi
+
+    execute_log "source activate freckles" "Could not activate freckles virtual environment"
+    log "Installing freckles"
+    execute_log "pip install freckles" "Could not install freckles in conda environment"
+    execute_log "source deactivate freckles" "Could not deactivate freckles virtual environment"
     link_required_executables "$CONDA_BASE_DIR/envs/freckles/bin"
-    } > "$SCRIPT_LOG_FILE" 2>&1
 }
 
 function install_conda_non_root {
@@ -248,7 +289,7 @@ function install_conda_non_root {
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         download "$CONDA_DOWNLOAD_URL_MAC" "$TEMP_DIR/miniconda.sh"
     fi
-    } > "$SCRIPT_LOG_FILE" 2>&1
+    } >> "$SCRIPT_LOG_FILE" 2>&1
     mkdir -p "$FRECKLES_DATA_DIR"
     echo "  - installing conda"
     {
@@ -256,29 +297,9 @@ function install_conda_non_root {
     export PATH="$CONDA_PATH:$PATH"
     cd "$HOME"
     rm -rf "$TEMP_DIR"
-    } > "$SCRIPT_LOG_FILE" 2>&1
+    } >> "$SCRIPT_LOG_FILE" 2>&1
 }
 
-function install_nix_non_root {
-    echo "  - bootstrapping nix package manager for use without root permissions..."
-    cd "$TEMP_DIR"
-    download "$FRECKLES_NON_ROOT_INSTALL_SCRIPT" "$TEMP_DIR/install.sh"
-    chmod +x "$TEMP_DIR/install.sh"
-    ./install.sh
-    cd "$HOME"
-    rm -r "$TEMP_DIR"
-}
-
-function install_nix_non_root_src {
-    install_nix_non_root
-    echo "  - bootstrapping nix package manager from source using nix proot environment..."
-
-    execute bash
-    mkdir -p "$NIX_SRC_STORE_DIR"
-    nix-channel --update
-    NIX_STORE_DIR="$NIX_SRC_STORE_DIR" nix-env -i nix
-
-}
 
 function add_freckles_path {
 
@@ -297,18 +318,9 @@ EOF
     fi
 }
 
-function install_nix_root {
-    echo "  - bootstrapping nix package manager (using root to create /nix folder)"
-    mkdir -p "/nix"
-    chown -R "$FRECKLES_USER" /nix
-    download "$FRECKLES_ROOT_INSTALL_SCRIPT" "$TEMP_DIR/install.sh"
-    cd "$TEMP_DIR"
-    sudo -u "$FRECKLES_USER" bash "$TEMP_DIR/install.sh"
-    cd "$HOME"
-    rm -r "$TEMP_DIR"
-}
-
 ############# Start script ##################
+
+execute_log "echo Starting freckles bootstrap: `date`" "Error"
 
 # check if freckles is already in the path, if it is, assume everything is bootstrapped
 if ! command_exists freckles; then
@@ -332,6 +344,7 @@ if ! command_exists freckles; then
     echo
 fi
 
+execute_log "echo Finished freckles bootstrap: `date`" "Error"
 
 if [ $using_sudo == true ]; then
     exec sudo -u "$FRECKLES_USER" -i freckles "$@"
