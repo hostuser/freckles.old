@@ -91,6 +91,8 @@ DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev li
 # rpm related variables
 RPM_DEPENDENCIES="xxx"
 
+touch "$SCRIPT_LOG_FILE"
+chown "$FRECKLES_USER" "$SCRIPT_LOG_FILE"
 
 function log () {
     echo "    .. $@" >> "$SCRIPT_LOG_FILE"
@@ -149,14 +151,14 @@ pip install --upgrade requests
 pip install --upgrade freckles
 set -e
 EOF
-    } >> "$SCRIPT_LOG_FILE" 2>&1 | error_exit "Could not create freckles virtual environment"
+    } >> "$SCRIPT_LOG_FILE" 2>&1 || error_exit "Could not create freckles virtual environment"
 }
 
 
 function install_freckles_deb {
     echo -e "  * Debian-based system detected"
     log "Updating apt cache"
-    execute_log apt-get update "Could not update apt repository cache"
+    execute_log "apt-get update" "Could not update apt repository cache"
     echo -e "  - Installing dependencies:\n\t$DEB_DEPENDENCIES"
     execute_log "apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow" "Error installing dependencies via apt."
     log "Creating freckles virtual environment"
