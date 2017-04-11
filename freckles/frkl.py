@@ -13,6 +13,7 @@ from exceptions import FrecklesConfigError, FrecklesRunError
 from operator import itemgetter
 
 import click
+import requests
 import six
 import yaml
 
@@ -38,7 +39,7 @@ DEFAULT_LOAD_KEY = "load"
 LEAF_DICT = "_leaf_dict"
 DEFAULT_FRKL_KEY_MARKER = "frkl_default"
 
-def get_config(config_file_url):
+def get_config(config_file_url, verify=None):
     """Retrieves the config (if necessary), and converts it to a dict.
 
     Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
@@ -63,8 +64,17 @@ def get_config(config_file_url):
     elif config_file_url.startswith("http"):
         # TODO: exception handling
         log.debug("Opening as url: {}".format(config_file_url))
-        response = urllib2.urlopen(config_file_url)
-        content = response.read()
+        #response = urllib2.urlopen(config_file_url)
+        #content = response.read()
+
+        if verify is None:
+            # TODO: other OS's
+            os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(
+                '/etc/ssl/certs/',
+                'ca-certificates.crt')
+            verify = True
+        r = requests.get(config_file_url, verify=verify)
+        content = r.text
         return yaml.load(content)
     else:
         # try to convert a json string
@@ -167,7 +177,7 @@ def flatten_root(root, add_leaf_dicts=False):
 
 class Frkl(object):
 
-    def __init__(self, configs, stem_key, other_valid_keys, default_leaf_key, default_leaf_default_key, default_leaf_default_value_key, default_repo, default_repo_path, add_leaf_dicts=False):
+    def __init__(self, configs, stem_key, other_valid_keys, default_leaf_key, default_leaf_default_key, default_leaf_default_value_key, default_repo, default_repo_path, add_leaf_dicts=False, verify=None):
 
         self.stem_key = stem_key
         self.other_keys = other_valid_keys
@@ -188,7 +198,7 @@ class Frkl(object):
 
         self.configs = []
         for c in configs:
-            self.configs.append(get_config(c))
+            self.configs.append(get_config(c, verify))
         self.root = []
         self.meta_dict = {}
 

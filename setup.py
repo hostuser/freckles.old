@@ -17,7 +17,8 @@ requirements = [
     'stevedore>=1.18.0',
     'py>=1.4.32',
     'click-log>=0.1.8',
-    'voluptuous>=0.9.3'
+    'voluptuous>=0.9.3',
+    'requests>=2.13.0'
 ]
 
 test_requirements = [
