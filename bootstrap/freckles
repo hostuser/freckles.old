@@ -90,7 +90,7 @@ STOW_SRC_DOWNLOAD_URL="http://ftp.gnu.org/gnu/stow/stow-2.2.2.tar.gz"
 DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow"
 
 # rpm related variables
-RPM_DEPENDENCIES="xxx"
+RPM_DEPENDENCIES="epel-release wget git python-virtualenv stow openssl-devel stow gcc libffi-devel python-devel openssl-devel"
 
 touch "$SCRIPT_LOG_FILE"
 chown "$FRECKLES_USER" "$SCRIPT_LOG_FILE"
@@ -187,12 +187,17 @@ function install_freckles_rpm {
     echo "  * RedHat-based system detected.\n"
     echo -e "  - Installing dependencies:\n\t$RPM_DEPENDENCIES"
 
-    execute_log "yum install wget git python-virtualenv stow openssl-devel" "Error installing dependencies via apt."
+    execute_log "yum install -y $RPM_DEPENDENCIES" "Error installing dependencies via yum."
+    log "Creating freckles virtual environment"
+    create_virtualenv
+    install_freckles_in_virtualenv
+    link_required_executables "$VIRTUALENV_PATH"
+    export PATH="$PATH:$VIRTUALENV_PATH"
 }
 
 function install_freckles_linux_root {
-    YUM_CMD=$(which yum)
-    APT_GET_CMD=$(which apt-get)
+    YUM_CMD=$(which yum 2> /dev/null)
+    APT_GET_CMD=$(which apt-get 2> /dev/null)
     if [[ ! -z $YUM_CMD ]]; then
         install_freckles_rpm
     elif [[ ! -z $APT_GET_CMD ]]; then
