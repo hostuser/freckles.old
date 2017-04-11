@@ -35,7 +35,8 @@ tasks:
       packages:
         - epel-release:
             pkgs:
-              epel-release
+              yum:
+                - epel-release
         - htop
         - fortunes:
             pkgs:
