@@ -513,6 +513,7 @@ class Freckles(object):
                 elif UNIQUE_TASK_ID_KEY in run_item.keys():
                     unique_ids.append(run_item[UNIQUE_TASK_ID_KEY])
 
+
                 # make sure the id didn't change, everything else can be different
                 run_item[FRECK_ID_KEY] = i
                 run_item.setdefault(FRECK_SUDO_KEY, FRECK_DEFAULT_SUDO)
