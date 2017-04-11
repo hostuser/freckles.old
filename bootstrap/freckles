@@ -136,6 +136,7 @@ function install_freckles {
     fi
 }
 
+#TODO: exception handline for this
 function create_virtualenv {
     echo "  - creating virtualenv for freckles and installing freckles from pypi"
     {
@@ -155,6 +156,19 @@ EOF
     } >> "$SCRIPT_LOG_FILE" 2>&1 || error_exit "Could not create freckles virtual environment"
 }
 
+#TODO: exception handline for this
+function install_freckles_in_virtualenv {
+    echo "  - creating virtualenv for freckles and installing freckles from pypi"
+    {
+        su "$FRECKLES_USER" <<EOF
+set +e
+source "$VIRTUALENV_DIR/bin/activate"
+pip install --upgrade freckles --upgrade-strategy only-if-needed
+set -e
+EOF
+    } >> "$SCRIPT_LOG_FILE" 2>&1 || error_exit "Could not create freckles virtual environment"
+}
+
 
 function install_freckles_deb {
     echo -e "  * Debian-based system detected"
@@ -164,6 +178,7 @@ function install_freckles_deb {
     execute_log "apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow" "Error installing dependencies via apt."
     log "Creating freckles virtual environment"
     create_virtualenv
+    install_freckles_in_virtualenv
     link_required_executables "$VIRTUALENV_PATH"
     export PATH="$PATH:$VIRTUALENV_PATH"
 }
@@ -279,7 +294,7 @@ function install_freckles_non_root_conda {
 
     execute_log "source activate freckles" "Could not activate freckles virtual environment"
     log "Installing freckles"
-    execute_log "pip install freckles" "Could not install freckles in conda environment"
+    execute_log "pip install -U freckles --upgrade-strategy only-if-needed" "Could not install freckles in conda environment"
     execute_log "source deactivate freckles" "Could not deactivate freckles virtual environment"
     link_required_executables "$CONDA_BASE_DIR/envs/freckles/bin"
 }
