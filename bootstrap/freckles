@@ -186,7 +186,7 @@ function install_freckles_deb {
 function install_freckles_rpm {
     echo "  * RedHat-based system detected.\n"
     echo -e "  - Installing dependencies:\n\t$RPM_DEPENDENCIES"
-
+    execute_log "yum install -y epel-release" "Error installing dependencies via yum."
     execute_log "yum install -y $RPM_DEPENDENCIES" "Error installing dependencies via yum."
     log "Creating freckles virtual environment"
     create_virtualenv
