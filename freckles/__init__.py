@@ -2,6 +2,6 @@
 
 __author__ = """Markus Binsteiner"""
 __email__ = 'makkus@posteo.de'
-__version__ = '0.1.38'
+__version__ = '0.1.39'
 
 from freckles import Freck, Freckles, FrecklesRunCallback
