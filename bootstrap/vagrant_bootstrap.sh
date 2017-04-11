@@ -2,15 +2,17 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
+set -x
+set -e
+
 #echo 'Acquire::http { Proxy "http://192.168.1.222:3142"; };' |sudo tee --append /etc/apt/apt.conf.d/01proxy
+
+#curl --insecure -L https://raw.githubusercontent.com/makkus/freckles-dev/master/prepare.sh | bash -s --
 
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
 FRECKLES_VIRTUALENV="$FRECKLES_DIR/data/venv"
 export WORKON_HOME="$FRECKLES_VIRTUALENV"
-
-set -x
-set -e
 
 sudo apt-get update
 sudo apt-get install -y build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow libsqlite3-dev

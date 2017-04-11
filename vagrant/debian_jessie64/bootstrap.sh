@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
-# bootstrap environment
-/freckles/bootstrap/bootstrap_deb.sh
-
-echo 'source "$HOME/.freckles/virtualenv/freckles/bin/activate"' >> "$HOME/.bashrc"
-ln -s /freckles/examples/example_only_zsh/dotfiles /home/vagrant/dotfiles
-
-# install freckles
-source "$HOME/.freckles/virtualenv/freckles/bin/activate"
-cd /freckles
-python setup.py develop
+curl --insecure -L https://raw.githubusercontent.com/makkus/freckles-dev/master/prepare.sh | bash -s --

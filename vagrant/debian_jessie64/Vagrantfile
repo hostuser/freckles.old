@@ -7,11 +7,19 @@
 # you're doing.
 Vagrant.configure("2") do |config|
 
-  if Vagrant.has_plugin?("vagrant-proxyconf")
-    config.proxy.http     = "http://192.168.1.222:3128/"
-    config.proxy.https    = "http://192.168.1.222:3128/"
-    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
-  end
+#  if Vagrant.has_plugin?("vagrant-proxyconf")
+#    config.proxy.http     = "http://192.168.1.222:3128/"
+#    config.proxy.https    = "http://192.168.1.222:3128/"
+#    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+#  end
+
+#  Vagrant.configure('2') do |config|
+#    config.cache.scope = :box
+#    config.proxy.enabled = true
+#    config.ca_certificates.enabled = true
+    # config.ca_certificates.certs = Dir.glob('/etc/pki/ca-trust/source/anchors/*.crt')
+#    config.ca_certificates.certs = Dir.glob('/etc/ssl/certs/*.pem')
+#  end
 
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
@@ -44,7 +52,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "/home/markus/projects/ansible/freckles", "/freckles", id: "dotfiles"
+  config.vm.synced_folder "/home/markus/projects/ansible/freckles", "/freckles", id: "freckles"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -75,5 +83,5 @@ Vagrant.configure("2") do |config|
   #   apt-get update
   #   apt-get install -y apache2
   # SHELL
-  #config.vm.provision :shell, path: "bootstrap/vagrant_bootstrap.sh", privileged: false
+  config.vm.provision :shell, path: "bootstrap.sh", privileged: false
 end

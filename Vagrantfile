@@ -7,10 +7,18 @@
 # you're doing.
 Vagrant.configure("2") do |config|
 
-  if Vagrant.has_plugin?("vagrant-proxyconf")
-    config.proxy.http     = "http://192.168.1.222:3128/"
-    config.proxy.https    = "http://192.168.1.222:3128/"
-    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+#  if Vagrant.has_plugin?("vagrant-proxyconf")
+#    config.proxy.http     = "http://192.168.1.222:3128/"
+#    config.proxy.https    = "http://192.168.1.222:3128/"
+#    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+  #  end
+
+  Vagrant.configure('2') do |config|
+    config.cache.scope = :box
+    config.proxy.enabled = true
+    config.ca_certificates.enabled = true
+    # config.ca_certificates.certs = Dir.glob('/etc/pki/ca-trust/source/anchors/*.crt')
+    config.ca_certificates.certs = Dir.glob('/etc/ssl/certs/*.pem')
   end
 
   # The most common configuration options are documented and commented below.
