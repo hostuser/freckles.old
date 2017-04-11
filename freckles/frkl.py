@@ -69,9 +69,9 @@ def get_config(config_file_url, verify=None):
 
         if verify is None:
             # TODO: other OS's
-            os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(
-                '/etc/ssl/certs/',
-                'ca-certificates.crt')
+            # os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(
+                # '/etc/ssl/certs/',
+                # 'ca-certificates.crt')
             verify = True
         r = requests.get(config_file_url, verify=verify)
         content = r.text
