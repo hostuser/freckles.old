@@ -33,6 +33,9 @@ tasks:
   - install: 
       use_dotfiles: true
       packages:
+        - epel-release:
+            pkgs:
+              epel-release
         - htop
         - fortunes:
             pkgs:
