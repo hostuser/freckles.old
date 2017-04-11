@@ -76,9 +76,10 @@ NIX_SRC_STORE_DIR="$BASE_DIR/nix"
 NIX_ENV_EXE="$HOME/.nix-profile/bin/nix-env"
 
 # conda related variables
-CONDA_DOWNLOAD_URL_LINUX="https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-Linux-x86_64.sh"
 #CONDA_DOWNLOAD_URL_LINUX="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh"
-CONDA_DOWNLOAD_URL_MAC="https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh"
+CONDA_DOWNLOAD_URL_LINUX="https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-Linux-x86_64.sh"
+#CONDA_DOWNLOAD_URL_MAC="https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh"
+CONDA_DOWNLOAD_URL_MAC="https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda2-latest-MacOSX-x86_64.sh"
 CONDA_BASE_DIR="$BASE_DIR/opt/conda"
 CONDA_PATH="$CONDA_BASE_DIR/bin"
 CONDA_ROOT_EXE="$CONDA_BASE_DIR/bin/conda"
@@ -150,13 +151,12 @@ source "$VIRTUALENV_DIR/bin/activate"
 pip install --upgrade pip
 pip install --upgrade setuptools wheel
 pip install --upgrade requests
-pip install --upgrade freckles
 set -e
 EOF
     } >> "$SCRIPT_LOG_FILE" 2>&1 || error_exit "Could not create freckles virtual environment"
 }
 
-#TODO: exception handline for this
+#TODO: exception handling for this
 function install_freckles_in_virtualenv {
     echo "  - creating virtualenv for freckles and installing freckles from pypi"
     {
@@ -213,7 +213,7 @@ function install_freckles_root {
     # figure out which os we are running
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         install_freckles_linux_root
-    elif [[ "$OSTYPE" == "darwin" ]]; then
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
         echo "Sorry, bootstrapping on  MacOS X with elevated privileges not supported (at the moment). Try to run without 'sudo' and everything should work fine..."
         exit 6
     elif [[ "$OSTYPE" == "cygwin" ]]; then
@@ -338,7 +338,8 @@ fi
 EOF
 
        echo -e "\nAdded path to freckles bin dir to .profile. You'll need to logout and login again to see the effect. Or you can just execute:\n\n  source $HOME/.profile"
-
+       echo
+       echo
     fi
 }
 
@@ -362,8 +363,6 @@ if ! command_exists freckles; then
     echo "Bootstrapping finished, running freckles..."
     echo
     add_freckles_path
-    echo
-    echo
     echo "Starting 'freckles' with arguments: $@"
     echo
 fi
