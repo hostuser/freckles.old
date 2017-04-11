@@ -371,7 +371,7 @@ fi
 execute_log "echo Finished freckles bootstrap: `date`" "Error"
 
 if [ $using_sudo == true ]; then
-    exec sudo -u "$FRECKLES_USER" -i freckles "$@"
+    exec sudo -u "$FRECKLES_USER" -i "PATH=$PATH:$FRECKLES_PATH" freckles "$@"
 else
     PATH="$PATH:$FRECKLES_PATH" freckles "$@"
 fi
