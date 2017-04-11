@@ -329,7 +329,7 @@ class GitPackageManager(AbstractPackageManager):
         return descs
 
 
-PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageManager, CondaPackageManager, GitPackageManager, PipPackageManager]
+PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageManager, CondaPackageManager, GitPackageManager, PipPackageManager, HomeBrewPackageManager]
 
 
 def get_os_family():
