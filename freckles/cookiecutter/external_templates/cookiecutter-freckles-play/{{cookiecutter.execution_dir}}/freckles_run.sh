@@ -4,7 +4,7 @@ if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then source "$HOME/.nix-pro
 
 cd {{cookiecutter.freckles_playbook_dir}}
 
-export PATH="../bin:$PATH"
+export PATH="$HOME/.freckles/bin:../bin:$PATH"
 
 
 ansible-playbook {{cookiecutter.freckles_ask_sudo}} {{cookiecutter.freckles_playbook}}
