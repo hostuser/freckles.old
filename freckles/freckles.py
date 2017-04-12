@@ -190,6 +190,8 @@ class FrecklesRunCallback(object):
 
         if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
             print("DOES NOT EXIST 1")
+        else:
+            print("DOES EXIST 1")
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
 
 
