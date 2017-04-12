@@ -179,19 +179,7 @@ class FrecklesRunCallback(object):
         self.current_freck_id = 1
         self.details = details
         self.success = True
-        try:
-            os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
-            print("CREATED")
-        except OSError as exc:  # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
-                pass
-            else:
-                raise
 
-        if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
-            print("DOES NOT EXIST 1")
-        else:
-            print("DOES EXIST 1")
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
 
 
@@ -202,11 +190,13 @@ class FrecklesRunCallback(object):
 
     def log(self, freck_id, details):
 
-        if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
-            print("DOES NOT EXIST")
-        print glob.glob("{}/*".format(FRECKLES_DEFAULT_EXECUTION_DIR))
-        print glob.glob("{}/*".format(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR))
-
+        try:
+            os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
+        except OSError as exc:  # Python >2.5
+            if exc.errno == errno.EEXIST and os.path.isdir(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
+                pass
+            else:
+                raise
         with open(self.log_file, "a+") as myfile:
             myfile.write("{}\n".format(details))
 
