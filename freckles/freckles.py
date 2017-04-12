@@ -2,6 +2,7 @@
 
 import abc
 import copy
+import errno
 import glob
 import json
 import logging
@@ -178,12 +179,17 @@ class FrecklesRunCallback(object):
         self.current_freck_id = 1
         self.details = details
         self.success = True
-        if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
+        try:
             os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
+        except OSError as exc:  # Python >2.5
+            if exc.errno == errno.EEXIST and os.path.isdir(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
+                pass
+            else:
+                raise
+
         if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
             print("DOES NOT EXIST 1")
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
-
 
 
     def set_total_tasks(self, total):
