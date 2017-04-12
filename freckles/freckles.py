@@ -181,6 +181,7 @@ class FrecklesRunCallback(object):
         self.success = True
         try:
             os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
+            print("CREATED")
         except OSError as exc:  # Python >2.5
             if exc.errno == errno.EEXIST and os.path.isdir(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
                 pass
