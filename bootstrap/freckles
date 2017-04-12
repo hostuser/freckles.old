@@ -140,7 +140,7 @@ function install_freckles {
 
 #TODO: exception handline for this
 function create_virtualenv {
-    echo "  - creating virtualenv for freckles and installing freckles from pypi"
+    echo "  - creating virtualenv for freckles"
     {
     su "$FRECKLES_USER" <<EOF
 set +e
@@ -159,7 +159,7 @@ EOF
 
 #TODO: exception handling for this
 function install_freckles_in_virtualenv {
-    echo "  - creating virtualenv for freckles and installing freckles from pypi"
+    echo "  - installing freckles into virtualenv"
     {
         su "$FRECKLES_USER" <<EOF
 set +e
@@ -185,10 +185,47 @@ function install_freckles_deb {
 }
 
 function install_freckles_rpm {
-    echo "  * RedHat-based system detected.\n"
+    echo "  * RedHat-based system detected."
     echo -e "  - Installing dependencies:\n\t$RPM_DEPENDENCIES"
     execute_log "yum install -y epel-release" "Error installing dependencies via yum."
     execute_log "yum install -y $RPM_DEPENDENCIES" "Error installing dependencies via yum."
+    log "Creating freckles virtual environment"
+    create_virtualenv
+    install_freckles_in_virtualenv
+    link_required_executables "$VIRTUALENV_PATH"
+    export PATH="$PATH:$VIRTUALENV_PATH"
+}
+
+function install_xcode {
+    g++ --version > /dev/null 2&>1
+    if [ ! $? == 0 ]; then
+        echo -e "  - Installing xcode"
+        touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+        log "Finding command-line-tools name"
+        PROD=$(softwareupdate -l |
+               grep "\*.*Command Line" |
+               head -n 1 | awk -F"*" '{print $2}' |
+               sed -e 's/^ *//' |
+               tr -d '\n')
+        log "Installing: $PROD"
+        execute_log "softwareupdate -i \"$PROD\" -v" "Could not install $PROD"
+    else
+        echo -e "  - xcode already installed, skipping"
+    fi
+
+}
+
+function install_freckles_mac_root {
+    echo "  * MacOS X-based system detected."
+    install_xcode
+    echo -e "  - Installing pip & virtualenv"
+    if ! command_exists pip; then
+        execute_log "easy_install pip" "Could not install pip"
+    fi
+    if ! command_exists virtualenv; then
+        execute_log "pip install virtualenv" "Could not install virtualenv via pip"
+    fi
+
     log "Creating freckles virtual environment"
     create_virtualenv
     install_freckles_in_virtualenv
@@ -215,8 +252,7 @@ function install_freckles_root {
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         install_freckles_linux_root
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "Sorry, bootstrapping on  MacOS X with elevated privileges not supported (at the moment). Try to run without 'sudo' and everything should work fine..."
-        exit 6
+        install_freckles_mac_root
     elif [[ "$OSTYPE" == "cygwin" ]]; then
         # POSIX compatibility layer and Linux environment emulation for Windows
         echo "Sorry, Cygwin platform is not supported (at the moment, anyway). Exiting..."
