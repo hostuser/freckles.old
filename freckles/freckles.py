@@ -181,7 +181,7 @@ class FrecklesRunCallback(object):
             os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
 
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
-        open(self.log_file, 'a').close()
+
 
 
     def set_total_tasks(self, total):
