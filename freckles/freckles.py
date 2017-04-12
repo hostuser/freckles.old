@@ -177,8 +177,9 @@ class FrecklesRunCallback(object):
         self.current_freck_id = 1
         self.details = details
         self.success = True
-        # self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_{}".format(run_nr))
+        os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
+
 
     def set_total_tasks(self, total):
         self.total_tasks = total
