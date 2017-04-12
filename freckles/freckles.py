@@ -186,7 +186,7 @@ class FrecklesRunCallback(object):
 
     def log(self, freck_id, details):
 
-        with open(self.log_file, "a") as myfile:
+        with open(self.log_file, "a+") as myfile:
             myfile.write("{}\n".format(details))
 
 
