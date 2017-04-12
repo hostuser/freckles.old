@@ -76,7 +76,7 @@ def create_inventory_dir(hosts, inventory_dir, group_name=FRECKLES_DEFAULT_GROUP
 
 {}
 
-""".format(group_name, "\n".join("{}     {}".format(hosts.keys(), ansible_python_interpreter='/usr/bin/env python')))
+""".format(group_name, "\n".join("{}     ansible_python_interpreter='/usr/bin/env python'".fromat(i) for i in hosts.keys())))
 
 def create_playbook_dict(playbook_items, host_group=FRECKLES_DEFAULT_GROUP_NAME):
     """Assembles the dictionary to create the playbook from."""
