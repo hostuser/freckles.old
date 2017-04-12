@@ -53,31 +53,39 @@ This executes a simple config that looks like:
 
 .. code-block:: yaml
 
-  vars:
-    dotfiles:
-      - base_dir: ~/dotfiles-quickstart
-        remote: https://github.com/makkus/freckles-quickstart.git
+vars:
+  dotfiles:
+     - base_dir: ~/dotfiles-quickstart
+       remote: https://github.com/makkus/freckles-quickstart.git
 
-  tasks:
-    - checkout-dotfiles
-    - install:
-        use_dotfiles: true
-        packages:
-          - htop
-          - fortunes:
-              pkgs:
-                apt:
-                  - fortunes
-                  - fortunes-off
-                  - fortunes-mario
-                yum:
-                  - fortune-mod
-                homebrew:
-                  - fortune
-    - stow
-    - file:
-        path: ~/.backups/zile
-        state: directory
+tasks:
+  - checkout-dotfiles
+  - install:
+      use_dotfiles: true
+      packages:
+        - epel-release:
+            pkgs:
+              yum:
+                - epel-release
+        - htop
+        - fortunes:
+            pkgs:
+              apt:
+                - fortunes
+                - fortunes-off
+                - fortunes-mario
+              yum:
+                - fortune-mod
+              homebrew:
+                - fortune
+
+  - stow
+  - file:
+      path: ~/.backups/zile
+      state: directory
+
+
+
 
 
 What this does:
