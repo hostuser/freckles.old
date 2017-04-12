@@ -177,7 +177,9 @@ class FrecklesRunCallback(object):
         self.current_freck_id = 1
         self.details = details
         self.success = True
-        os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
+        if not os.path.exists(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR):
+            os.makedirs(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR)
+
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
         open(self.log_file, 'a').close()
 
