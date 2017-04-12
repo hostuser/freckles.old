@@ -67,6 +67,7 @@ class CallbackModule(CallbackBase):
         if not action:
             action = "n/a"
         output["action"] = action
+        output["ignore_errors"] = self.get_task_detail("ignore_errors")
         task_name = self.get_task_detail("name")
         if not task_name:
             task_name = "n/a"

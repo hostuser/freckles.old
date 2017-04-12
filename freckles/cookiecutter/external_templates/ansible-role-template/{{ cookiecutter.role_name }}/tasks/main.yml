@@ -8,5 +8,5 @@
     {{ arg }}: {{ "\"{{" }} {{ arg }} {{ " | default(omit) }}\"" }}
     {% endfor %}
   become: {{ details.become | default("no") }}
-  ignore_errors: "{{ ignore_errors | default('no') }}"
+  ignore_errors: "{{ ignore_errors | default('yes') }}"
 {% endfor %}
