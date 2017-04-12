@@ -6,10 +6,12 @@ import json
 import logging
 import os
 import pprint
+import shutil
 import sys
 import urllib2
 import uuid
 from collections import OrderedDict
+from datetime import datetime
 from exceptions import FrecklesConfigError, FrecklesRunError
 from operator import itemgetter
 
@@ -165,7 +167,7 @@ class Freck(object):
 
 class FrecklesRunCallback(object):
 
-    def __init__(self, frecks, items, details=False):
+    def __init__(self, run_nr, frecks, items, details=False):
         self.frecks = frecks
         self.items = {}
         for item in items:
@@ -175,12 +177,18 @@ class FrecklesRunCallback(object):
         self.current_freck_id = 1
         self.details = details
         self.success = True
+        # self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_{}".format(run_nr))
+        self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
 
     def set_total_tasks(self, total):
         self.total_tasks = total
         self.log(1, RUN_STARTED)
 
     def log(self, freck_id, details):
+
+        with open(self.log_file, "a") as myfile:
+            myfile.write("{}\n".format(details))
+
 
         #log.debug("Details for freck '{}': {}".format(freck_id, details))
         if details == RUN_STARTED:
@@ -475,8 +483,12 @@ class Freckles(object):
         return sorted_result
 
 
-
     def run(self):
+
+        start_date = datetime.now()
+        date_string = start_date.strftime('%y%m%d_%H_%M_%S')
+        archive_dirname = os.path.join(FRECKLES_DEFAULT_EXECUTION_ARCHIVE_DIR, date_string)
+        os.makedirs(archive_dirname)
 
         for run_nr, frecks in enumerate(self.process_leafs(), start=1):
 
@@ -521,11 +533,13 @@ class Freckles(object):
                 items.append(run_item)
                 i = i + 1
 
-            callback = FrecklesRunCallback(self.freck_plugins, items)
+            callback = FrecklesRunCallback(run_nr, self.freck_plugins, items)
             runner_obj = runner_class(items, callback)
 
             click.echo("Starting run #{}".format(run_nr))
             runner_obj.run()
             click.echo("Run #{} finished.".format(run_nr))
 
+            dest_dir = os.path.join(archive_dirname, "run_{}".format(run_nr))
+            shutil.move(FRECKLES_DEFAULT_EXECUTION_DIR, dest_dir)
             #TODO: stats, check whether failed
