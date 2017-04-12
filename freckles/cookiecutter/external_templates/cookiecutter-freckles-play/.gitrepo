@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:makkus/cookiecutter-freckles-play.git
 	branch = master
-	commit = 4fbe17b39c5f58ad60c9dde773a0872675402a5e
-	parent = 9516d5dbecd0cac3d2040ff86a0630242e702bfb
+	commit = 5f7d65992c6b323b428dffae905ab4849a85aa7b
+	parent = 4516b8fa550a2e95d0efbc8d0feb3f6bb4747248
 	cmdver = 0.3.1
