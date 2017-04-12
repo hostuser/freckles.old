@@ -542,4 +542,8 @@ class Freckles(object):
 
             dest_dir = os.path.join(archive_dirname, "run_{}".format(run_nr))
             shutil.move(FRECKLES_DEFAULT_EXECUTION_DIR, dest_dir)
+
+            if os.path.exists(FRECKLES_DEFAULT_LAST_EXECUTION_DIR):
+                os.unlink(FRECKLES_DEFAULT_LAST_EXECUTION_DIR)
+            os.symlink(dest_dir, FRECKLES_DEFAULT_LAST_EXECUTION_DIR)
             #TODO: stats, check whether failed
