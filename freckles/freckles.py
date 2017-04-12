@@ -2,6 +2,7 @@
 
 import abc
 import copy
+import glob
 import json
 import logging
 import os
@@ -188,7 +189,11 @@ class FrecklesRunCallback(object):
         self.total_tasks = total
         self.log(1, RUN_STARTED)
 
+
     def log(self, freck_id, details):
+
+        print glob.glob("{}/*".format(FRECKLES_DEFAULT_EXECUTION_DIR))
+        print glob.glob("{}/*".format(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR))
 
         with open(self.log_file, "a+") as myfile:
             myfile.write("{}\n".format(details))

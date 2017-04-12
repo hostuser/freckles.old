@@ -7,7 +7,6 @@ import click
 
 # configuration constants
 FRECKLES_DEFAULT_DIR = os.path.abspath(click.get_app_dir('freckles', force_posix=True))
-print("PATH: {}".format(FRECKLES_DEFAULT_DIR))
 
 
 # freckles filenames and extensions
