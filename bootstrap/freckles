@@ -94,6 +94,7 @@ DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev li
 RPM_DEPENDENCIES="epel-release wget git python-virtualenv stow openssl-devel stow gcc libffi-devel python-devel openssl-devel"
 
 touch "$SCRIPT_LOG_FILE"
+chmod 700 "$SCRIPT_LOG_FILE"
 chown "$FRECKLES_USER" "$SCRIPT_LOG_FILE"
 
 function log () {

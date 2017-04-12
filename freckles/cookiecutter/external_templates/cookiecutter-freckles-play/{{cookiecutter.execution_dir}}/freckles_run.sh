@@ -6,5 +6,6 @@ cd {{cookiecutter.freckles_playbook_dir}}
 
 export PATH="$HOME/.freckles/bin:../bin:$PATH"
 
+mkdir -p ../logs
 
 ansible-playbook {{cookiecutter.freckles_ask_sudo}} {{cookiecutter.freckles_playbook}}
