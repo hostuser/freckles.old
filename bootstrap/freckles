@@ -210,7 +210,7 @@ function install_xcode {
         log "Installing: $PROD"
         execute_log "softwareupdate -i \"$PROD\" -v" "Could not install $PROD"
     else
-        echo -e "  - xcode already installed, skipping"
+        echo -e "  - 'xcode' already installed, skipping"
     fi
 
 }
@@ -229,6 +229,8 @@ function install_stow_from_source {
         execute_log "sudo make install" "Could not install stow"
         cd ~
         execute_log "sudo rm -rf /tmp/stow_install" "Could not delete stow sources"
+    else
+        echo -e "  - 'stow' already installed, skilling"
     fi
 }
 
@@ -313,7 +315,7 @@ function install_freckles_non_root_conda {
         echo "  * installing conda"
         install_conda_non_root
     else
-        echo "  * conda already installed, not installing again"
+        echo "  * 'conda' already installed, not installing again"
         export PATH="$CONDA_PATH:$PATH"
     fi
 
@@ -349,7 +351,7 @@ function install_freckles_non_root_conda {
         log "Installing stow into conda environment"
         execute_log "conda install --name freckles -y -c conda-forge -c freckles stow" "Could not install stow or one of its dependencies via conda."
     else
-        log "stow requirement already installed, not installing again."
+        log "'stow' requirement already installed, not installing again."
     fi
 
     execute_log "source activate freckles" "Could not activate freckles virtual environment"
