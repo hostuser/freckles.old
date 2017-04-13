@@ -120,9 +120,9 @@ function execute_log {
 function download {
     {
     if command_exists wget; then
-        wget -O $2 $1
+        execute_log "wget -O $2 $1" "Could not download $1 using wget"
     elif command_exists curl; then
-        curl -o $2 $1
+        execute_log "curl -o $2 $1" "Could not download $1 using curl"
     else
         echo "Could not find 'wget' nor 'curl' to download files. Exiting..."
         exit 1
@@ -215,9 +215,26 @@ function install_xcode {
 
 }
 
+function install_stow_from_source {
+    if ! command_exists stow; then
+        echo -e "  - Installing 'stow' from source"
+        rm -rf /tmp/stow_install
+        mkdir -p /tmp/stow_install
+        cd /tmp/stow_install || error_exit "Can't enter stow download dir"
+        download "$STOW_SRC_DOWNLOAD_URL" "/tmp/stow_install/stow.tar.gz"
+        execute_log "tar xvzf /tmp/stow_install/stow.tar.gz" "Could not untar stow tar file"
+        execute_log "rm /tmp/stow_install/stow.tar.gz" "Could not delete downloaded stow file"
+        cd stow*
+        execute_log ./configure "Could not configure stow sources"
+        execute_log "sudo make install" "Could not install stow"
+        execute_log "sudo rm -rf /tmp/stow_install" "Could not delete stow sources"
+    fi
+}
+
 function install_freckles_mac_root {
     echo "  * MacOS X-based system detected."
     install_xcode
+    install_stow_from_source
     echo -e "  - Installing pip & virtualenv"
     if ! command_exists pip; then
         execute_log "easy_install pip" "Could not install pip"
