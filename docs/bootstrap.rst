@@ -7,7 +7,7 @@ Bootstrap
 
 There are a few different ways to bootstrap `freckles`. Depending on the state of your box, your proficiency and your general trust in random people on the internet, you can choose one of the methods below.
 
-*Note*:
+**Bootstrap & execution in one go:**
 
 Below I only describe bootstrapping `freckles` itself. You can, though, execute `freckles` itself in the same go. If you want to do that, replace `bash` with `bash -s -- <freckles_command>`. For example:
 
@@ -19,33 +19,33 @@ Below I only describe bootstrapping `freckles` itself. You can, though, execute 
 Run the bootstrap script directly (without elevated permissions)
 ----------------------------------------------------------------
 
-- supported (and tested -- other distributions/version might very well work too):
-
-   - Linux
-
-     - Debian
-
-       - Jessie
-
-     - Ubuntu
-
-       - 16.10
-       - 16.04
-
-     - CentOS
-
-       - 7
-
-   - Mac OS X
-
-     - El Capitan
-
-   - Windows
-
-     - Windows 10 (Ubuntu subsystem) -- not tested yet
-
-
 This is the default way of bootstrapping `freckles`. It will create a self-contained installation (in ``$HOME/.freckles``), using conda_ to install requirements.
+
+Supported (and tested -- other distributions/version might very well work too)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Linux
+- Debian
+
+  - Jessie
+
+- Ubuntu
+
+  - 16.04
+  - 16.10
+
+- CentOS
+
+  - 7
+
+- Mac OS X
+
+  - El Capitan
+
+- Windows
+
+  - Windows 10 (Ubuntu subsystem) -- not tested yet
+
 
 Using `curl`:
 
@@ -162,4 +162,4 @@ The bootstrap process will install `freckles` as well as its requirements. `frec
 
 .. _conda: https://conda.io
 .. _miniconda: https://conda.io/miniconda.html
-.. _`conda environments`: https://conda.io/docs/using/envs.html
+.. _`conda environment`: https://conda.io/docs/using/envs.html
