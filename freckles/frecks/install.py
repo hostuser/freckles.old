@@ -638,13 +638,16 @@ class InstallBrew(AbstractRole):
 
     @staticmethod
     def get_install_brew_meta():
-        return AbstractRole.create_role_dict("install_brew", item_name="homebrew", desc="install package manager", sudo=False, additional_roles={"install_brew": "https://github.com/geerlingguy/ansible-role-homebrew.git", "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"}, unique_task_id=InstallBrew.UNIQUE_TASK_ID)
+        return AbstractRole.create_role_dict("install_brew", item_name="homebrew", desc="install package manager", sudo=True, additional_roles={"install_brew": "https://github.com/geerlingguy/ansible-role-homebrew.git", "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"}, unique_task_id=InstallBrew.UNIQUE_TASK_ID)
 
     def get_unique_task_id(self, freck_meta):
         return InstallBrew.UNIQUE_TASK_ID
 
     def get_role(self, freck_meta):
         return "install_brew"
+
+    def get_sudo(self, freck_meta):
+        return True
 
     def get_additional_roles(self, freck_meta):
         return {"install_conda": "https://github.com/geerlingguy/ansible-role-homebrew.git", "elliotweiser.osx-command-line-tools": "https://github.com/elliotweiser/ansible-osx-command-line-tools.git"}

@@ -1,5 +1,5 @@
-`freckles` documentation
-========================
+**freckles**
+============
 
 Contents:
 

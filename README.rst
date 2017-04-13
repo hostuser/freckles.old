@@ -43,7 +43,7 @@ For its most basic use-case -- which is installing and configuring packages -- *
  - a *dotfile repository* -> to have something to work on
  - *curl* (or *wget*) -> for bootstrapping (well, technically it also needs *bash*)
 
-At the moment (and that might change in the future), the easiest way to install *freckles* is to bootstrap it (`more details <XXX>`_) using curl and bash. The bootstrap process can also already execute the first *freckles* run, which makes it possible to setup a machine with one line in your shell:
+At the moment (and that might change in the future), the easiest way to install *freckles* is to bootstrap it (more details: :ref:`Bootstrap`) using curl and bash. The bootstrap process can also already execute the first *freckles* run, which makes it possible to setup a machine with one line in your shell:
 
 .. code-block:: console
 

@@ -9,15 +9,15 @@ There are a few different ways to bootstrap `freckles`. Depending on the state o
 
 **Bootstrap & execution in one go:**
 
-Below I only describe bootstrapping `freckles` itself. You can, though, execute `freckles` itself in the same go. If you want to do that, replace `bash` with `bash -s -- <freckles_command>`. For example:
+Below I only describe bootstrapping `freckles` itself. You can, however, execute `freckles` itself in the same go. If you want to do that, replace ``bash`` with ``bash -s -- <freckles_command>``. For example:
 
 .. code-block:: console
 
     curl -sL https://get.frkl.io | bash -s -- apply gh:makkus/freckles/examples/quickstart.yml
 
 
-Run the bootstrap script directly (without elevated permissions)
-----------------------------------------------------------------
+Bootstrap via script (without elevated permissions)
+---------------------------------------------------
 
 This is the default way of bootstrapping `freckles`. It will create a self-contained installation (in ``$HOME/.freckles``), using conda_ to install requirements.
 
@@ -66,7 +66,7 @@ If a ``$HOME/.profile`` file exists, the bootstrapping process adds a line to ad
 
    source $HOME/.profile
 
-Or, if that doesn't apply to your machine because you don't have a ``.profile`` file, do something like this (wherever you see fit):
+Or, if that doesn't apply to your machine because you don't have a ``.profile`` file, do something like this (how-/wherever you see fit):
 
 .. code-block:: console
 
@@ -76,17 +76,21 @@ Or, if that doesn't apply to your machine because you don't have a ``.profile`` 
 What does this do?
 ++++++++++++++++++
 
-This installe conda_ (miniconda_ actually). Then it creates a `conda environment`_ called 'freckles', into which `freckles` along with its dependencies are installed.
+This installs the conda_ package manager (miniconda_ actually). Then it creates a `conda environment`_ called 'freckles', into which `freckles` along with its dependencies are installed.
 
 Everything that is installed (about 450mb of stuff) is put into the ``$HOME/.freckles`` folder, which can be deleted without any problems.
 
 If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckles/bin`` to the users ``$PATH`` environment variable. If no such file exists, it's the users responsibility to either add that path, or start `freckles` directly using its path.
 
 
-Run the bootstrap script directly (with elevated permissions)
--------------------------------------------------------------
+Bootstrap via script (with elevated permissions)
+------------------------------------------------
 
-- supported (and tested -- other distributions/version might very well work too):
+This is a quicker way to bootstrap `freckles`, as 'normal' distribution packages are used to install dependencies. Also, the size of the ``$HOME/.freckles`` folder will be smaller, ~70mb -- systems packages are adding to that though). The `freckles` install itself is done in a virtualenv using `pip`. Root permissions are required though.
+
+
+Supported (and tested -- other distributions/version might very well work too)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
    - Linux
 
@@ -111,9 +115,6 @@ Run the bootstrap script directly (with elevated permissions)
 
      - Windows 10 (Ubuntu subsystem) -- not tested yet
 
-
-This is a quicker way to bootstrap `freckles`, as 'normal' distribution packages are used to install dependencies. Also, the size of the ``$HOME/.freckles`` folder will be smaller, ~70mb). The `freckles` install itself is done in a virtualenv using `pip`. Root permissions are required though.
-
 Using `curl`:
 
 .. code-block:: console
@@ -130,7 +131,7 @@ Using `wget`:
 What does this do?
 ++++++++++++++++++
 
-This installs all the requirements that are needed to create a Python virtualenv for `freckles`. What exactly those requirements are differs depending on the OS/Distribution that is used. Then a Python virtual environment is created in ``$HOME/.freckles/opt/venv_freckles`` into which `freckles` and all its requirements are installed (~70mb).
+This installs all the requirements that are needed to create a Python virtualenv for `freckles`. What exactly those requirements are differs depending on the OS/Distribution that is used (check the :ref:`Install manually via pip` section for details). Then a Python virtual environment is created in ``$HOME/.freckles/opt/venv_freckles`` into which `freckles` and all its requirements are installed (~70mb).
 
 If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckles/bin`` to the users ``$PATH`` environment variable. If no such file exists, it's the users responsibility to either add that path, or start `freckles` directly using its path.
 
@@ -138,20 +139,59 @@ If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckl
 Install manually via ``pip``
 ----------------------------
 
+If you prefer to install `freckles` from pypi_ yourself, you'll have to install a few system packages, mostly to be able to install ``pycrypto`` when doing the ``pip install``.
+
 Requirements
 ++++++++++++
 
 Ubuntu/Debian
 .............
 
+.. code-block:: console
+
+   apt install build-essential git python-dev python-virtualenv libssl-dev libffi-dev stow
+
 RedHat/CentOS
 .............
+
+.. code-block:: console
+
+   yum install epel-release wget git python-virtualenv stow openssl-devel stow gcc libffi-devel python-devel openssl-devel
 
 MacOS X
 .......
 
-Install
-+++++++
+We need Xcode. Either install it from the app store, or do something like:
+
+.. code-block:: console
+
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
+    PROD=$(softwareupdate -l |
+           grep "\*.*Command Line" |
+           head -n 1 | awk -F"*" '{print $2}' |
+           sed -e 's/^ *//' |
+           tr -d '\n');
+    softwareupdate -i "$PROD" -v;
+
+
+We also need to manually install pip:
+
+.. code-block:: console
+
+    sudo easy_install pip
+
+And freckles also depends on stow_ (if you want to be able to use that functionality within `freckles`). Either install it via homebrew or ports or whatever. Or from source (check out the `stow part of the bootstrap script`_ for an example.
+
+
+Install `freckles`
+++++++++++++++++++
+
+Ideally, you'll install `freckles` into its own virtualenv. But if you read this you'll know how to do that (hopefully). Here's how to install it system-wide (which I haven't tested, to be honest, so let me know if that doesn't work)
+
+.. code-block:: console
+
+   sudo pip install --upgrade pip   # just to make sure
+   sudo pip install freckles
 
 
 Bootstrapped files/layout
@@ -163,3 +203,6 @@ The bootstrap process will install `freckles` as well as its requirements. `frec
 .. _conda: https://conda.io
 .. _miniconda: https://conda.io/miniconda.html
 .. _`conda environment`: https://conda.io/docs/using/envs.html
+.. _pypi: https://pypi.python.org
+.. _stow: https://www.gnu.org/software/stow
+.. _`stow part of the bootstrap script`: https://github.com/makkus/freckles/blob/master/bootstrap/freckles#L218
