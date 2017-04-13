@@ -17,7 +17,7 @@ Overview
      :alt: Updates
 
 
-*a cute dotfile manager, all over the place*
+*a cute dotfile manager; all over the place*
 
 *freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on your local machine, not as much for configuring remote machines. It can also be used to easily setup an environment in VMs (for example using Vagrant), or containers, potentially sharing the configuration you use on your workstation.
 
@@ -29,10 +29,17 @@ Features
 --------
 
 * one-line setup of a new environment, including freckles bootstrap
-* supports Linux & MacOS X
+* supports Linux & MacOS X (and probably the Ubuntu subsystem on Windows 10)
 * share the same configuration for your Linux and MacOS workstation as well as Vagrant machines, containers, etc.
 * support for systems where you don't have root/sudo access via the nix_ package manager or conda_ (or if you just think it's a good idea to use one/any of them)
-* direct support for ansible_ modules and roles
+* direct support for all ansible_ modules and roles
+
+What, ...why?
+-------------
+
+I re-installed a new (or recently bricked) laptop this once too often, and wanted a way to quickly re-create my working environment, automatically. Now, that's what configuration management tools are for, and I do quite like ansible_ and have a bit of experience with it. What I don't like is how one usually needs a set of configuration files to describe a setup, even for simple use-cases like setting up a single, local machine. And I didn't want to setup `ansible` manually every time before I can run my playbooks and roles. Basically, I wanted a thing that allows me to run one line of code, pointing to one configuration file, and it does everything I want it to do.
+
+This is what `freckles` now is, sorta. Obviously, in the course of writing it -- given my compulsion to over-engineer everything along with me having a bit of time on my hands -- it can be a few other things which I didn't consider before I started and which may or may not be useful to anybody else. Either way. If you want a simple script to manage your machine, run. If you don't mind a bit of what angry old IT folk would/will probably call 'bloat', and you think that a bit of harddrive-space is worth saving a few minutes/hours every once in a while, give this here a go and tell me what you think.
 
 Quickstart
 ----------
@@ -80,9 +87,7 @@ This executes a simple config that looks like:
                   - fortune
 
     - stow
-    - file:
-        path: ~/.backups/zile
-        state: directory
+    - create-folder: ~/.backups/zile
 
 
 

@@ -50,7 +50,4 @@ tasks:
                 - fortune
 
   - stow
-  - file:
-      path: ~/.backups/zile
-      state: directory
-
+  - create-folder: ~/.backups/zile
