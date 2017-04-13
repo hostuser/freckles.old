@@ -11,7 +11,7 @@ set -e
 
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
-FRECKLES_VIRTUALENV="$FRECKLES_DIR/data/venv"
+FRECKLES_VIRTUALENV="$FRECKLES_DIR/opt/venv_freckles"
 export WORKON_HOME="$FRECKLES_VIRTUALENV"
 
 sudo apt-get update

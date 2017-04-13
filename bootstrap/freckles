@@ -56,13 +56,13 @@ DEBUG=false
 FRECKLES_USER_HOME="`eval echo ~$FRECKLES_USER`"
 
 BASE_DIR="$FRECKLES_USER_HOME/.freckles"
-FRECKLES_DATA_DIR="$BASE_DIR/data"
+FRECKLES_DATA_DIR="$BASE_DIR/opt"
 TEMP_DIR="/tmp/freckles_install"
 
 FRECKLES_PATH="$BASE_DIR/bin"
 
 # python/virtualenv related variables
-VIRTUALENV_DIR="$FRECKLES_DATA_DIR/venv"
+VIRTUALENV_DIR="$FRECKLES_DATA_DIR/venv_freckles"
 VIRTUALENV_PATH="$VIRTUALENV_DIR/bin"
 
 # nix-related variables
@@ -227,6 +227,7 @@ function install_stow_from_source {
         cd stow*
         execute_log ./configure "Could not configure stow sources"
         execute_log "sudo make install" "Could not install stow"
+        cd ~
         execute_log "sudo rm -rf /tmp/stow_install" "Could not delete stow sources"
     fi
 }

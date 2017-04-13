@@ -28,11 +28,11 @@ tasks:
                 - openssl-devel
                 - sqlite-devel
 
-  - create-folder: ~/.freckles/data/venv
+  - create-folder: ~/.freckles/opt/venv_freckles
 
   - install:
       pkg_mgr: pip
-      virtualenv: ~/.freckles/data/venv/freckles_test
+      virtualenv: ~/.freckles/opt/venv_freckles
       packages:
         - pip
         - setuptools
@@ -40,6 +40,6 @@ tasks:
         - ~/projects/freckles/requirements_dev.txt
 
   - shell:
-      free_form: 'source ~/.freckles/data/venv/freckles_test/bin/activate && python setup.py develop'
+      free_form: 'source ~/.freckles/venv_freckles/bin/activate && python setup.py develop'
       chdir: '~/projects/freckles'
       executable: 'bash'
