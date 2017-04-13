@@ -9,6 +9,7 @@ Contents:
    readme
    bootstrap
    usage
+   trust
    contributing
    authors
    history

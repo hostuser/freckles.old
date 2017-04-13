@@ -31,7 +31,7 @@ Features
 * one-line setup of a new environment, including freckles bootstrap
 * supports Linux & MacOS X (and probably the Ubuntu subsystem on Windows 10)
 * share the same configuration for your Linux and MacOS workstation as well as Vagrant machines, containers, etc.
-* support for systems where you don't have root/sudo access via the nix_ package manager or conda_ (or if you just think it's a good idea to use one/any of them)
+* support for systems where you don't have root/sudo access via the nix_ package manager or conda_ (or if you just think it's a good idea to use any of them)
 * direct support for all ansible_ modules and roles
 
 What, ...why?
@@ -91,19 +91,18 @@ This executes a simple config that looks like:
 
 
 
-
-
 What this does:
 
  - checks out the repository of dotfile(s) at `https://github.com/makkus/freckles-quickstart.git <https://github.com/makkus/freckles-quickstart>`_
  - installs all the applications/packages that are configured in that repo (only the emacs-like editor ``zile`` in this case)
- - also installs a few other packages that don't require configuration (``htop``, ``fortunes``, ``fortunes-off``, ``fortunes-mario``)
+ - installs the ``epel`` repo if on a RPM-based platform
+ - also installs a few other packages that don't require configuration which is the reason they are not included in the dotfiles repo (``htop`` and, depending on which platform this is run on one or some more packages connected to the `fortune` tool)
  - `stows <https://www.gnu.org/software/stow/>`_ all the dotfiles in the above repository into the users home directory (again, only for *zile* in this case)
- - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the .zile file in the repo we checked out)
+ - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the .zile file in the repo we checked out and zile does not create that dir itself)
 
-To read how all that works in more detail, please read the full documentation at XXX
+To read how all that works in more detail, please read the full documentation at: :ref:`Usage`
 
-You don't like executing random scripts on the internet? Yeah, me neither. Read here: XXX.
+You don't like executing random scripts on the internet? Yeah, me neither. Read here: :ref:`Trust`
 
 Supported platforms
 -------------------
