@@ -41,8 +41,8 @@ PKG_MGRS_COMMANDS = {
     "deb": {"ansible_module": "apt", "update": False, "upgrade": False, "valid_install_keys": ["deb", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache"]},
     "apt": {"ansible_module": "apt", "update": {"update_cache": True}, "upgrade": {"upgrade": "dist"}, "valid_install_keys": ["allow_unauthenticated", "autoremove", "cache_valid_time", "default_release", "dpkg_options", "force", "install_recommends", "only_upgrade", "purge", "state", "update_cache", "upgrade"]},
     "yum": {"ansible_module": "yum", "update": False, "upgrade": {"name": "'*'", "state": "latest"}, "valid_install_keys": ["conf_file", "disable_gpg_check", "disablerepo", "enablerepo", "exclude", "insstallroot", "list", "skip_broken", "state", "update_cache", "validate_certs"]},
-    "nix": {"ansible_module": "nix", "update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"]},
-    "conda": {"ansible_module": "conda", "update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"]},
+    "nix": {"ansible_module": "nix", "update": {"update_cache": True}, "upgrade": {"upgrade": True}, "roles": {"install_nix_pkg": "frkl:ansible-nix-pkgs"}, "valid_install_keys": ["state"], ENSURE_PACKAGE_MANAGER_KEY: True},
+    "conda": {"ansible_module": "conda", "update": False, "upgrade": False, "roles": {"install_conda_pkgs": "frkl:ansible-conda-pkgs"}, "valid_install_keys": ["upgrade", "channels", "environment", "state"], ENSURE_PACKAGE_MANAGER_KEY: True},
     "homebrew": {"ansible_module": "homebrew", "update": {"update_homebrew": True, "upgrade_homebrew": False}, "upgrade": {"upgrade_all": True, "update_homebrew": False, "valid_install_keys": ["install_options", "path", "state"]}, ENSURE_PACKAGE_MANAGER_KEY: True},
     "git": {"update": False, "upgrade": False, "valid_install_keys": GIT_VALID_KEYS},
     "pip": {"update": False, "upgrade": False, ENSURE_PACKAGE_MANAGER_KEY: False}
