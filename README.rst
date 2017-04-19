@@ -71,7 +71,9 @@ At the moment (and that might change in the future), the easiest way to install 
 
    curl -sL https://get.frkl.io | bash -s -- apply gh:makkus/freckles/examples/quickstart.yml
 
-This executes a simple config that looks like:
+The config file I've choosen as an example is a bit more complicated than it'd need to be, but I wanted to show off how *freckles* can use the same config file for different platforms. If you only work on one platform, the same config would look quite a bit tidier. Check out the same example for (only) Debian/Ubuntu: `quickstart-debian.yml <https://github.com/makkus/freckles/blob/master/examples/quickstart-debian.yml>`_.
+
+Either, way, the above command applies the following (fairly) simple configuration to your machine:
 
 .. code-block:: yaml
 

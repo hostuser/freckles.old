@@ -21,8 +21,10 @@ Bootstrap via script (without elevated permissions)
 
 This is the default way of bootstrapping `freckles`. It will create a self-contained installation (in ``$HOME/.freckles``), using conda_ to install requirements.
 
-Supported (and tested -- other distributions/version might very well work too)
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Supported
++++++++++
+
+Those are the platforms I have tested so far, others might very well work too:
 
 - Linux
 - Debian
@@ -86,11 +88,13 @@ If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckl
 Bootstrap via script (with elevated permissions)
 ------------------------------------------------
 
-This is a quicker way to bootstrap `freckles`, as 'normal' distribution packages are used to install dependencies. Also, the size of the ``$HOME/.freckles`` folder will be smaller, ~70mb -- systems packages are adding to that though). The `freckles` install itself is done in a virtualenv using `pip`. Root permissions are required though.
+This is a quicker way to bootstrap `freckles`, as 'normal' distribution packages are used to install dependencies. Also, the size of the ``$HOME/.freckles`` folder will be smaller, ~70mb -- systems packages are adding to that though). The `freckles` install itself is done in a virtualenv using `pip`. Root permissions are required.
 
 
-Supported (and tested -- other distributions/version might very well work too)
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Supported
++++++++++
+
+Those are the platforms I have tested so far, others might very well work too:
 
    - Linux
 
@@ -192,6 +196,12 @@ Ideally, you'll install `freckles` into its own virtualenv. But if you read this
 
    sudo pip install --upgrade pip   # just to make sure
    sudo pip install freckles
+
+Optionally, if necessary add *freckles* to your PATH. for example, add something like the following to your ``.profile`` file (obviously, use the location you installed *freckles* into, not the one I show here):
+
+.. code-block:: console
+
+   if [ -e "$HOME/.freckles/opt/venv_freckles/bin/conda" ]; then export PATH="$HOME/.freckles/opt/venv_freckles/bin:$PATH"; fi
 
 
 Bootstrapped files/layout
