@@ -1,0 +1,41 @@
+---
+# freckles quickstart example config
+#
+# this checks out a dotfiles repository that contains the configuration for
+# an emacs-like editor (zile).
+#
+# once that is done, it installs an emacs-like editor called 'zile' (using the name(s) child-folder(s) of the top level
+# dotfiles repo folder to determine which packages to install, 'zile' in this case, the
+# exact package names can be configured in other places if necessary though). this happens
+# because the 'use_dotfiles' variable in the install directive is set to 'true' (default is 'false').
+#
+# alongside 'zile' we also install a list of packages that don't need any special configuration,
+# 'htop' and the 'fortunes' application. because for 'fortunes' we want to install 2 additional
+# packages with the main programm, we specify it under the 'pkgs' sub-key. this can also be used if
+# a package is named differently in different distributions/package managers. in this case we could
+# easily just added all fortunes package names in the list under the 'packages' key (but we wanted
+# to show off how to do it using the 'pkgs' way).
+#
+# once all those packages are installed, all root-level child-folders of the dotfiles repo are
+# soft-linked into the users home directory (using 'stow').
+#
+# the last part of this configuration is the directive to ensure a folder '.backups/zile' exists
+# in the users home directory. we need this because we specified it in the zile configuration file
+# that is contained in the dotfiles repo
+
+vars:
+  dotfiles:
+     - base_dir: ~/dotfiles-quickstart
+       remote: https://github.com/makkus/freckles-quickstart.git
+
+tasks:
+  - checkout-dotfiles
+  - install: 
+      use_dotfiles: true
+      packages:
+        - htop
+        - fortunes
+        - fortunes-off
+        - fortunes-mario
+  - stow
+  - create-folder: ~/.backups/zile

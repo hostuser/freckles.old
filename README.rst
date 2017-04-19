@@ -52,12 +52,12 @@ Really quick-start
 
    curl -sL https://get.frkl.io | bash -s -- --help
 
-This bootstraps *freckles*, runs it, and displays its help information. All files that are installed live under the ``$HOME/.freckles`` folder, which can be deleted without affecting anything else. This also adds a line to your ``$HOME/.profile`` file to add `freckles` to your path.
+This bootstraps *freckles*, runs it, and displays help information. All files that are installed live under the ``$HOME/.freckles`` folder, which can be deleted without affecting anything else. This also adds a line to your ``$HOME/.profile`` file to add `freckles` to your path.
 
 Quickstart
 ----------
 
-**Warning: run this only after you read what it does, as it installs some packages onto your computer you might not want. Should not do any real harm though**
+**Warning: run this only after you read what it does, as it installs some packages onto your computer you might not want. Should not do any real harm though.**
 
 For its most basic use-case -- which is installing and configuring packages -- *freckles* needs:
 

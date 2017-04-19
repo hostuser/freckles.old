@@ -76,11 +76,11 @@ Or, if that doesn't apply to your machine because you don't have a ``.profile`` 
 What does this do?
 ++++++++++++++++++
 
-This installs the conda_ package manager (miniconda_ actually). Then it creates a `conda environment`_ called 'freckles', into which `freckles` along with its dependencies are installed.
+This installs the conda_ package manager (miniconda_ actually). Then it creates a `conda environment`_ called 'freckles', into which `freckles` along with its dependencies is installed.
 
-Everything that is installed (about 450mb of stuff) is put into the ``$HOME/.freckles`` folder, which can be deleted without any problems.
+Everything that is installed (about 450mb of stuff) is put into the ``$HOME/.freckles`` folder, which can be deleted without affecting anything else.
 
-If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckles/bin`` to the users ``$PATH`` environment variable. If no such file exists, it's the users responsibility to either add that path, or start `freckles` directly using its path.
+If a ``$HOME/.profile`` file exists, a line will be added to add ``$HOME/.freckles/bin`` to the users ``$PATH`` environment variable. If no such file exists, it's the users responsibility to either add that path, or start `freckles` directly using its path (``~/.freckles/bin/freckles``).
 
 
 Bootstrap via script (with elevated permissions)
@@ -180,13 +180,13 @@ We also need to manually install pip:
 
     sudo easy_install pip
 
-And freckles also depends on stow_ (if you want to be able to use that functionality within `freckles`). Either install it via homebrew or ports or whatever. Or from source (check out the `stow part of the bootstrap script`_ for an example.
+And freckles also depends on stow_ (if you want to be able to use that functionality within `freckles`). Either install it via homebrew or ports or whatever. Or from source (check out the `stow part of the bootstrap script`_ for an example).
 
 
 Install `freckles`
 ++++++++++++++++++
 
-Ideally, you'll install `freckles` into its own virtualenv. But if you read this you'll know how to do that (hopefully). Here's how to install it system-wide (which I haven't tested, to be honest, so let me know if that doesn't work)
+Ideally, you'll install `freckles` into its own virtualenv. But if you read this you'll (hopefully) know how to do that. Here's how to install it system-wide (which I haven't tested, to be honest, so let me know if that doesn't work)
 
 .. code-block:: console
 
@@ -197,7 +197,7 @@ Ideally, you'll install `freckles` into its own virtualenv. But if you read this
 Bootstrapped files/layout
 -------------------------
 
-The bootstrap process will install `freckles` as well as its requirements. `freckles` (and depending on the bootstrap process choosen, also its dependencies) is installed into ``$HOME/.freckles/opt``. Symbolic links  ``freckles`` executable as well as some helper applications (``ansible-playbook``, ``conda``, etc.) are created in ``$HOME/.freckles/bin`` and a line is added to ``$HOME/.profile`` which adds this folder to the ``PATH`` variable, which means that after the next login (or after issuing ``source ~/.profile``) `freckles` can be run directly from then on:
+The bootstrap process will install `freckles` as well as its requirements. `freckles` (and depending on the bootstrap process choosen, also its dependencies) is installed into ``$HOME/.freckles/opt``. Symbolic links  ``freckles`` executable as well as some helper applications (``ansible-playbook``, ``conda``, etc.) are created in ``$HOME/.freckles/bin`` and a line is added to ``$HOME/.profile`` which adds this folder to the ``PATH`` variable, which means that after the next login (or after issuing ``source ~/.profile``) `freckles` can be run directly from then on.
 
 
 .. _conda: https://conda.io
