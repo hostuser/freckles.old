@@ -18,6 +18,7 @@ import py
 from constants import *
 from freckles import Freckles
 from frkl import Frkl
+from utils import CursorOff
 
 from . import __version__ as VERSION
 
@@ -123,7 +124,8 @@ def run(freckles_config, details, config):
 
     freckles = Freckles(*config)
     freckles.preprocess_configs()
-    freckles.run(details)
+    with CursorOff():
+        freckles.run(details)
 
 
 @cli.command("debug-freck")
@@ -136,7 +138,8 @@ def debug_freck(freckles_config, freck_name, config, details):
     freckles = Freckles(*config)
     freckles.set_debug(freck_name)
     freckles.preprocess_configs()
-    freckles.run(details)
+    with CursorOff():
+        freckles.run(details)
 
 
 @cli.command("print-config")

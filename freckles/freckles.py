@@ -26,7 +26,7 @@ from freckles_runner import FrecklesRunner
 from frkl import FRKL_META_LEVEL_KEY, LEAF_DICT, Frkl, expand_config_url
 from runners.ansible_runner import AnsibleRunner
 from sets import Set
-from utils import (check_schema, dict_merge, get_pkg_mgr_from_path,
+from utils import (CursorOff, check_schema, dict_merge, get_pkg_mgr_from_path,
                    load_extensions)
 from voluptuous import ALLOW_EXTRA, Any, Required, Schema
 

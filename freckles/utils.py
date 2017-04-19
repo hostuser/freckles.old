@@ -32,6 +32,12 @@ NIX_MATCH = "{}{}{}".format(sep, 'nix', sep)
 CONDA_MATCH = "{}{}{}".format(sep, 'conda', sep)
 NO_INSTALL_MATCH = "{}{}{}".format(sep, "no_install", sep)
 
+class CursorOff(object):
+    def __enter__(self):
+        os.system('setterm -cursor off')
+
+    def __exit__(self, *args):
+        os.system('setterm -cursor on')
 
 def dict_merge(dct, merge_dct):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
