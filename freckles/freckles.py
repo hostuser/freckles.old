@@ -399,7 +399,7 @@ class Freckles(object):
         self.freck_plugins = load_extensions()
         self.supported_runners = [FRECKLES_DEFAULT_RUNNER]
         self.configs = config_items
-        frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH, add_leaf_dicts=True)
+        frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH, add_leaf_dicts=False)
         self.leafs = frkl.leafs
         self.debug_freck = False
         # pprint.pprint(self.frecks)

@@ -135,33 +135,14 @@ def run(freckles_config, details, config, debug):
 @pass_freckles_config
 def print_config(freckles_config, config):
     """Flattens overlayed configs and prints result.
+       This is useful mostly for debugging purposes, when creating the configuration.
 
-    This is useful mostly for debugging purposes, when creating the configuration.
-
-    The output to this command could be piped into a yaml file, and then used with the ``run`` command. Although, in practice that doesn't make much sense of course. """
+       The output to this command could be piped into a yaml file, and then used with the ``run`` command. Although, in practice that doesn't make much sense of course. """
 
     freckles = Freckles(*config)
-    result_runs = []
-    for run, run_details in freckles.runs.iteritems():
+    leafs = freckles.leafs
 
-        output_frecks = []
-        run_name = run_details[RUN_DESC_KEY]
-        run_nr = run
-        frecks = run_details[RUN_FRECKS_KEY]
-
-        freckles.create_runner_and_items(run_nr)
-        run_items = freckles.run_items[run_nr]
-        for run_item_nr, run_item in run_items.iteritems():
-            freck_name = run_item.pop(INT_FRECK_NAME_KEY, None)
-            freck_type = run_item.pop(INT_FRECK_TYPE_KEY, None)
-            freck_desc = run_item.pop(INT_FRECK_DESC_KEY, None)
-            freck_object = run_item.pop(INT_FRECK_KEY, None)
-
-            output_frecks.append({freck_name: {FRECK_TYPE_KEY: freck_type, FRECK_DESC_KEY: freck_desc, FRECK_VARS_KEY: run_item}})
-
-        result_runs.append({RUN_DESC_KEY: run_name, RUN_FRECKS_KEY: output_frecks})
-
-    print(yaml.dump({"runs": result_runs}, default_flow_style=False))
+    print(yaml.dump(leafs, default_flow_style=False))
 
 if __name__ == "__main__":
     cli()

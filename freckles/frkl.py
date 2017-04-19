@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import pprint
+import re
 import sys
 import urllib2
 import uuid
@@ -13,9 +14,11 @@ from exceptions import FrecklesConfigError, FrecklesRunError
 from operator import itemgetter
 
 import click
+import jinja2
 import requests
 import six
 import yaml
+from jinja2 import BaseLoader, Environment, PackageLoader
 
 import sets
 from constants import *
@@ -39,7 +42,7 @@ DEFAULT_LOAD_KEY = "load"
 LEAF_DICT = "_leaf_dict"
 DEFAULT_FRKL_KEY_MARKER = "frkl_default"
 
-def get_config(config_file_url, verify=None):
+def get_config(config_file_url, verify_ssl=None):
     """Retrieves the config (if necessary), and converts it to a dict.
 
     Config can be either a path to a local yaml file, an url to a remote yaml file, or a json string.
@@ -58,8 +61,8 @@ def get_config(config_file_url, verify=None):
     if os.path.exists(config_file_url):
         log.debug("Opening as file: {}".format(config_file_url))
         with open(config_file_url) as f:
-            config_yaml = yaml.load(f)
-        return config_yaml
+            content = f.read()
+
     # check if url
     elif config_file_url.startswith("http"):
         # TODO: exception handling
@@ -67,22 +70,27 @@ def get_config(config_file_url, verify=None):
         #response = urllib2.urlopen(config_file_url)
         #content = response.read()
 
-        if verify is None:
+        if verify_ssl is None:
             # TODO: other OS's
             # os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(
                 # '/etc/ssl/certs/',
                 # 'ca-certificates.crt')
-            verify = True
-        r = requests.get(config_file_url, verify=verify)
+            verify_ssl = True
+        r = requests.get(config_file_url, verify=verify_ssl)
         content = r.text
-        return yaml.load(content)
+
     else:
         # try to convert a json string
         try:
-            config = json.loads(config_file_url)
-            return config
+            content = json.loads(config_file_url)
         except:
             raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
+
+    # remove comments
+    # content = re.sub(r'(?m)^#.*\n?', '', content)
+    # content = re.sub(r'(?m)^---.*\n?', '', content)
+    return content
+
 
 def expand_config_url(url):
 
@@ -141,7 +149,10 @@ def get_and_load_configs(config_url, load_external=True, load_key=DEFAULT_LOAD_K
     """
 
     log.debug("Loading config: {}".format(config_url))
-    config_dict = get_config(config_url)
+    config_template = get_config(config_url)
+    rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
+    config_string = rtemplate.render({})
+    config_dict = yaml.load(config_string)
     result = [config_dict]
 
     load = config_dict.get(load_key, [])
@@ -198,7 +209,11 @@ class Frkl(object):
 
         self.configs = []
         for c in configs:
-            self.configs.append(get_config(c, verify))
+            config_template = get_config(c, verify)
+            rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
+            config_string = rtemplate.render(env=os.environ)
+            config_dict = yaml.load(config_string)
+            self.configs.append(config_dict)
         self.root = []
         self.meta_dict = {}
 
@@ -206,6 +221,10 @@ class Frkl(object):
 
         # pprint.pprint(self.root)
         self.leafs = flatten_root(self.root, self.add_leaf_dicts)
+
+        # pprint.pprint(self.leafs)
+        # print(yaml.dump(self.leafs, default_flow_style=False))
+        # sys.exit(0)
 
 
     def frklize_config(self, root, configs, meta_dict_parent, level, add_level=False):
