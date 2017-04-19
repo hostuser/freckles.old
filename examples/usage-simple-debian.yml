@@ -1,0 +1,10 @@
+---
+# simple config to install a few packages on a debian-based system
+
+tasks:
+  - install: 
+      packages:
+        - htop
+        - fortunes
+	- zile
+
