@@ -402,7 +402,6 @@ class Freckles(object):
         frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH, add_leaf_dicts=False)
         self.leafs = frkl.leafs
         self.debug_freck = False
-        # pprint.pprint(self.frecks)
 
 
     def set_debug(self, debug_freck):
@@ -413,6 +412,8 @@ class Freckles(object):
 
         for leaf in self.leafs:
             check_schema(leaf, FRECKLES_INPUT_CONFIG_SCHEMA)
+            if FRECK_META_KEY not in leaf.keys():
+                continue
             if leaf[FRECK_META_KEY][TASK_NAME_KEY] in self.freck_plugins.keys():
                 leaf[FRECK_META_KEY][FRECK_NAME_KEY] = leaf[FRECK_META_KEY][TASK_NAME_KEY]
                 continue
@@ -433,6 +434,8 @@ class Freckles(object):
 
         frecks = []
         for freck_nr, leaf in enumerate(self.leafs):
+            if FRECK_META_KEY not in leaf.keys():
+                continue
             freck_name = leaf[FRECK_META_KEY][FRECK_NAME_KEY]
 
             runner, processed = self.freck_plugins[freck_name].process_leaf(copy.deepcopy(leaf), self.supported_runners, self.debug_freck)

@@ -86,9 +86,6 @@ def get_config(config_file_url, verify_ssl=None):
         except:
             raise FrecklesConfigError("Can't parse config, doesn't seem to be a file nor a json string: {}".format(config_file_url), 'config', config_file_url)
 
-    # remove comments
-    # content = re.sub(r'(?m)^#.*\n?', '', content)
-    # content = re.sub(r'(?m)^---.*\n?', '', content)
     return content
 
 
@@ -173,7 +170,8 @@ def flatten_root(root, add_leaf_dicts=False):
 
     result = []
     for item in root:
-        leaf_dict = item.pop(LEAF_DICT)
+        if LEAF_DICT in item.keys():
+            leaf_dict = item.pop(LEAF_DICT)
         result_dict = {}
         for var, value_dicts in item.iteritems():
             result_dict[var] = {}
@@ -183,6 +181,15 @@ def flatten_root(root, add_leaf_dicts=False):
         if add_leaf_dicts:
             result_dict[LEAF_DICT] = leaf_dict
         result.append(result_dict)
+
+    return result
+
+def merge_root(root):
+
+    flattened = flatten_root(root)
+    result = {}
+    for f in reversed(flattened):
+        dict_merge(result, f)
 
     return result
 
@@ -202,22 +209,18 @@ class Frkl(object):
         #TODO: check default_value_dict in all_keys
         self.default_leaf_value_dict_key = default_leaf_default_value_key
 
+        self.verify_ssl = verify
         self.add_leaf_dicts = add_leaf_dicts
 
         self.all_keys = Set([self.default_leaf_key, self.default_leaf_value_dict_key, self.stem_key])
         self.all_keys.update(self.other_keys)
 
-        self.configs = []
-        for c in configs:
-            config_template = get_config(c, verify)
-            rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
-            config_string = rtemplate.render(env=os.environ)
-            config_dict = yaml.load(config_string)
-            self.configs.append(config_dict)
+        self.config_urls = configs
+
         self.root = []
         self.meta_dict = {}
 
-        self.frklize_config(self.root, self.configs, self.meta_dict, 0)
+        self.frklize_config(self.root, self.config_urls, self.meta_dict, {}, 0)
 
         # pprint.pprint(self.root)
         self.leafs = flatten_root(self.root, self.add_leaf_dicts)
@@ -227,11 +230,24 @@ class Frkl(object):
         # sys.exit(0)
 
 
-    def frklize_config(self, root, configs, meta_dict_parent, level, add_level=False):
+    def frklize_config(self, root, configs, meta_dict_parent, root_base_dict, level, add_level=False):
 
         for c in configs:
 
+            is_root_config = False
             meta_dict = copy.deepcopy(meta_dict_parent)
+
+            try:
+                config_template = get_config(c, self.verify_ssl)
+                temp_flattened = merge_root(root)
+                temp_flattened["env"] = os.environ
+                rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
+                config_string = rtemplate.render(**temp_flattened)
+                c = yaml.load(config_string)
+                is_root_config = True
+            except:
+                # means this is not a 'url' config
+                pass
 
             # if none of the known keys are used in the config,
             # we assume it's a 'default_key'-dict
@@ -259,6 +275,15 @@ class Frkl(object):
 
             stem = base_dict.pop(self.stem_key, NO_STEM_INDICATOR)
 
+            # we want to take along all the 'base' non-stem variables
+            if is_root_config:
+                dict_merge(root_base_dict, base_dict)
+
+            temp = {}
+            dict_merge(temp, root_base_dict)
+            dict_merge(temp, base_dict)
+            base_dict = temp
+
             for key in base_dict.keys():
                 if key not in self.all_keys:
                     raise Exception("Key '{}' not allowed (in {})".format(key, base_dict))
@@ -275,6 +300,6 @@ class Frkl(object):
                 leaf[LEAF_DICT] = base_dict
                 root.append(leaf)
             elif isinstance(stem, (list, tuple)) and not isinstance(stem, basestring):
-                self.frklize_config(root, stem, meta_dict, level+1)
+                self.frklize_config(root, stem, meta_dict, {}, level+1)
             else:
                 raise Exception("Value of {} must be list (is: '{}')".format(self.stem_key, type(stem)))
