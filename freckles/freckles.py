@@ -401,7 +401,7 @@ class Freckles(object):
         self.configs = config_items
         frkl = Frkl(self.configs, FRECK_TASKS_KEY, [FRECK_VARS_KEY, FRECK_META_KEY], FRECK_META_KEY, TASK_NAME_KEY, FRECK_VARS_KEY, DEFAULT_DOTFILE_REPO_NAME, FRECKLES_DEFAULT_FRECKLES_BOOTSTRAP_CONFIG_PATH, add_leaf_dicts=True)
         self.leafs = frkl.leafs
-        self.debug_freck = None
+        self.debug_freck = False
         # pprint.pprint(self.frecks)
 
 
@@ -434,16 +434,15 @@ class Freckles(object):
         frecks = []
         for freck_nr, leaf in enumerate(self.leafs):
             freck_name = leaf[FRECK_META_KEY][FRECK_NAME_KEY]
-            debug = self.debug_freck and  self.debug_freck == freck_name
 
-            runner, processed = self.freck_plugins[freck_name].process_leaf(copy.deepcopy(leaf), self.supported_runners, debug)
+            runner, processed = self.freck_plugins[freck_name].process_leaf(copy.deepcopy(leaf), self.supported_runners, self.debug_freck)
 
 
             if not processed:
                 log.debug("No frecks created for freck_name '{}'.".format(freck_name))
                 continue
 
-            if debug:
+            if self.debug_freck:
                 click.echo("Processed leaf '{}'.".format(freck_name))
                 click.echo("---")
                 click.echo("Input:")
@@ -540,8 +539,7 @@ class Freckles(object):
 
                 freck_plugin = self.freck_plugins[freck[FRECK_NAME_KEY]]
 
-                debug = self.debug_freck and self.debug_freck == freck[FRECK_NAME_KEY]
-                run_item = freck_plugin.create_run_item(copy.deepcopy(freck), debug)
+                run_item = freck_plugin.create_run_item(copy.deepcopy(freck), self.debug_freck)
                 if not isinstance(run_item, dict):
                     raise Exception("Freck plugin returned non-dict value as run_item")
 

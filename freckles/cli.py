@@ -111,10 +111,11 @@ def augment_config(freckles_config):
 
 @cli.command("apply")
 @click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
+@click.option('--debug', help='print debug information for each freck', default=False, is_flag=True)
 # @click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
-def run(freckles_config, details, config):
+def run(freckles_config, details, config, debug):
     """Executes one or multiple runs.
 
     A config can either be a local yaml file, a url to a remote yaml file, or a json string.
@@ -123,20 +124,7 @@ def run(freckles_config, details, config):
     """
 
     freckles = Freckles(*config)
-    freckles.preprocess_configs()
-    with CursorOff():
-        freckles.run(details)
-
-
-@cli.command("debug-freck")
-@click.argument('freck-name', required=True, nargs=1)
-@click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
-@click.argument('config', required=False, nargs=-1)
-@pass_freckles_config
-def debug_freck(freckles_config, freck_name, config, details):
-
-    freckles = Freckles(*config)
-    freckles.set_debug(freck_name)
+    freckles.set_debug(debug)
     freckles.preprocess_configs()
     with CursorOff():
         freckles.run(details)
