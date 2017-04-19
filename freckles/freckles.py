@@ -176,7 +176,7 @@ class FrecklesRunCallback(object):
             self.items[item[FRECK_ID_KEY]] = item
         self.task_result = {}
         self.total_tasks = -1
-        self.current_freck_id = 1
+        self.current_freck_id = -1
         self.detailed_output = details
         self.success = True
 
@@ -185,7 +185,7 @@ class FrecklesRunCallback(object):
 
     def set_total_tasks(self, total):
         self.total_tasks = total
-        self.log(1, RUN_STARTED)
+        #self.log(1, RUN_STARTED)
 
 
     def log(self, freck_id, details):
@@ -221,10 +221,11 @@ class FrecklesRunCallback(object):
         self.task_result.setdefault(freck_id, []).append(details)
 
         if self.current_freck_id != freck_id:
-            # means new task
-            freck_success = self.log_freck_complete(self.current_freck_id)
-            if not freck_success:
-                self.success = False
+            if self.current_freck_id > 0:
+                # means new task
+                freck_success = self.log_freck_complete(self.current_freck_id)
+                if not freck_success:
+                    self.success = False
 
             self.current_freck_id = freck_id
             self.print_task_title(self.current_freck_id)

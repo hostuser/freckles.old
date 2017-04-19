@@ -319,6 +319,7 @@ class AnsibleRunner(FrecklesRunner):
 
         needs_sudo = playbook_needs_sudo(self.items)
         passwordless_sudo = can_passwordless_sudo()
+        self.extra_script_commands = ""
         if not passwordless_sudo and needs_sudo:
             log.debug("Some playbook items will need sudo, adding parameter to execution pipeline...")
             self.freckles_ask_sudo = "--ask-become-pass"
@@ -337,6 +338,7 @@ class AnsibleRunner(FrecklesRunner):
                 "freckles_playbook_dir": self.playbook_dir,
                 "freckles_playbook": self.playbook_file,
                 "freckles_ask_sudo": self.freckles_ask_sudo,
+                "freckles_extra_script_commands": self.extra_script_commands,
                 "freckles_library_path": self.freckles_library_path_string,
                 "freckles_develop_roles_path": FRECKLES_DEVELOP_ROLE_PATH,
                 "freckles_ansible_roles": self.roles,
@@ -375,17 +377,19 @@ class AnsibleRunner(FrecklesRunner):
 
         success = True
         if self.freckles_ask_sudo:
-            click.echo("\nLooks like we need a sudo password for some parts of the pipeline, this might interrupt the execution process, depending on how sudo is configured on this machine. Please provide your password below if necessary.\n")
-        proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE, shell=True)
+            click.echo("\nLooks like we need a sudo password for some parts of the pipeline, this might interrupt the execution process, depending on how sudo is configured on this machine. Please provide your password below (if applicable).\n")
+
+        proc = subprocess.Popen(self.execution_script_file, stdout=subprocess.PIPE, stderr=sys.stdout.fileno(), stdin=subprocess.PIPE, shell=True)
 
         total_tasks = (len(self.items))
         self.callback.set_total_tasks(total_tasks)
 
         freck_id = False
         for line in iter(proc.stdout.readline, ''):
-            details = json.loads(line)
-            freck_id = int(details.get(FRECK_ID_KEY))
-            self.callback.log(freck_id, details)
+
+                details = json.loads(line)
+                freck_id = int(details.get(FRECK_ID_KEY))
+                self.callback.log(freck_id, details)
 
         if not freck_id:
                 raise FrecklesRunError("Error in run, most probably this is a bug in one of the freckles modules. Please file a bug report.", self)
