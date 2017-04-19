@@ -234,7 +234,6 @@ class Frkl(object):
 
         for c in configs:
 
-            is_root_config = False
             meta_dict = copy.deepcopy(meta_dict_parent)
 
             try:
@@ -244,7 +243,6 @@ class Frkl(object):
                 rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
                 config_string = rtemplate.render(**temp_flattened)
                 c = yaml.load(config_string)
-                is_root_config = True
             except:
                 # means this is not a 'url' config
                 pass
@@ -276,7 +274,7 @@ class Frkl(object):
             stem = base_dict.pop(self.stem_key, NO_STEM_INDICATOR)
 
             # we want to take along all the 'base' non-stem variables
-            if is_root_config:
+            if level == 0:
                 dict_merge(root_base_dict, base_dict)
 
             temp = {}
