@@ -177,7 +177,7 @@ class FrecklesRunCallback(object):
         self.task_result = {}
         self.total_tasks = -1
         self.current_freck_id = 1
-        self.details = details
+        self.detailed_output = details
         self.success = True
 
         self.log_file = os.path.join(FRECKLES_DEFAULT_EXECUTION_LOGS_DIR, "run_log")
@@ -229,6 +229,20 @@ class FrecklesRunCallback(object):
             self.current_freck_id = freck_id
             self.print_task_title(self.current_freck_id)
 
+        else:
+            if self.detailed_output:
+                click.echo("\n  . {}".format(self.get_summary_string_from_detaila(details)), nl=False)
+
+
+    def get_summary_string_from_detaila(self, details):
+        """Produces a human readable string from the current details dict."""
+
+        action = details["action"]
+        freck_id = details["freck_id"]
+        state = details["state"]
+        task_name = details["task_name"]
+
+        return "{}: {} -> {}".format(task_name, action, state)
 
     def handle_freck_task_output(self, task, output_details):
         """Method to convert the output of a Freck run to something freckles can display nicely.
@@ -349,7 +363,7 @@ class FrecklesRunCallback(object):
 
         click.echo("\t=> {}".format(state_string))
 
-        if not self.details and state_string != FRECKLES_STATE_FAILED:
+        if  state_string != FRECKLES_STATE_FAILED:
             return True
 
         if state_string == FRECKLES_STATE_SKIPPED:
@@ -494,7 +508,7 @@ class Freckles(object):
         return sorted_result
 
 
-    def run(self):
+    def run(self, details=False):
 
         start_date = datetime.now()
         date_string = start_date.strftime('%y%m%d_%H_%M_%S')
@@ -544,12 +558,12 @@ class Freckles(object):
                 items.append(run_item)
                 i = i + 1
 
-            callback = FrecklesRunCallback(run_nr, self.freck_plugins, items)
+            callback = FrecklesRunCallback(run_nr, self.freck_plugins, items, details)
             runner_obj = runner_class(items, callback)
 
             click.echo("Starting run #{}".format(run_nr))
-            runner_obj.run()
-            click.echo("Run #{} finished.".format(run_nr))
+            success = runner_obj.run()
+            click.echo("Run #{} finished: {}".format(run_nr, ("success" if success else "failed")))
 
             dest_dir = os.path.join(archive_dirname, "run_{}".format(run_nr))
             log.debug("Moving run directory to archive: {}".format(dest_dir))
@@ -559,4 +573,6 @@ class Freckles(object):
                 os.unlink(FRECKLES_DEFAULT_LAST_EXECUTION_DIR)
             log.debug("Creating archive directory to last run convenience link")
             os.symlink(dest_dir, FRECKLES_DEFAULT_LAST_EXECUTION_DIR)
-            #TODO: stats, check whether failed
+            if not success:
+                click.echo("\nRun failed, exiting...")
+                sys.exit(1)

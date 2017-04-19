@@ -109,12 +109,11 @@ def augment_config(freckles_config):
     pass
 
 @cli.command("apply")
-@click.option('--run_nr', '-r', required=False, help='only kick off one run, using it\'s index', default=0)
 @click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
-@click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
+# @click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
-def run(freckles_config, run_nr, details, only_prepare, config):
+def run(freckles_config, details, config):
     """Executes one or multiple runs.
 
     A config can either be a local yaml file, a url to a remote yaml file, or a json string.
@@ -124,30 +123,21 @@ def run(freckles_config, run_nr, details, only_prepare, config):
 
     freckles = Freckles(*config)
     freckles.preprocess_configs()
-    freckles.run()
+    freckles.run(details)
 
 
 @cli.command("debug-freck")
-@click.option('--only-prepare', '-p', required=False, default=False, help='Only prepare the run(s), don\'t kick them off', is_flag=True)
 @click.argument('freck-name', required=True, nargs=1)
+@click.option('--details', help='whether to print details of the results of the  operations that are executed, or not', default=False, is_flag=True)
 @click.argument('config', required=False, nargs=-1)
 @pass_freckles_config
-def debug_freck(freckles_config, freck_name, config, only_prepare):
-
+def debug_freck(freckles_config, freck_name, config, details):
 
     freckles = Freckles(*config)
     freckles.set_debug(freck_name)
     freckles.preprocess_configs()
-    freckles.run()
+    freckles.run(details)
 
-
-
-@cli.command("test-config")
-@click.argument('config', required=False, nargs=-1)
-@pass_freckles_config
-def test_config(freckles_config, config):
-
-    frkl = Frkl(config)
 
 @cli.command("print-config")
 @click.argument('config', required=False, nargs=-1)
@@ -181,49 +171,6 @@ def print_config(freckles_config, config):
         result_runs.append({RUN_DESC_KEY: run_name, RUN_FRECKS_KEY: output_frecks})
 
     print(yaml.dump({"runs": result_runs}, default_flow_style=False))
-
-
-
-    # runs = create_runs(config)
-
-    # result_runs = []
-
-    # for run in runs:
-    #     run_name = run["name"]
-    #     run_nr = run["nr"]
-    #     playbook_items = freckles_config.freckles.create_playbook_items(run)
-    #     frecks = []
-    #     for item_nr, item in playbook_items.iteritems():
-    #         freck_type = item.pop(FRECK_TYPE_KEY)
-    #         freck_name = item.pop(FRECK_NAME_KEY)
-    #         freckles_id = item.pop(FRECK_ID_KEY) # we don't need this id, still pulling it out
-
-    #         frecks.append({freck_type: {"name": freck_name, "vars": item}})
-
-    #     result_runs.append({"name": run_name, "frecks": frecks})
-
-
-
-
-
-
-def start_runs(config):
-    """Helper method to kick off all runs."""
-
-    for run in config.runs:
-        run_nr = run["nr"]
-        log.info("Reading configuration for run #{}".format(run_nr))
-        runner = FrecklesRunner(config.freckles, run, clear_build_dir=True, execution_base_dir=config.get("build_base_dir"), execution_dir_name=config.get("build_dir_name"), details=config.get("details"))
-        if not runner.playbook_items:
-            log.info("No config found, doing nothing...")
-        else:
-            log.info("Starting run #{}...".format(run_nr))
-            success = runner.run()
-            log.info("Run #{} finished.".format(run_nr))
-            if not success:
-                raise FrecklesRunError("At least one error for run #{}. Exiting...".format(run_nr), run)
-
-        run_nr = run_nr + 1
 
 if __name__ == "__main__":
     cli()

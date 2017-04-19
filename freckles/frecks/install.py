@@ -322,6 +322,7 @@ class GitPackageManager(AbstractPackageManager):
 
         for pkg in self.pkgs:
             meta = {}
+            meta[TASK_NAME_KEY] = 'git'
             meta[FRECK_VARS_KEY] = {'repo': self.repo, 'dest': self.dest}
             meta[FRECK_ITEM_NAME_KEY] = self.repo
             descs.append(meta)

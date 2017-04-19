@@ -18,7 +18,7 @@ import yaml
 
 from cookiecutter.main import cookiecutter
 from freckles.constants import *
-from freckles.exceptions import FrecklesConfigError
+from freckles.exceptions import FrecklesConfigError, FrecklesRunError
 from freckles.freckles_runner import FrecklesRunner
 from freckles.utils import (can_passwordless_sudo, check_schema, dict_merge,
                             playbook_needs_sudo)
@@ -381,11 +381,14 @@ class AnsibleRunner(FrecklesRunner):
         total_tasks = (len(self.items))
         self.callback.set_total_tasks(total_tasks)
 
+        freck_id = False
         for line in iter(proc.stdout.readline, ''):
             details = json.loads(line)
             freck_id = int(details.get(FRECK_ID_KEY))
             self.callback.log(freck_id, details)
 
+        if not freck_id:
+                raise FrecklesRunError("Error in run, most probably this is a bug in one of the freckles modules. Please file a bug report.", self)
         self.callback.log(freck_id, RUN_FINISHED)
 
         # TODO: check success?

@@ -19,7 +19,7 @@ Overview
 
 *a cute dotfile manager; all over the place*
 
-At its heart, *freckles* is a dotfile manager. You point it to the configuration files of the applications you use, and it makes sure to replicate those configurations across the machines you use. It can, if you want it to, do more than that though. For example, it can also install all the packages you use, ensure certain folders exists, stuff like that.
+At its heart, *freckles* is a dotfile manager. You point it to the configuration files of the applications you use, and it makes sure to replicate those configurations across your machines, virtual or not. It also can, if you want it to, do more than that though. For example, it can also install all the packages you use, ensure certain folders exists, stuff like that.
 
 
 *freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on your local machine, not as much for configuring remote machines.
