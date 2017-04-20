@@ -21,6 +21,10 @@ To see the options for each sub-command, use:
 
 ``apply`` is the main command to be used with *freckles*. It takes one or more configuration files or urls to configuration files, and applies the environment that is described in those onto the machine where *freckles* is running.
 
+.. code-block:: console
+
+   freckles apply <config_url_or_path_1> [<config_url_or_path_2> <config_url_or_path_3> ...]
+
 *freckles* configuration files are designed to be as simple to create as possible, while maintaining the ability to describe more complex setups by optionally supporting a more complex format. On this page we will only use the simple format, for more details on how to get the most out of it please check out the :ref:`configuration` section, as well as the usage :ref:`examples`.
 
 Installing a few packages
