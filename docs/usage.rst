@@ -94,7 +94,7 @@ Either of those commands will do the same, and the output will look something li
    - task 03/03: apt -> install 'zile'	=> changed
    Run #1 finished: success
 
-*freckles* tries to determine whether a sudo password is required (for example, some package managers need sudo, some other don't), and it will display the above message if it thinks it is. The password prompt is the underlying *ansible* playbook runs though.
+*freckles* tries to determine whether a sudo password is required (for example, some package managers need sudo, some other don't, some systems have passwordless sudo, some do not), and it will display the above message if it thinks it is. The password prompt is the underlying *ansible* playbook runs though.
 
 
 Installing packages using a dotfile repository
@@ -125,7 +125,7 @@ Basically, your dotfiles are all stored in a git repository (here's `mine <https
 
 This makes for a nice and tidy organisation of all your dotfiles, and they don't get in each others way. In order to get the config files to the location the application expects it to, we use `GNU stow <https://www.gnu.org/software/stow/>`_. We point ``stow`` to our base directory, and tell it to symbolically link everything that is in one of the sub-folders of our base directory into the users home directory. ``stow`` is quite smart and can do that with a few different strategies, but I'll not get into those here. I recommend you look up how ``stow`` works, it's worth a read.
 
-Since I manage my dotfiles using ``git`` and ``stow`` anyway, I figured we can re-use the folder structure we have already to install the packages that belong to our configurations. The only thing we need to do is to name the sub-folders like the package name on the platform we use. As an example, I'm using the emacs-like editor called ``zile`` I often use to quickly edit small text files. It needs a configuration file called ``.zile``, which needs to be located in the root of the home directory:
+Since I manage my dotfiles using ``git`` and ``stow`` anyway, I figured we can re-use the folder structure we have already to install the packages that belong to our configurations. The only thing we need to do is to name the sub-folders like the package name on the platform we use. As an example, we'll using the emacs-like editor called ``zile`` which I find quite handy to quickly edit small text files. It uses a configuration file called ``.zile``, which needs to be located in the root of the home directory:
 
 .. code-block:: console
 
@@ -243,6 +243,40 @@ Now, let's merge both ways of installing packages, so we can have both packages 
      - stow
      - create-folder: ~/.backups/zile
 
-In addition to the ``checkout-dotfiles``, ``install`` and ``stow`` tasks, we introduce a new task type here: ``create-folder``. This does exactly what you expect it to do: creates a folder, using a string or list of strings with folder paths. If a folder already exists in one of the described locations, it will do nothing.
+In addition to the ``checkout-dotfiles``, ``install`` and ``stow`` tasks, we introduce a new task type here: ``create-folder``. This does exactly what you expect it to do: creates a folder, using a string or list of strings with folder paths. If a folder already exists, it will do nothing.
 
 In this case, we need the folder ``$HOME/.backups/zile`` because it is configured in the .zile configuration file in our dotfile directory. ``zile`` itself does not create this folder, and can't create backups if it doesn't exist.
+
+Install packages on different platforms
++++++++++++++++++++++++++++++++++++++++
+
+Depending on your requirements, sometimes you might want to re-create the same environment on different platforms. Say, your development machine is running Mac OS X, but you often use virtual machines running Ubuntu (maybe using Vagrant) as well. One of the problems here is that package names sometimes differ no different platforms. In our last example, we installed the applications ``htop``, ``fortunes`` (including a few debian-specific 'plugins` for it), and ``zile``. ``htop`` and ``zile`` are usually named the same on most platforms I came across, but ``fortunes`` is named is called ``fortune-mod`` on RedHat, and ``fortune`` on homebrew for Mac OS X.
+
+*freckles* can handle this, by supporting an optional configuration format for the ``install`` plugin which deals with more complex contexts. You won't need this too often I'd imagine, but it's simple enough to use to be included in this basic usage guide.
+
+For packages that are named the same, we don't need to do anything in particular, we can leave their config as it is. For the fortune mod we have to tell *freckles* the name of the package(s) on the respective platform:
+
+.. code-block:: console
+
+   - install:
+       use_dotfiles: true
+       packages:
+         - epel-release:
+             pkgs:
+               yum:
+                 - epel-release
+         - htop
+         - fortune:
+             pkgs:
+               apt:
+                 - fortunes
+                 - fortunes-off
+                 - fortunes-mario
+               yum:
+                 - fortune-mod
+               homebrew:
+                 - fortune
+
+As you can see, *freckles* assumes the package name is the string if the list item under ``packages`` is a string. If the list item is a dict, it will look for a key called ``pkgs`` and look up the package manager that is used on the system *freckles* is running on using its key. In the case of a debian-based system, we install 3 packages. Those additional packages don't exist on RedHat or in Homebrew, which is why we don't worry about them. Also, notice how we install the ``epel-release`` package. This only exists for RedHat-based systems, and is needed to enable some extra repositories without which we wouldn't be able to install some of our specified applications. Since the respective ``pkgs`` dict does not have entries for ``deb`` or ``homebrew``, this is ignored on those platforms.
+
+For a complete config file that does all of the things we talked about so far, check out: `quickstart.yml <https://github.com/makkus/freckles/blob/master/examples/quickstart.yml>`_
