@@ -6,5 +6,4 @@ tasks:
       packages:
         - htop
         - fortunes
-	- zile
-
+        - zile
