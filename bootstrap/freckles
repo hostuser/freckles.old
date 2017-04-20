@@ -50,12 +50,13 @@ else
 fi
 
 # General variables
-SCRIPT_LOG_FILE="/tmp/freckles.log"
 DEBUG=false
 
 FRECKLES_USER_HOME="`eval echo ~$FRECKLES_USER`"
 
 BASE_DIR="$FRECKLES_USER_HOME/.freckles"
+INSTALL_LOG_DIR="$BASE_DIR/.install_logs"
+SCRIPT_LOG_FILE="$INSTALL_LOG_DIR/install.log"
 FRECKLES_DATA_DIR="$BASE_DIR/opt"
 TEMP_DIR="/tmp/freckles_install"
 
@@ -93,6 +94,7 @@ DEB_DEPENDENCIES="build-essential git python-dev python-virtualenv libssl-dev li
 # rpm related variables
 RPM_DEPENDENCIES="epel-release wget git python-virtualenv stow openssl-devel stow gcc libffi-devel python-devel openssl-devel"
 
+mkdir -p "$INSTALL_LOG_DIR"
 touch "$SCRIPT_LOG_FILE"
 chmod 700 "$SCRIPT_LOG_FILE"
 chown "$FRECKLES_USER" "$SCRIPT_LOG_FILE"
