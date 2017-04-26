@@ -29,11 +29,11 @@ pip install --upgrade pip
 pip install --upgrade setuptools wheel
 
 
-echo 'source "$HOME/.freckles/data/venv/freckles/bin/activate"' >> "$HOME/.bashrc"
+echo 'source "$HOME/.freckles/opt/venv_freckles/freckles/bin/activate"' >> "$HOME/.bashrc"
 #ln -s /vagrant/examples/example_only_zsh/dotfiles /home/vagrant/dotfiles
 
 # install freckles
-source "$HOME/.freckles/data/venv/freckles/bin/activate"
+source "$HOME/.freckles/opt/venv_freckles/freckles/bin/activate"
 cd /vagrant
 pip install -r requirements_dev.txt
 python setup.py develop

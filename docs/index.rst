@@ -9,6 +9,8 @@ Contents:
    readme
    bootstrap
    usage
+   advanced_usage
+   examples
    trust
    contributing
    authors

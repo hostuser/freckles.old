@@ -19,12 +19,11 @@ Overview
 
 *a cute dotfile manager; all over the place*
 
-At its heart, *freckles* is a dotfile manager. You point it to the configuration files of the applications you use, and it makes sure to replicate those configurations across your machines, virtual or not. It also can, if you want it to, do more than that. For example, it can install all the packages you generally use and/or ensure certain folders exists.
+At its heart, *freckles* is a dotfile manager. You point it to the configuration files of the applications you use, and it makes sure to apply those configurations on your workstations, virtual or not. It can also do more than that, if you want it to. For example, it can install all the packages you generally use and/or ensure certain folders exists.
 
+*freckles* is implemented as a layer on top of ansible_, aiming to simplify and streamline configuration for use on a single machine. It tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). Instead of describing your infrastructure, as you do in *ansible*, in *freckles* you describe your working environment (in general, or for a specific project). This is only a subtle difference, and I'm still not sure whether it warrants a project like *freckles*. The idea got me curious enough to try and find out though :-).
 
-*freckles* tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). It's built on top of ansible_, and is meant to be used on a single machine (or VM, or container), not as much for configuring a set of remote machines like typical configuration management systems. It is centered around packages and configurations to re-create working or project environments, rather than setting up infrastructure and/or services on a connected set of boxes.
-
-*freckles* is written in Python, and GPL v3 licensed
+*freckles* is written in Python, and GPL v3 licensed.
 
 Documentation: https://freckles.readthedocs.io.
 
