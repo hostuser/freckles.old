@@ -172,6 +172,9 @@ def flatten_root(root, add_leaf_dicts=False):
     for item in root:
         if LEAF_DICT in item.keys():
             leaf_dict = item.pop(LEAF_DICT)
+        else:
+            leaf_dict = {}
+
         result_dict = {}
         for var, value_dicts in item.iteritems():
             result_dict[var] = {}
@@ -238,14 +241,24 @@ class Frkl(object):
 
             try:
                 config_template = get_config(c, self.verify_ssl)
-                temp_flattened = merge_root(root)
-                temp_flattened["env"] = os.environ
-                rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
-                config_string = rtemplate.render(**temp_flattened)
-                c = yaml.load(config_string)
+                try:
+                    temp_flattened = merge_root(root)
+                    # make sure at least empty dicts exist for all possible keys, otherwise template rendering might fail when
+                    # trying something like {{ vars.key1 | default("DefaultValue") }}
+                    for key in self.all_keys:
+                        if key not in temp_flattened.keys():
+                            temp_flattened[key] = {}
+                            temp_flattened["env"] = os.environ
+                    rtemplate = Environment(loader=BaseLoader()).from_string(config_template)
+                    config_string = rtemplate.render(**temp_flattened)
+                    c = yaml.load(config_string)
+                except Exception, e:
+                    raise FrecklesRunError("Error parsing/rendering config file: {}".format(e), None)
+
             except:
                 # means this is not a 'url' config
                 pass
+
 
             # if none of the known keys are used in the config,
             # we assume it's a 'default_key'-dict
