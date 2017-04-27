@@ -1,0 +1,46 @@
+---
+# freckles config to create a dev environment for freckles itself
+
+tasks:
+  - git-repo:
+      repo: {{ vars.project_repo }}
+      target: {{ vars.project_dir }}
+
+  - update-package-cache
+
+  - install: 
+      packages:
+        - dev-requirements:
+            pkgs:
+              apt:
+                - build-essential
+                - python-dev
+                - python-virtualenv
+                - libssl-dev
+                - libffi-dev
+                - stow
+                - libsqlite3-dev
+              yum:
+                - epel-release
+                - wget
+                - git
+                - python-virtualdev
+                - stow
+                - openssl-devel
+                - sqlite-devel
+
+  - create-folder: {{ vars.venv_dir }}
+
+  - install:
+      pkg_mgr: pip
+      virtualenv: {{ vars.venv_dir }}
+      packages:
+        - pip
+        - setuptools
+        - wheel
+        - {{ vars.project_dir }}/requirements_dev.txt
+
+  - shell:
+      free_form: 'source {{ vars.venv_dir }}/bin/activate && python setup.py develop'
+      chdir: '{{ vars.project_dir }}'
+      executable: 'bash'

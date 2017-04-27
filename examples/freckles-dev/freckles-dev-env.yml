@@ -1,0 +1,10 @@
+---
+# freckles dev environment variables
+
+vars:
+  project_repo: https://github.com/makkus/freckles.git
+  project_dir: ~/projects/freckles
+  venv_dir: ~/.freckles/opt/venv_freckles
+
+# tasks:
+  # - /vagrant/examples/freckles-dev/freckles-dev-tasks.yml
