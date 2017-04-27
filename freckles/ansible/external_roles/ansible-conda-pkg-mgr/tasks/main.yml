@@ -37,7 +37,7 @@
     dest: "{{ ansible_env.HOME }}/.profile"
     line: "if [ -e \"$HOME/{{ conda_rel_path }}/conda/bin/conda\" ]; then export PATH=\"$HOME/{{ conda_rel_path }}/conda/bin:$PATH\"; fi   # added by freckles"
     create: yes
-  when: "{{ add_path | default(false) }}"
+  when: add_path | default(true)
   ignore_errors: true
 
 - name: update conda - FRECKLES_IGNORE

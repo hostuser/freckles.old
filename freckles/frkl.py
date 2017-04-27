@@ -168,8 +168,10 @@ def get_and_load_configs(config_url, load_external=True, load_key=DEFAULT_LOAD_K
 
 def flatten_root(root, add_leaf_dicts=False):
 
+    root_copy = copy.deepcopy(root)
     result = []
-    for item in root:
+    for item in root_copy:
+
         if LEAF_DICT in item.keys():
             leaf_dict = item.pop(LEAF_DICT)
         else:
@@ -225,7 +227,6 @@ class Frkl(object):
 
         self.frklize_config(self.root, self.config_urls, self.meta_dict, {}, 0)
 
-        # pprint.pprint(self.root)
         self.leafs = flatten_root(self.root, self.add_leaf_dicts)
 
         # pprint.pprint(self.leafs)

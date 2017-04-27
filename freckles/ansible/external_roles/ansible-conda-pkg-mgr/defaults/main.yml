@@ -5,4 +5,3 @@
 conda_rel_path: ".local/opt"
 conda_parent_dir: "{{ ansible_env.HOME }}/{{ conda_rel_path }}"
 
-add_path: false

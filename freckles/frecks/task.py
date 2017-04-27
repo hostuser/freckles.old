@@ -110,8 +110,7 @@ class AbstractTask(Freck):
         return result
 
 class Task(AbstractTask):
-    """Generic task neck that can be used directly, or overwritten for more custom stuff.
-
+    """Generic task freck that can be used directly, or overwritten for more custom stuff.
     """
 
     def get_item_name(self, freck_meta):
@@ -123,5 +122,8 @@ class Task(AbstractTask):
     def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
 
         # adding last vars, needed for 'pure' ansible tasks, otherwise all inherited vars would be put into the generated role
+        # print("XXXX")
+        # pprint.pprint(leaf)
         leaf[FRECK_META_KEY][FRECK_VARS_KEY] = leaf[LEAF_DICT].get(FRECK_VARS_KEY, {})
+        #leaf[FRECK_META_KEY][FRECK_VARS_KEY] = leaf[LEAF_DICT][FRECK_VARS_KEY]
         return (FRECKLES_ANSIBLE_RUNNER, [leaf[FRECK_META_KEY]])

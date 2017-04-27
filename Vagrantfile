@@ -56,6 +56,7 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   config.vm.synced_folder ".", "/vagrant", id: "vagrant"
   config.vm.synced_folder "/home/markus/projects/ansible/roles", "/ansible_roles", id: "ansible-roles"
+  config.vm.synced_folder "/home/markus/dotfiles-new", "/dotfiles", id: "dotfiles"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
