@@ -280,10 +280,12 @@ class FrecklesRunCallback(object):
                     ignore_changed = True
                     break
 
+            ignore_errors = details["ignore_errors"] is True
+
             if details[FRECKLES_STATE_KEY] != FRECKLES_STATE_SKIPPED:
                 skipped = False
 
-                if details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
+                if not ignore_errors and details[FRECKLES_STATE_KEY] == FRECKLES_STATE_FAILED:
                     failed = True
                 if not ignore_changed and details["result"].get(FRECKLES_CHANGED_KEY, False):
                     changed = True
