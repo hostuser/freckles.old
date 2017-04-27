@@ -517,6 +517,8 @@ class Update(AbstractTask):
         new_meta[FRECK_SUDO_KEY] = get_pkg_mgr_sudo(pkg_mgr)
         new_meta[FRECK_ITEM_NAME_KEY] = "{} package cache".format(pkg_mgr)
         new_meta[UNIQUE_TASK_ID_KEY] = "{}_{}".format(Update.UNIQUE_TASK_ID_PREFIX, pkg_mgr)
+        if "roles" in PKG_MGRS_COMMANDS[pkg_mgr].keys():
+            new_meta[FRECK_META_ROLES_KEY] = PKG_MGRS_COMMANDS[pkg_mgr]["roles"]
         return new_meta
 
     def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
@@ -570,6 +572,9 @@ class Upgrade(AbstractTask):
         new_meta[FRECK_ITEM_NAME_KEY] = "{} packages".format(pkg_mgr)
 
         new_meta[UNIQUE_TASK_ID_KEY] = "{}_{}".format(Upgrade.UNIQUE_TASK_ID_PREFIX, pkg_mgr)
+        if "roles" in PKG_MGRS_COMMANDS[pkg_mgr].keys():
+            new_meta[FRECK_META_ROLES_KEY] = PKG_MGRS_COMMANDS[pkg_mgr]["roles"]
+
         return new_meta
 
     def process_leaf(self, leaf, supported_runners=[FRECKLES_DEFAULT_RUNNER], debug=False):
