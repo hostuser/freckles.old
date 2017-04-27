@@ -4,7 +4,7 @@ if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then source "$HOME/.nix-pro
 
 cd {{cookiecutter.freckles_playbook_dir}}
 
-export PATH="$HOME/.freckles/bin:../bin:$PATH"
+export PATH="$HOME/.freckles/bin:../bin:$PATH:$HOME/.freckles/opt/conda/bin:$HOME/.freckles/opt/venv_freckles/freckles/bin"
 
 mkdir -p ../logs
 

@@ -1,0 +1,23 @@
+---
+# freckles config to create a dev environment for freckles itself, using conda
+#
+# run via:
+#
+# freckles apply gh:makkus/freckles/examples/freckles-dev/vars.yml gh:makkus/freckles/examples/freckles-dev/conda.yml
+
+tasks:
+  - git-repo:
+      repo: {{ vars.project_repo | default('https://github.com/makkus/freckles.git') }}
+      target: {{ vars.project_dir | default('~/projects/freckles') }}
+
+  - install-conda
+
+  - shell:
+      free_form: 'conda env create -f environment.yml'
+      chdir: {{ vars.project_dir | default('~/projects/freckles') }}
+      creates: '~/.freckles/opt/conda/envs/freckles-dev'
+
+  - shell:
+      free_form: 'source $HOME/.freckles/opt/conda/bin/activate freckles-dev && python setup.py develop'
+      chdir: {{ vars.project_dir | default('~/projects/freckles') }}
+      executable: 'bash'

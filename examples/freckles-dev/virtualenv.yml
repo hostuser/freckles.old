@@ -1,5 +1,7 @@
 ---
 # freckles config to create a dev environment for freckles itself
+vars:
+    venv_dir: ~/.freckles/opt/venv_freckles
 
 tasks:
   - git-repo:

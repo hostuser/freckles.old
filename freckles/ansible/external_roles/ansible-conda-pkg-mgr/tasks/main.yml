@@ -42,4 +42,4 @@
 
 - name: update conda - FRECKLES_IGNORE
   become: no
-  shell: "{{ conda_parent_dir }}/conda/bin/conda update conda"
+  shell: "{{ conda_parent_dir }}/conda/bin/conda update --name root conda"
