@@ -37,13 +37,6 @@ Features
 * support for systems where you don't have root/sudo access via the nix_ package manager or conda_ (or if you just think it's a good idea to use any of them)
 * direct support for all ansible_ modules and roles
 
-What, ...why?
--------------
-
-I re-installed a new (or recently bricked) laptop or VM or container this one time too often, and I was annoyed that there is no real easy and quick way to re-create my working environment in those fresh environments, without having to write shell-scripts that sooner or later turn out unmaintainable and are fairly unflexible to begin with. Now, of course, that's what configuration management tools are for, and I do quite like ansible_ and have a bit of experience with it. What I don't like is how one usually needs a set of configuration files to describe a setup, even for simple use-cases like setting up a single, local machine. And I didn't want to install `ansible` itself manually every time before I can run my playbooks and roles. Basically, I wanted a thing that allows me to run one line of code, pointing to one configuration file, and after a while I have the same setup as I have on my other machines.
-
-This is what `freckles` now is, sorta. As a result of my tendency to over-engineer everything in my way along with me having a bit of time on my hands -- it now can do a few other things which I didn't consider before I started working on it, and which may or may not be useful to somebody else. Either way. If you want a simple and lightweight script to manage your machine, you better run, fast. But if you don't mind a bit of what angry oldish IT folk and/or minimalism-hipsters would probably call 'bloat', and you think that a bit of harddrive-space is a good trade-off for saving a few minutes/hours every once in a while, give this here a go and tell me what you think.
-
 Really quick-start
 -----------------
 
@@ -120,6 +113,14 @@ What this does:
 To read how all that works in more detail, please read the full documentation at: :ref:`Usage`
 
 You don't like executing random scripts on the internet? Yeah, me neither. Read here: :ref:`Trust`
+
+What, ...why?
+-------------
+
+I re-installed a new (or recently bricked) laptop or VM or container this one time too often, and I was annoyed that there is no real easy and quick way to re-create my working environment in those fresh environments, without having to write shell-scripts that sooner or later turn out unmaintainable and are fairly unflexible to begin with. Now, of course, that's what configuration management tools are for, and I do quite like ansible_ and have a bit of experience with it. What I don't like is how one usually needs a set of configuration files to describe a setup, even for simple use-cases like setting up a single, local machine. And I didn't want to install `ansible` itself manually every time before I can run my playbooks and roles. Basically, I wanted a thing that allows me to run one line of code, pointing to one configuration file, and after a while I have the same setup as I have on my other machines.
+
+This is what `freckles` now is, sorta. As a result of my tendency to over-engineer everything in my way along with me having a bit of time on my hands -- it now can do a few other things which I didn't consider before I started working on it, and which may or may not be useful to somebody else. Either way. If you want a simple and lightweight script to manage your machine, you better run, fast. But if you don't mind a bit of what angry oldish IT folk and/or minimalism-hipsters would probably call 'bloat', and you think that a bit of harddrive-space is a good trade-off for saving a few minutes/hours every once in a while, give this here a go and tell me what you think.
+
 
 Supported platforms
 -------------------
