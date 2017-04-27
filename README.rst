@@ -103,9 +103,9 @@ Either, way, the above command applies the following (fairly) simple configurati
 What this does:
 
  - checks out the repository of dotfile(s) at `https://github.com/makkus/freckles-quickstart.git <https://github.com/makkus/freckles-quickstart>`_
- - on Mac OS X, installs homebrew_ if it is not installed already
- - installs the ``epel`` repo if on a RPM-based platform
- - installs all the applications/packages that are configured in this repo (only the emacs-like editor ``zile`` in this case)
+ - on Mac OS X, installs homebrew_ if it is not installed already (this does not need to be specified, *freckles* figures that out on its own)
+ - installs the ``epel-release`` repo if on a RPM-based platform
+ - installs all the applications/packages that are configured in the repo we checked out earlier (only the emacs-like editor ``zile`` in this case) -- this is done by setting the ``use_dotfiles`` variable of the ``install`` task to true
  - also installs a few other packages that don't require configuration which is the reason they are not included in the dotfiles repo (``htop`` and, depending on which platform this is run on one or some more packages for the `fortune` tool)
  - `stows <https://www.gnu.org/software/stow/>`_ all the dotfiles in the above repository into the users home directory (again, only for *zile* in this case)
  - creates a folder ``$HOME/.backups/zile`` if it doesn't exist already (needed because it is configured in the ``.zile`` config-file -- contained in the repo we checked out and 'stowed' (means symbolic-linked) to the user home directory -- to be used as backup directory. *zile* does not create that dir itself and errors out if it doesn't exist)
