@@ -340,7 +340,7 @@ class FrecklesRunCallback(object):
         item_name = task_item[FRECK_ITEM_NAME_KEY]
         task_desc = task_item[FRECK_DESC_KEY]
 
-        task_title = "- task {:02d}/{:02d}: {} '{}'".format(freckles_id, len(self.items), task_desc, item_name)
+        task_title = "- task {:02d}/{:02d}: {}\t- '{}'".format(freckles_id, len(self.items), task_desc, item_name)
         nl = False
         if log.getEffectiveLevel() < 20:
             nl = True

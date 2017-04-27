@@ -75,7 +75,7 @@ class AbstractTask(Freck):
         else:
             vars = freck_meta.get(FRECK_VARS_KEY, {})
 
-        item_name = self.get_item_name(freck_meta) or freck_meta[FRECK_ITEM_NAME_KEY] or task_name
+        item_name = freck_meta.get(FRECK_DETAIL_KEY, False) or self.get_item_name(freck_meta) or freck_meta[FRECK_ITEM_NAME_KEY] or task_name
         template_keys = self.get_task_template_keys(freck_meta) or freck_meta.get(TASK_TEMPLATE_KEYS, False) or vars.keys()
 
         template_keys.extend(vars.keys())

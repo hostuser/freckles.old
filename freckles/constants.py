@@ -53,6 +53,7 @@ FRECK_RUNNER_KEY = "runner" # TODO: add supported runners check
 
 
 FRECK_DESC_KEY = "desc"
+FRECK_DETAIL_KEY = "detail"
 FRECK_INDEX_KEY = "freck_index"
 FRECK_VARS_KEY = "vars"
 FRECK_META_KEY = "meta"
