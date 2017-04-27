@@ -1,12 +1,9 @@
 ---
 # freckles config to create a dev environment for freckles itself
-vars:
-    venv_dir: ~/.freckles/opt/venv_freckles
-
 tasks:
   - git-repo:
-      repo: {{ vars.project_repo }}
-      target: {{ vars.project_dir }}
+      repo: {{ vars.project_repo | default('https://github.com/makkus/freckles.git') }}
+      target: {{ vars.project_dir | default('~/projects/freckles') }}
 
   - update-package-cache
 
@@ -31,18 +28,18 @@ tasks:
                 - openssl-devel
                 - sqlite-devel
 
-  - create-folder: {{ vars.venv_dir }}
+  - create-folder: ~/.freckles/opt/venv_freckles_dev
 
   - install:
       pkg_mgr: pip
-      virtualenv: {{ vars.venv_dir }}
+      virtualenv: ~/.freckles/opt/venv_freckles_dev
       packages:
         - pip
         - setuptools
         - wheel
-        - {{ vars.project_dir }}/requirements_dev.txt
+        - {{ vars.project_dir | default('~/projects/freckles') }}/requirements_dev.txt
 
   - shell:
-      free_form: 'source {{ vars.venv_dir }}/bin/activate && python setup.py develop'
-      chdir: '{{ vars.project_dir }}'
+      free_form: 'source ~/.freckles/opt/venv_freckles_dev/bin/activate && python setup.py develop'
+      chdir: {{ vars.project_dir | default('~/projects/freckles') }}
       executable: 'bash'
