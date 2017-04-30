@@ -17,11 +17,15 @@ Overview
      :alt: Updates
 
 
-*a cute dotfile manager; all over the place*
+*managing dotfiles? and more? cute!*
 
-At its heart, *freckles* is a dotfile manager. You point it to the configuration files of the applications you use, and it makes sure to apply those configurations on your workstations, virtual or not. It can also do more than that, if you want it to. For example, it can install all the packages you generally use and/or ensure certain folders exists.
+At its heart, *freckles* is configuration management for your local machine(s). If you are familiar with ansible_, puppet_, or chef_ you know what configuration management is, and why it's a good idea. If not: in short, configuration management gives you a way to describe the configuration of a machine and the services and applications it runs in some way and format (e.g. in code, json, yml, ...) and apply this recorded configuration onto a vanilla (virtual or not) machine.
 
-*freckles* is implemented as a layer on top of ansible_, aiming to simplify and streamline configuration for use on a single machine. It tries to make it easy to record and replicate the configuration and setup of your working environment (or parts thereof). Instead of describing your infrastructure, as you do in *ansible*, in *freckles* you describe your working environment (in general, or for a specific project). This is only a subtle difference, and I'm still not sure whether it warrants a project like *freckles*. The idea got me curious enough to try and find out though :-).
+Depending on the configuration management framework you choose, the learning curve for them is quite steep, and require quite a bit of initial investment in terms of time to learn how they work, and to prepare the configuration that works for your infrastructure. Even the (arguably) easiest to pickup system, *ansible*, needs you to prepare and edit several files and folders, even for simple use-cases. This makes sense, since all of those solutions are quite powerful, and have to be able to deal with quite a lot of complexity.
+
+*freckles*' goal is to simplify this configuration for use-cases that are less involved, like setting up your local workstation and development VMs with the tools of your choice, and the configuration needed to get started quickly. Without having to do a lot of manual bootstrapping, setup and preparation. Ideally, issuing one command, involving a pre-created configuration should be enough.
+
+*freckles* is implemented as a layer on top off *ansible*. Instead of describing your infrastructure, as you do in *ansible*, in *freckles* you describe your working environment (in general, or for a specific project). This is only a subtle difference, and I'm still not sure whether its worth developing a project like *freckles*. The idea got me curious enough to try and find out though :-).
 
 *freckles* is written in Python, and GPL v3 licensed.
 
@@ -163,6 +167,8 @@ This package was created using, amongst others:
 - ansible-nix_
 
 .. _ansible: https://ansible.com
+.. _puppet: https://puppet.com
+.. _chef: https://www.chef.io/chef
 .. _nix: https://nixos.org/nix/
 .. _conda: https://conda.io
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
