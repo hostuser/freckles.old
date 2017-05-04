@@ -271,7 +271,7 @@ function install_freckles_linux_root {
 function install_freckles_root {
 
     # figure out which os we are running
-    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         install_freckles_linux_root
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         install_freckles_mac_root
