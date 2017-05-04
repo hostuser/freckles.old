@@ -335,15 +335,6 @@ PKG_MGRS = [AptPackageManager, YumPackageManager, GitPackageManager, NixPackageM
 
 def get_os_family():
 
-    # pf = basic.get_platform()
-    # if pf == 'Darwin':
-        # return pf
-    # distribution = basic.get_distribution()
-    # print(distribution)
-    # osfamily = Distribution.OS_FAMILY.get(distribution)
-    # print(osfamily)
-    # return osfamily
-
     basic._ANSIBLE_ARGS = '{"ANSIBLE_MODULE_ARGS": {}}'
     module = basic.AnsibleModule({})
     d = Distribution(module)
