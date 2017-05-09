@@ -7,11 +7,13 @@
 # you're doing.
 Vagrant.configure("2") do |config|
 
-#  if Vagrant.has_plugin?("vagrant-proxyconf")
-#    config.proxy.http     = "http://192.168.1.222:3128/"
-#    config.proxy.https    = "http://192.168.1.222:3128/"
-#    config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
-  #  end
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.http     = "http://10.0.0.14:3128/"
+    config.proxy.https    = "http://10.0.0.14:3128/"
+    config.apt_proxy.http = "http://10.0.0.11:3142"
+    config.apt_proxy.https = "http://10.0.0.11:3142"
+    config.proxy.no_proxy = "localhost,127.0.0.1,.lan"
+  end
 
   Vagrant.configure('2') do |config|
     config.cache.scope = :box
@@ -55,8 +57,8 @@ Vagrant.configure("2") do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   config.vm.synced_folder ".", "/vagrant", id: "vagrant"
-  config.vm.synced_folder "/home/markus/projects/ansible/roles", "/ansible_roles", id: "ansible-roles"
-  config.vm.synced_folder "/home/markus/dotfiles-new", "/dotfiles", id: "dotfiles"
+  config.vm.synced_folder "/home/markus/projects/roles", "/ansible_roles", id: "ansible-roles"
+  config.vm.synced_folder "/home/markus/dotfiles", "/dotfiles", id: "dotfiles"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.

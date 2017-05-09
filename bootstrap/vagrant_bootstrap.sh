@@ -5,9 +5,7 @@ export DEBIAN_FRONTEND=noninteractive
 set -x
 set -e
 
-#echo 'Acquire::http { Proxy "http://192.168.1.222:3142"; };' |sudo tee --append /etc/apt/apt.conf.d/01proxy
-
-#curl --insecure -L https://raw.githubusercontent.com/makkus/freckles-dev/master/prepare.sh | bash -s --
+cp -r /vagrant/bootstrap/.pip /home/vagrant/.pip
 
 # create freckles virtualenv
 FRECKLES_DIR="$HOME/.freckles"
