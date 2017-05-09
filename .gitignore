@@ -67,3 +67,6 @@ target/
 /GTAGS
 .vagrant/
 temp/
+
+vagrant/
+examples/other/
