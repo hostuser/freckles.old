@@ -1,6 +1,6 @@
-===================================================
+========
 Overview
-===================================================
+========
 
 .. image:: https://img.shields.io/pypi/v/freckles.svg
         :target: https://pypi.python.org/pypi/freckles
